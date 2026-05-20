@@ -36,7 +36,7 @@ export default async function AnalyticsPage() {
               <div className="text-sm font-medium text-neutral-600 mb-2">{year}년</div>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 <KpiCard title="매출" amount={t.revenue} />
-                <KpiCard title="사업비용" amount={-t.expense} />
+                <KpiCard title="지출" amount={-t.expense} />
                 <KpiCard title="순이익" amount={t.net} />
                 <KpiCard title="유진 급여" amount={t.ownerDraw} />
                 <KpiCard title="예비비" amount={t.reserve} />

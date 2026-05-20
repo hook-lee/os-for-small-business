@@ -2560,14 +2560,14 @@ export const REAL_TRANSACTIONS: RealTransaction[] = [
 export const GROUND_TRUTH_KPI = {
   2024: {
     revenue: 102_034_000,
-    expense: 83_958_351,    // owner draw·예비비 제외한 순수 사업비용
+    expense: 83_958_351,    // Looker 대시보드 "지출" — owner_draw·reserve 제외, living 포함 (사업비+생활비+자본)
     net: 18_075_649,
     ownerDraw: 36_000_000,  // 유진 급여
   },
   2025: {
     revenue: 117_992_000,
     revenueCardOnly: 101_732_700,  // 현금 매출 약 16M 제외
-    expense: 101_211_363,
+    expense: 101_211_363,          // Looker 대시보드 "지출" — owner_draw·reserve 제외, living 포함
     net: 16_780_637,
     ownerDraw: 31_000_000,
   },
