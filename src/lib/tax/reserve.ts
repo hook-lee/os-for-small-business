@@ -26,11 +26,8 @@ export function recommendReserve(
   }
   const vatTotal = Math.round((vatSoFar * 4) / currentQuarter)
 
-  // 종소세는 연 1회(5월) 신고 → 연말(12월) 기준으로만 포함.
-  // 분기 중간에는 부가세 납부 준비만 해도 되므로, 12월이 아닌 시점엔 0으로 처리.
-  const incomeTaxTotal = month === 12
-    ? simulateIncomeTax(transactions, asOfDate, options).estimatedTax
-    : 0
+  const incomeTaxResult = simulateIncomeTax(transactions, asOfDate, options)
+  const incomeTaxTotal = incomeTaxResult.estimatedTax
 
   const annualTaxEstimate = vatTotal + incomeTaxTotal
   const monthly = Math.round(annualTaxEstimate / 12)

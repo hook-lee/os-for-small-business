@@ -30,15 +30,15 @@ describe('recommendReserve', () => {
     expect(r.breakdown.incomeTaxTotal).toBe(0)
   })
 
-  it('1분기 매출 1100만, 매입 0 → 부가세 100만/분기 → 연 400만 → 월 약 33만', () => {
-    // 1Q에 1100만 매출. 부가세 = 100만. 연환산 = 400만. 종소세 0 (영업이익 작음).
+  it('1분기 매출 1100만, 매입 0 → 부가세 100만/분기 → 연 400만 → 종소세도 포함', () => {
+    // 1Q에 1100만 매출. 부가세 = 100만. 연환산 = 400만. 종소세도 항상 포함.
     const r = recommendReserve(
       [tx('2026-01-15', '매출', 11_000_000)],
       '2026-03-31',
     )
     expect(r.breakdown.vatTotal).toBe(4_000_000)
-    expect(r.breakdown.incomeTaxTotal).toBe(0)
-    expect(r.monthly).toBe(Math.round(4_000_000 / 12))  // 약 333,333
+    expect(r.breakdown.incomeTaxTotal).toBeGreaterThan(0)
+    expect(r.monthly).toBe(Math.round(r.annualTaxEstimate / 12))
   })
 
   it('영업이익이 크면 종소세도 포함', () => {
