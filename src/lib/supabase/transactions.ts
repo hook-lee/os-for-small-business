@@ -29,13 +29,21 @@ function rowToTransaction(row: TransactionRow): Transaction {
 
 export async function fetchAllTransactions(): Promise<Transaction[]> {
   const supabase = getSupabaseClient()
-  const { data, error } = await supabase
-    .from('transactions')
-    .select('date, raw_category, category, amount, method, counterparty, person, classification, memo')
-    .order('date', { ascending: true })
-    .limit(10000)
-  if (error) throw new Error(`Supabase fetch failed: ${error.message}`)
-  return (data ?? []).map(rowToTransaction)
+  // PostgREST는 요청당 최대 1000행(기본 max-rows)만 반환하므로 range로 페이지네이션.
+  const PAGE = 1000
+  const all: TransactionRow[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('date, raw_category, category, amount, method, counterparty, person, classification, memo')
+      .order('date', { ascending: true })
+      .range(from, from + PAGE - 1)
+    if (error) throw new Error(`Supabase fetch failed: ${error.message}`)
+    const rows = (data ?? []) as TransactionRow[]
+    all.push(...rows)
+    if (rows.length < PAGE) break
+  }
+  return all.map(rowToTransaction)
 }
 
 export interface NewTransactionInput {

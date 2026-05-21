@@ -27,15 +27,22 @@ const rows = REAL_TRANSACTIONS.map(t => {
   }
 })
 
-// 배치로 삽입 (500개씩)
-const BATCH = 500
-for (let i = 0; i < rows.length; i += BATCH) {
-  const batch = rows.slice(i, i + BATCH)
-  const { error } = await supabase.from('transactions').insert(batch)
-  if (error) {
-    console.error(`Batch ${i} failed:`, error.message)
-    process.exit(1)
+// 배치로 삽입 (500개씩) — top-level await 회피 위해 async IIFE로 감쌈
+async function main() {
+  const BATCH = 500
+  for (let i = 0; i < rows.length; i += BATCH) {
+    const batch = rows.slice(i, i + BATCH)
+    const { error } = await supabase.from('transactions').insert(batch)
+    if (error) {
+      console.error(`Batch ${i} failed:`, error.message)
+      process.exit(1)
+    }
+    console.log(`Inserted ${Math.min(i + BATCH, rows.length)}/${rows.length}`)
   }
-  console.log(`Inserted ${Math.min(i + BATCH, rows.length)}/${rows.length}`)
+  console.log('Seed complete.')
 }
-console.log('Seed complete.')
+
+main().catch((e) => {
+  console.error('Seed failed:', e)
+  process.exit(1)
+})
