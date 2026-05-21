@@ -15,6 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <h1 className="text-lg font-semibold">워크스페이스 <span className="text-neutral-400 text-sm font-normal">· 라파 필라테스</span></h1>
             <nav className="flex gap-4 text-sm">
               <a href="/" className="hover:underline">홈</a>
+              <a href="/add" className="hover:underline font-medium text-blue-600">입력</a>
               <a href="/tax" className="hover:underline">세금</a>
               <a href="/analytics" className="hover:underline">분석</a>
               <a href="/settings" className="hover:underline">설정</a>

@@ -1,59 +1,51 @@
 import { NextResponse } from 'next/server'
-import { fetchSheetRows, getSheetConfig } from '@/lib/sheets/client'
-import { parseSheetRows } from '@/lib/sheets/parser'
-import { createCache } from '@/lib/sheets/cache'
+import { loadTransactions, invalidateCache } from '@/lib/data/loader'
 import { normalizeCategory, classify } from '@/lib/categories/normalize'
-import type { Transaction } from '@/types/domain'
-
-function hasSheetConfig(): boolean {
-  return !!(
-    process.env.GOOGLE_SHEETS_CLIENT_EMAIL &&
-    process.env.GOOGLE_SHEETS_PRIVATE_KEY &&
-    process.env.GOOGLE_SHEETS_ID
-  )
-}
-
-async function loadFixtureFallback(): Promise<Transaction[]> {
-  const { REAL_TRANSACTIONS } = await import('../../../../tests/fixtures/real-transactions')
-  return REAL_TRANSACTIONS.map(r => {
-    const category = normalizeCategory(r.category) ?? '기타'
-    return {
-      date: r.date,
-      rawCategory: r.category,
-      category,
-      amount: r.amount,
-      method: r.method,
-      counterparty: r.counterparty || undefined,
-      person: r.person || undefined,
-      classification: classify(category),
-      memo: undefined,
-    } satisfies Transaction
-  })
-}
-
-const transactionsCache = createCache({
-  ttlMs: 5 * 60 * 1000,
-  fetcher: async () => {
-    if (!hasSheetConfig()) {
-      return loadFixtureFallback()
-    }
-    const config = getSheetConfig()
-    const rows = await fetchSheetRows(config)
-    return parseSheetRows(rows)
-  },
-})
+import { insertTransaction } from '@/lib/supabase/transactions'
+import { hasSupabaseConfig } from '@/lib/supabase/client'
 
 export async function GET() {
   try {
-    const transactions = await transactionsCache.get()
+    const transactions = await loadTransactions()
     return NextResponse.json({ transactions, cachedAt: new Date().toISOString() })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({ error: message }, { status: 500 })
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
   }
 }
 
-export async function DELETE() {
-  transactionsCache.invalidate()
-  return NextResponse.json({ ok: true })
+export async function POST(req: Request) {
+  if (!hasSupabaseConfig()) {
+    return NextResponse.json({ error: 'Supabase 미설정 — 입력하려면 SUPABASE_URL/SERVICE_ROLE_KEY 필요' }, { status: 503 })
+  }
+  try {
+    const body = await req.json() as {
+      date?: string; rawCategory?: string; amount?: number; method?: string;
+      counterparty?: string; person?: string; memo?: string;
+    }
+    if (!body.date || !body.rawCategory || typeof body.amount !== 'number' || !body.method) {
+      return NextResponse.json({ error: 'date, rawCategory, amount, method 필수' }, { status: 400 })
+    }
+    const category = normalizeCategory(body.rawCategory)
+    if (!category) {
+      return NextResponse.json({ error: '유효하지 않은 카테고리' }, { status: 400 })
+    }
+    if (!['카드', '계좌이체', '현금'].includes(body.method)) {
+      return NextResponse.json({ error: '유효하지 않은 수단' }, { status: 400 })
+    }
+    await insertTransaction({
+      date: body.date,
+      rawCategory: body.rawCategory,
+      category,
+      amount: body.amount,
+      method: body.method as '카드' | '계좌이체' | '현금',
+      counterparty: body.counterparty,
+      person: body.person,
+      classification: classify(category),
+      memo: body.memo,
+    })
+    invalidateCache()
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
+  }
 }

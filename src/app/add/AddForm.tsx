@@ -1,0 +1,282 @@
+'use client'
+
+import { useState, useEffect, type FormEvent } from 'react'
+import { Card } from '@/components/ui/Card'
+
+type TxType = '지출' | '매출'
+type Method = '카드' | '계좌이체' | '현금'
+
+const QUICK_CATEGORIES = [
+  '매출', '식비', '임대료', '마케팅비', '소모품', '공과금',
+  '교통비', '경조사비', '유진 급여', '예비비', '기타',
+]
+
+function today(): string {
+  return new Date().toISOString().slice(0, 10)
+}
+
+interface RecentTx {
+  date: string
+  rawCategory: string
+  amount: number
+  method: string
+}
+
+export function AddForm() {
+  const [txType, setTxType] = useState<TxType>('지출')
+  const [date, setDate] = useState(today())
+  const [rawCategory, setRawCategory] = useState('식비')
+  const [amountStr, setAmountStr] = useState('')
+  const [method, setMethod] = useState<Method>('카드')
+  const [counterparty, setCounterparty] = useState('')
+  const [person, setPerson] = useState('')
+  const [memo, setMemo] = useState('')
+  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [errorMsg, setErrorMsg] = useState('')
+  const [recent, setRecent] = useState<RecentTx[]>([])
+
+  useEffect(() => {
+    fetchRecent()
+  }, [])
+
+  async function fetchRecent() {
+    try {
+      const res = await fetch('/api/transactions')
+      if (!res.ok) return
+      const json = await res.json() as { transactions: RecentTx[] }
+      const sorted = [...(json.transactions ?? [])].sort((a, b) => b.date.localeCompare(a.date))
+      setRecent(sorted.slice(0, 5))
+    } catch {
+      // silent
+    }
+  }
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    const amount = parseFloat(amountStr)
+    if (!amountStr || isNaN(amount) || amount <= 0) {
+      setErrorMsg('금액을 올바르게 입력하세요')
+      return
+    }
+    setStatus('saving')
+    setErrorMsg('')
+    const signedAmount = txType === '매출' ? Math.abs(amount) : -Math.abs(amount)
+    try {
+      const res = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date,
+          rawCategory,
+          amount: signedAmount,
+          method,
+          counterparty: counterparty || undefined,
+          person: person || undefined,
+          memo: memo || undefined,
+        }),
+      })
+      const json = await res.json() as { ok?: boolean; error?: string }
+      if (!res.ok) {
+        setErrorMsg(json.error ?? '저장 실패')
+        setStatus('error')
+        return
+      }
+      setStatus('saved')
+      setAmountStr('')
+      setCounterparty('')
+      setPerson('')
+      setMemo('')
+      setDate(today())
+      setTimeout(() => setStatus('idle'), 2500)
+      await fetchRecent()
+    } catch {
+      setErrorMsg('네트워크 오류')
+      setStatus('error')
+    }
+  }
+
+  const isSupabaseMissing = status === 'error' && errorMsg.includes('Supabase 미설정')
+
+  return (
+    <div className="space-y-6 max-w-lg">
+      <Card>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* 매출/지출 토글 */}
+          <div className="flex gap-2">
+            {(['지출', '매출'] as TxType[]).map(t => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTxType(t)}
+                className={`flex-1 py-3 rounded-lg font-semibold text-base transition-colors ${
+                  txType === t
+                    ? t === '매출'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-neutral-800 text-white'
+                    : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200'
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+
+          {/* 금액 */}
+          <div>
+            <label className="block text-sm font-medium mb-1 text-neutral-600">금액 (원)</label>
+            <input
+              type="number"
+              inputMode="numeric"
+              min="0"
+              step="100"
+              placeholder="0"
+              value={amountStr}
+              onChange={e => setAmountStr(e.target.value)}
+              className="w-full border border-neutral-300 rounded-lg px-4 py-4 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          {/* 카테고리 버튼 그리드 */}
+          <div>
+            <label className="block text-sm font-medium mb-2 text-neutral-600">카테고리</label>
+            <div className="flex flex-wrap gap-2">
+              {QUICK_CATEGORIES.map(cat => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setRawCategory(cat)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    rawCategory === cat
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 결제 수단 */}
+          <div>
+            <label className="block text-sm font-medium mb-2 text-neutral-600">결제 수단</label>
+            <div className="flex gap-2">
+              {(['카드', '계좌이체', '현금'] as Method[]).map(m => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMethod(m)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    method === m
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 날짜 */}
+          <div>
+            <label className="block text-sm font-medium mb-1 text-neutral-600">날짜</label>
+            <input
+              type="date"
+              value={date}
+              onChange={e => setDate(e.target.value)}
+              className="w-full border border-neutral-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* 거래처 / 사람 (선택) */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-neutral-600">거래처 (선택)</label>
+              <input
+                type="text"
+                value={counterparty}
+                onChange={e => setCounterparty(e.target.value)}
+                placeholder="예: 쿠팡"
+                className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-neutral-600">사람 (선택)</label>
+              <input
+                type="text"
+                value={person}
+                onChange={e => setPerson(e.target.value)}
+                placeholder="예: 유진"
+                className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* 메모 */}
+          <div>
+            <label className="block text-sm font-medium mb-1 text-neutral-600">메모 (선택)</label>
+            <input
+              type="text"
+              value={memo}
+              onChange={e => setMemo(e.target.value)}
+              placeholder="간단한 메모"
+              className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* 저장 버튼 */}
+          <button
+            type="submit"
+            disabled={status === 'saving'}
+            className={`w-full py-4 rounded-lg text-white font-semibold text-base transition-colors ${
+              status === 'saving'
+                ? 'bg-blue-400 cursor-not-allowed'
+                : status === 'saved'
+                  ? 'bg-green-600'
+                  : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+          >
+            {status === 'saving' ? '저장 중...' : status === 'saved' ? '저장됨' : '저장'}
+          </button>
+
+          {/* 오류 메시지 */}
+          {(status === 'error' || errorMsg) && (
+            <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+              {errorMsg}
+              {isSupabaseMissing && (
+                <p className="mt-1 text-xs text-red-500">
+                  SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY 환경변수를 설정하세요.
+                </p>
+              )}
+            </div>
+          )}
+        </form>
+      </Card>
+
+      {/* 최근 입력 5건 */}
+      <div>
+        <h3 className="text-sm font-semibold text-neutral-500 mb-2">최근 입력</h3>
+        {recent.length === 0 ? (
+          <p className="text-sm text-neutral-400">아직 거래가 없습니다.</p>
+        ) : (
+          <div className="space-y-2">
+            {recent.map((tx, i) => (
+              <Card key={i} className="flex items-center justify-between py-2 px-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-neutral-400 w-24 shrink-0">{tx.date}</span>
+                  <span className="text-sm font-medium">{tx.rawCategory}</span>
+                  <span className="text-xs text-neutral-400">{tx.method}</span>
+                </div>
+                <span className={`text-sm font-semibold tabular-nums ${tx.amount >= 0 ? 'text-blue-600' : 'text-neutral-800'}`}>
+                  {tx.amount >= 0 ? '+' : ''}{tx.amount.toLocaleString('ko-KR')}원
+                </span>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
