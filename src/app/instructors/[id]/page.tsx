@@ -1,4 +1,6 @@
 import { fetchInstructorById, fetchMembersByInstructor } from '@/lib/supabase/instructors'
+import { fetchAllPasses } from '@/lib/supabase/passes'
+import { computeInstructorKPI, groupPassesByMember } from '@/lib/analytics/instructor-kpi'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/Card'
 import { notFound } from 'next/navigation'
@@ -20,6 +22,17 @@ export default async function InstructorDetailPage({
 
   const members = await fetchMembersByInstructor(id)
 
+  // KPI 계산
+  let kpi: ReturnType<typeof computeInstructorKPI> | null = null
+  try {
+    const allPasses = await fetchAllPasses()
+    const instructorPasses = allPasses.filter(p => p.instructorId === id)
+    const allByMember = groupPassesByMember(allPasses)
+    kpi = computeInstructorKPI(id, instructorPasses, allByMember)
+  } catch {
+    kpi = null
+  }
+
   const roleLabel = instructor.role === 'owner' ? '스튜디오 오너' : instructor.role === 'admin' ? '관리자' : '강사'
 
   return (
@@ -38,6 +51,15 @@ export default async function InstructorDetailPage({
         <Row label="듀엣 시급" value={`${instructor.rateDuet.toLocaleString()}원`} />
         <Row label="그룹 시급" value={`${instructor.rateGroup.toLocaleString()}원`} />
       </Card>
+
+      {kpi && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+          <KpiBox title="총 매출" value={`${kpi.totalRevenue.toLocaleString()}원`} sub={`${kpi.totalMemberCount}명 담당`} />
+          <KpiBox title="활성 회원" value={`${kpi.activeMemberCount}명`} sub="이용중 수강권 보유" />
+          <KpiBox title="재등록률" value={`${(kpi.reregistrationRate * 100).toFixed(0)}%`} sub={`${kpi.totalMemberCount}명 중 2회+ 결제`} />
+          <KpiBox title="전환율" value={`${(kpi.trialConversionRate * 100).toFixed(0)}%`} sub={`체험 ${kpi.trialMemberCount}명 → 정회원 ${kpi.convertedMemberCount}명`} />
+        </div>
+      )}
 
       <div>
         <h3 className="text-lg font-semibold mt-6 mb-2">담당 회원 ({members.length}명)</h3>
@@ -85,6 +107,16 @@ function Row({ label, value }: { label: string; value: string | null }) {
     <div className="flex">
       <div className="w-24 shrink-0 text-sm text-neutral-500">{label}</div>
       <div className="text-sm">{value ?? '—'}</div>
+    </div>
+  )
+}
+
+function KpiBox({ title, value, sub }: { title: string; value: string; sub: string }) {
+  return (
+    <div className="rounded-lg border border-neutral-200 bg-white p-3 shadow-sm">
+      <div className="text-xs text-neutral-500">{title}</div>
+      <div className="text-xl font-bold mt-1 tabular-nums">{value}</div>
+      <div className="text-xs text-neutral-400 mt-1">{sub}</div>
     </div>
   )
 }

@@ -20,7 +20,13 @@ function ratesSummary(inst: Instructor): string {
   return `개인 ${ratePrivate.toLocaleString()}·재활 ${rateRehab.toLocaleString()}·듀엣 ${rateDuet.toLocaleString()}·그룹 ${rateGroup.toLocaleString()}원`
 }
 
-export function InstructorsTable({ instructors: initial, memberCounts = {} }: { instructors: Instructor[]; memberCounts?: Record<number, number> }) {
+interface InstructorsTableProps {
+  instructors: Instructor[]
+  memberCounts?: Record<number, number>
+  revenueByInstructor?: Record<number, number>
+}
+
+export function InstructorsTable({ instructors: initial, memberCounts = {}, revenueByInstructor = {} }: InstructorsTableProps) {
   const router = useRouter()
   const [instructors, setInstructors] = useState<Instructor[]>(initial)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -199,6 +205,7 @@ export function InstructorsTable({ instructors: initial, memberCounts = {} }: { 
                 <th className="text-left px-4 py-2 font-medium">전화번호</th>
                 <th className="text-left px-4 py-2 font-medium">담당 회원</th>
                 <th className="text-left px-4 py-2 font-medium">시급 (개인·재활·듀엣·그룹)</th>
+                <th className="text-right px-4 py-2 font-medium">매출 기여</th>
                 <th className="text-left px-4 py-2 font-medium">동작</th>
               </tr>
             </thead>
@@ -236,6 +243,9 @@ export function InstructorsTable({ instructors: initial, memberCounts = {} }: { 
                     ) : (
                       <span className="text-neutral-700">{ratesSummary(inst)}</span>
                     )}
+                  </td>
+                  <td className="px-4 py-3 text-right tabular-nums text-neutral-600">
+                    {(revenueByInstructor[inst.id] ?? 0).toLocaleString()}원
                   </td>
                   <td className="px-4 py-3">
                     {editingId === inst.id ? (
@@ -277,7 +287,7 @@ export function InstructorsTable({ instructors: initial, memberCounts = {} }: { 
               ))}
               {instructors.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-neutral-400 text-sm">
+                  <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">
                     강사가 아직 없습니다.
                   </td>
                 </tr>

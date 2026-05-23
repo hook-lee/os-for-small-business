@@ -1,4 +1,5 @@
 import { fetchAllInstructors, countMembersByInstructor } from '@/lib/supabase/instructors'
+import { fetchAllPasses } from '@/lib/supabase/passes'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { InstructorsTable } from './InstructorsTable'
 
@@ -7,10 +8,18 @@ export const dynamic = 'force-dynamic'
 export default async function InstructorsPage() {
   const instructors = hasSupabaseConfig() ? await fetchAllInstructors() : []
   const memberCounts: Record<number, number> = {}
+  const revenueByInstructor: Record<number, number> = {}
   if (hasSupabaseConfig()) {
     await Promise.all(instructors.map(async i => {
       memberCounts[i.id] = await countMembersByInstructor(i.id)
     }))
+    try {
+      const allPasses = await fetchAllPasses()
+      for (const p of allPasses) {
+        if (p.instructorId == null) continue
+        revenueByInstructor[p.instructorId] = (revenueByInstructor[p.instructorId] ?? 0) + (p.paymentAmount ?? 0)
+      }
+    } catch {/* fallback empty */}
   }
   return (
     <div className="space-y-4">
@@ -22,7 +31,7 @@ export default async function InstructorsPage() {
           Supabase 미설정 — 환경변수 설정 후 강사 데이터가 표시됩니다.
         </div>
       )}
-      <InstructorsTable instructors={instructors} memberCounts={memberCounts} />
+      <InstructorsTable instructors={instructors} memberCounts={memberCounts} revenueByInstructor={revenueByInstructor} />
     </div>
   )
 }

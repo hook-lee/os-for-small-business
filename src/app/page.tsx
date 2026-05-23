@@ -4,6 +4,9 @@ import { simulateVAT, type Quarter } from '@/lib/tax/vat'
 import { recommendReserve } from '@/lib/tax/reserve'
 import { getUpcomingDueDates } from '@/lib/tax/due-dates'
 import { getActionCards } from '@/lib/advice/action-cards'
+import { fetchAllPasses } from '@/lib/supabase/passes'
+import { computeOverallTrialConversion, groupPassesByMember } from '@/lib/analytics/instructor-kpi'
+import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { VATForecastCard } from '@/components/HomeCards/VATForecastCard'
 import { ReserveCard } from '@/components/HomeCards/ReserveCard'
 import { DueDateBanner } from '@/components/HomeCards/DueDateBanner'
@@ -32,6 +35,15 @@ export default async function HomePage() {
     isYoungStartupSet: profile.isYoungStartupEligible,
   })
 
+  let conversion: ReturnType<typeof computeOverallTrialConversion> | null = null
+  try {
+    if (hasSupabaseConfig()) {
+      const allPasses = await fetchAllPasses()
+      const byMember = groupPassesByMember(allPasses)
+      conversion = computeOverallTrialConversion(byMember)
+    }
+  } catch { conversion = null }
+
   return (
     <div className="space-y-4">
       {nextDue && <DueDateBanner due={nextDue} />}
@@ -40,6 +52,15 @@ export default async function HomePage() {
         <ReserveCard recommendation={reserveResult} />
       </div>
       <ActionCardsList cards={actionCards} />
+      {conversion && (
+        <div className="grid grid-cols-2 gap-3 mt-3">
+          <div className="rounded-lg border border-neutral-200 bg-white p-3 shadow-sm">
+            <div className="text-xs text-neutral-500">전체 전환율 (체험 → 정회원)</div>
+            <div className="text-2xl font-bold mt-1">{(conversion.rate * 100).toFixed(0)}%</div>
+            <div className="text-xs text-neutral-400 mt-1">체험 {conversion.trialCount}명 → {conversion.convertedCount}명</div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

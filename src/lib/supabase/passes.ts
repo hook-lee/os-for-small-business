@@ -46,7 +46,7 @@ interface PassRow {
   last_modified_at: string | null
 }
 
-function rowToPass(row: PassRow): Pass {
+export function rowToPass(row: PassRow): Pass {
   return {
     id: row.id,
     memberId: row.member_id,
@@ -131,6 +131,25 @@ export async function issuePass(
     .single()
   if (error) throw new Error(`Issue pass failed: ${error.message}`)
   return (data as { id: number }).id
+}
+
+export async function fetchAllPasses(): Promise<Pass[]> {
+  const supabase = getSupabaseClient()
+  const PAGE = 1000
+  const all: Pass[] = []
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from('passes')
+      .select('*')
+      .order('paid_at', { ascending: true, nullsFirst: false })
+      .range(from, from + PAGE - 1)
+    if (error) throw new Error(`Supabase passes fetch failed: ${error.message}`)
+    const rows = (data ?? []) as PassRow[]
+    if (rows.length === 0) break
+    all.push(...rows.map(rowToPass))
+    if (rows.length < PAGE) break
+  }
+  return all
 }
 
 export async function deletePass(id: number): Promise<void> {
