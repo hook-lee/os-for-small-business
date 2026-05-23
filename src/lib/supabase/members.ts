@@ -10,6 +10,7 @@ export interface Member {
   address: string | null
   detailAddress: string | null
   memo: string | null
+  internalMemo: string | null
   tier: string | null
   appConnected: boolean
   registeredAt: string | null
@@ -26,6 +27,7 @@ interface MemberRow {
   address: string | null
   detail_address: string | null
   memo: string | null
+  internal_memo: string | null
   tier: string | null
   app_connected: boolean
   registered_at: string | null
@@ -43,6 +45,7 @@ function rowToMember(row: MemberRow): Member {
     address: row.address,
     detailAddress: row.detail_address,
     memo: row.memo,
+    internalMemo: row.internal_memo,
     tier: row.tier,
     appConnected: row.app_connected,
     registeredAt: row.registered_at,
@@ -119,4 +122,34 @@ export async function deleteMember(id: number): Promise<void> {
   const supabase = getSupabaseClient()
   const { error } = await supabase.from('members').delete().eq('id', id)  // passes는 ON DELETE CASCADE
   if (error) throw new Error(`Delete member failed: ${error.message}`)
+}
+
+export interface MemberUpdate {
+  name?: string
+  phone?: string | null
+  email?: string | null
+  gender?: string | null
+  birthDate?: string | null
+  address?: string | null
+  detailAddress?: string | null
+  memo?: string | null
+  internalMemo?: string | null
+  tier?: string | null
+}
+
+export async function updateMember(id: number, patch: MemberUpdate): Promise<void> {
+  const supabase = getSupabaseClient()
+  const dbPatch: Record<string, unknown> = {}
+  if (patch.name !== undefined) dbPatch.name = patch.name
+  if (patch.phone !== undefined) dbPatch.phone = patch.phone
+  if (patch.email !== undefined) dbPatch.email = patch.email
+  if (patch.gender !== undefined) dbPatch.gender = patch.gender
+  if (patch.birthDate !== undefined) dbPatch.birth_date = patch.birthDate
+  if (patch.address !== undefined) dbPatch.address = patch.address
+  if (patch.detailAddress !== undefined) dbPatch.detail_address = patch.detailAddress
+  if (patch.memo !== undefined) dbPatch.memo = patch.memo
+  if (patch.internalMemo !== undefined) dbPatch.internal_memo = patch.internalMemo
+  if (patch.tier !== undefined) dbPatch.tier = patch.tier
+  const { error } = await supabase.from('members').update(dbPatch).eq('id', id)
+  if (error) throw new Error(`Update member failed: ${error.message}`)
 }

@@ -41,7 +41,7 @@ interface LessonRow {
   memo: string | null
 }
 
-function rowToLesson(row: LessonRow): Lesson {
+export function rowToLesson(row: LessonRow): Lesson {
   return {
     id: row.id,
     passId: row.pass_id,
@@ -186,6 +186,21 @@ export async function setLessonStatus(lessonId: number, newStatus: LessonStatus)
   if (updateError) throw new Error(`Update lesson failed: ${updateError.message}`)
 
   return { deductionDelta: delta }
+}
+
+export async function fetchLessonsByMember(memberId: number): Promise<Lesson[]> {
+  try {
+    const supabase = getSupabaseClient()
+    const { data, error } = await supabase
+      .from('lessons')
+      .select('*')
+      .eq('member_id', memberId)
+      .order('lesson_date', { ascending: false })
+    if (error) return []
+    return ((data ?? []) as LessonRow[]).map(rowToLesson)
+  } catch {
+    return []
+  }
 }
 
 export async function deleteLesson(lessonId: number): Promise<{ deductionDelta: number }> {

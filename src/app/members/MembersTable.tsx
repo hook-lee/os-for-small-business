@@ -5,8 +5,20 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import type { Member } from '@/lib/supabase/members'
 
-export function MembersTable({ members }: { members: Member[] }) {
+interface Props {
+  members: Member[]
+  currentFilter?: string
+  totalCount?: number
+  expiringCount?: number
+  dormantCount?: number
+}
+
+export function MembersTable({ members, currentFilter = 'all', totalCount, expiringCount, dormantCount }: Props) {
   const router = useRouter()
+
+  function changeFilter(f: string) {
+    router.push(f === 'all' ? '/members' : `/members?filter=${f}`)
+  }
   const [query, setQuery] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -84,6 +96,17 @@ export function MembersTable({ members }: { members: Member[] }) {
 
   return (
     <div className="space-y-3">
+      <div className="flex gap-2 text-sm">
+        <button onClick={() => changeFilter('all')} className={`px-3 py-1 rounded ${currentFilter === 'all' ? 'bg-blue-600 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}>
+          전체 ({totalCount ?? members.length})
+        </button>
+        <button onClick={() => changeFilter('expiring')} className={`px-3 py-1 rounded ${currentFilter === 'expiring' ? 'bg-amber-500 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}>
+          만료 임박 ({expiringCount ?? 0})
+        </button>
+        <button onClick={() => changeFilter('dormant')} className={`px-3 py-1 rounded ${currentFilter === 'dormant' ? 'bg-red-500 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}>
+          휴면 ({dormantCount ?? 0})
+        </button>
+      </div>
       <div className="flex items-center gap-3 flex-wrap">
         <input
           type="text"
