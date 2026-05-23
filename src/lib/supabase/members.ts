@@ -78,3 +78,45 @@ export async function fetchMemberById(id: number): Promise<Member | null> {
   if (error) throw new Error(`Supabase member fetch failed: ${error.message}`)
   return data ? rowToMember(data as MemberRow) : null
 }
+
+export interface NewMemberInput {
+  name: string
+  phone?: string | null
+  email?: string | null
+  gender?: string | null
+  birthDate?: string | null
+  address?: string | null
+  detailAddress?: string | null
+  memo?: string | null
+  tier?: string | null
+  appConnected?: boolean
+}
+
+export async function insertMember(input: NewMemberInput): Promise<number> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase
+    .from('members')
+    .insert({
+      name: input.name,
+      phone: input.phone ?? null,
+      email: input.email ?? null,
+      gender: input.gender ?? null,
+      birth_date: input.birthDate ?? null,
+      address: input.address ?? null,
+      detail_address: input.detailAddress ?? null,
+      memo: input.memo ?? null,
+      tier: input.tier ?? null,
+      app_connected: input.appConnected ?? false,
+      registered_at: new Date().toISOString().slice(0, 10),
+    })
+    .select('id')
+    .single()
+  if (error) throw new Error(`Insert member failed: ${error.message}`)
+  return (data as { id: number }).id
+}
+
+export async function deleteMember(id: number): Promise<void> {
+  const supabase = getSupabaseClient()
+  const { error } = await supabase.from('members').delete().eq('id', id)  // passes는 ON DELETE CASCADE
+  if (error) throw new Error(`Delete member failed: ${error.message}`)
+}
