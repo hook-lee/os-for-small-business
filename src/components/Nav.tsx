@@ -7,6 +7,7 @@ const ITEMS: Array<{ href: string; label: string }> = [
   { href: '/add', label: '입력' },
   { href: '/members', label: '회원' },
   { href: '/instructors', label: '강사' },
+  { href: '/pass-products', label: '수강권' },
   { href: '/tax', label: '세금' },
   { href: '/analytics', label: '분석' },
   { href: '/settings', label: '설정' },

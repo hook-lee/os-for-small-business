@@ -108,3 +108,20 @@ alter table transactions add column if not exists member_id bigint references me
 alter table transactions add column if not exists instructor_id bigint references instructors(id) on delete set null;
 create index if not exists transactions_member_idx on transactions (member_id);
 create index if not exists transactions_instructor_idx on transactions (instructor_id);
+
+-- v2.1: 수강권 카탈로그 (상품 마스터)
+create table if not exists pass_products (
+  id bigint generated always as identity primary key,
+  name text not null,                 -- 듀엣 / 재활 / 개인 / 체험 / 2:1 소그룹 등
+  pass_type text not null check (pass_type in ('프라이빗','그룹')),
+  duration_days int not null,         -- 유효 기간 (일)
+  total_count int not null,           -- 총 횟수
+  price bigint not null,              -- 판매 금액 (원)
+  per_unit_price bigint,              -- 회당 가격 (계산 또는 직접)
+  display_order int default 0,
+  color text,                         -- UI 카드 색상
+  active boolean not null default true,
+  created_at timestamptz default now()
+);
+
+create index if not exists pass_products_active_idx on pass_products (active);
