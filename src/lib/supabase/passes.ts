@@ -82,6 +82,11 @@ export async function fetchPassesByMember(memberId: number): Promise<Pass[]> {
   return ((data ?? []) as PassRow[]).map(rowToPass)
 }
 
+export async function fetchActivePassesByMember(memberId: number): Promise<Pass[]> {
+  const all = await fetchPassesByMember(memberId)
+  return all.filter(p => p.status === '이용중' && (p.remainingCount ?? 0) > 0)
+}
+
 export interface IssuePassInput {
   memberId: number
   instructorId: number | null

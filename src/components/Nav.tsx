@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 const ITEMS: Array<{ href: string; label: string }> = [
   { href: '/', label: '홈' },
   { href: '/add', label: '입력' },
+  { href: '/lessons', label: '수업' },
   { href: '/members', label: '회원' },
   { href: '/instructors', label: '강사' },
   { href: '/pass-products', label: '수강권' },

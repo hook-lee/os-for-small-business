@@ -152,3 +152,24 @@ create table if not exists payroll_records (
 
 create index if not exists payroll_instructor_idx on payroll_records (instructor_id);
 create index if not exists payroll_yearmonth_idx on payroll_records (year_month);
+
+-- v2.2: 수업 로그 (간이) — 풀 캘린더 X, 날짜별 리스트만
+create table if not exists lessons (
+  id bigint generated always as identity primary key,
+  pass_id bigint references passes(id) on delete set null,
+  member_id bigint not null references members(id) on delete cascade,
+  instructor_id bigint references instructors(id) on delete set null,
+  lesson_date date not null,
+  lesson_time text,  -- 'HH:MM'
+  duration_minutes int default 50,
+  status text not null default 'scheduled' check (status in ('scheduled','completed','cancelled_same_day','cancelled_advance','noshow')),
+  deducted boolean not null default false,
+  memo text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index if not exists lessons_date_idx on lessons (lesson_date);
+create index if not exists lessons_member_idx on lessons (member_id);
+create index if not exists lessons_instructor_idx on lessons (instructor_id);
+create index if not exists lessons_pass_idx on lessons (pass_id);
