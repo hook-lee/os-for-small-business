@@ -2,6 +2,7 @@ import type { Transaction, Category, PaymentMethod, TxClassification } from '@/t
 import { getSupabaseClient } from './client'
 
 interface TransactionRow {
+  id: number
   date: string
   raw_category: string
   category: string
@@ -15,6 +16,7 @@ interface TransactionRow {
 
 function rowToTransaction(row: TransactionRow): Transaction {
   return {
+    id: row.id,
     date: row.date,
     rawCategory: row.raw_category,
     category: row.category as Category,
@@ -35,7 +37,7 @@ export async function fetchAllTransactions(): Promise<Transaction[]> {
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await supabase
       .from('transactions')
-      .select('date, raw_category, category, amount, method, counterparty, person, classification, memo')
+      .select('id, date, raw_category, category, amount, method, counterparty, person, classification, memo')
       .order('date', { ascending: true })
       .range(from, from + PAGE - 1)
     if (error) throw new Error(`Supabase fetch failed: ${error.message}`)
@@ -44,6 +46,12 @@ export async function fetchAllTransactions(): Promise<Transaction[]> {
     if (rows.length < PAGE) break
   }
   return all.map(rowToTransaction)
+}
+
+export async function deleteTransaction(id: number): Promise<void> {
+  const supabase = getSupabaseClient()
+  const { error } = await supabase.from('transactions').delete().eq('id', id)
+  if (error) throw new Error(`Supabase delete failed: ${error.message}`)
 }
 
 export interface NewTransactionInput {

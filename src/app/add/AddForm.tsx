@@ -16,6 +16,7 @@ function today(): string {
 }
 
 interface RecentTx {
+  id?: number      // Supabase 출처면 존재. fixture 출처면 undefined (삭제 불가)
   date: string
   rawCategory: string
   amount: number
@@ -34,10 +35,29 @@ export function AddForm() {
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const [recent, setRecent] = useState<RecentTx[]>([])
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   useEffect(() => {
     fetchRecent()
   }, [])
+
+  async function handleDelete(id: number, label: string) {
+    if (!confirm(`${label}\n정말 삭제할까요?`)) return
+    setDeletingId(id)
+    try {
+      const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' })
+      const json = await res.json() as { ok?: boolean; error?: string }
+      if (!res.ok) {
+        alert(`삭제 실패: ${json.error ?? 'unknown'}`)
+        return
+      }
+      await fetchRecent()
+    } catch {
+      alert('삭제 실패: 네트워크 오류')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   async function fetchRecent() {
     try {
@@ -262,18 +282,44 @@ export function AddForm() {
           <p className="text-sm text-neutral-400">아직 거래가 없습니다.</p>
         ) : (
           <div className="space-y-2">
-            {recent.map((tx, i) => (
-              <Card key={i} className="flex items-center justify-between py-2 px-3">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-neutral-400 w-24 shrink-0">{tx.date}</span>
-                  <span className="text-sm font-medium">{tx.rawCategory}</span>
-                  <span className="text-xs text-neutral-400">{tx.method}</span>
-                </div>
-                <span className={`text-sm font-semibold tabular-nums ${tx.amount >= 0 ? 'text-blue-600' : 'text-neutral-800'}`}>
-                  {tx.amount >= 0 ? '+' : ''}{tx.amount.toLocaleString('ko-KR')}원
-                </span>
-              </Card>
-            ))}
+            {recent.map((tx, i) => {
+              const canDelete = typeof tx.id === 'number'
+              const isDeleting = canDelete && deletingId === tx.id
+              const label = `${tx.date} ${tx.rawCategory} ${tx.amount >= 0 ? '+' : ''}${tx.amount.toLocaleString('ko-KR')}원`
+              return (
+                <Card key={tx.id ?? `fx-${i}`} className="flex items-center justify-between py-2 px-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-xs text-neutral-400 w-24 shrink-0">{tx.date}</span>
+                    <span className="text-sm font-medium">{tx.rawCategory}</span>
+                    <span className="text-xs text-neutral-400">{tx.method}</span>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className={`text-sm font-semibold tabular-nums ${tx.amount >= 0 ? 'text-blue-600' : 'text-neutral-800'}`}>
+                      {tx.amount >= 0 ? '+' : ''}{tx.amount.toLocaleString('ko-KR')}원
+                    </span>
+                    {canDelete ? (
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(tx.id!, label)}
+                        disabled={isDeleting}
+                        className="text-xs text-red-500 hover:text-red-700 disabled:text-neutral-300 px-2 py-1 rounded hover:bg-red-50"
+                        aria-label="삭제"
+                        title="삭제"
+                      >
+                        {isDeleting ? '...' : '삭제'}
+                      </button>
+                    ) : (
+                      <span
+                        className="text-xs text-neutral-300 px-2 py-1"
+                        title="과거 시드 데이터 — 직접 삭제 불가"
+                      >
+                        —
+                      </span>
+                    )}
+                  </div>
+                </Card>
+              )
+            })}
           </div>
         )}
       </div>

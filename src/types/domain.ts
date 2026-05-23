@@ -22,6 +22,7 @@ export type Category =
   | '복리후생비' | '지급수수료' | '세탁비' | '연금' | '적금' | '기타'
 
 export interface Transaction {
+  id?: number                         // Supabase row PK (fixture 출처면 undefined — 삭제 불가)
   date: string                        // ISO yyyy-mm-dd
   rawCategory: string                 // 시트 원본 (오타·공백 포함)
   category: Category                  // 정규화된 표준 카테고리
