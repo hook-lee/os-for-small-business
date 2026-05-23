@@ -6,20 +6,29 @@ import type { UserProfile } from '@/lib/profile/settings'
 export function SettingsForm({ initial }: { initial: UserProfile }) {
   const [profile, setProfile] = useState<UserProfile>(initial)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [errorMsg, setErrorMsg] = useState<string>('')
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setStatus('saving')
+    setErrorMsg('')
     try {
       const res = await fetch('/api/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profile),
       })
-      if (!res.ok) throw new Error('save failed')
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        const msg = (body && typeof body === 'object' && 'error' in body)
+          ? String(body.error)
+          : `HTTP ${res.status}`
+        throw new Error(msg)
+      }
       setStatus('saved')
       setTimeout(() => setStatus('idle'), 2000)
-    } catch {
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : '알 수 없는 오류')
       setStatus('error')
     }
   }
@@ -106,7 +115,11 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
       >
         {status === 'saving' ? '저장 중...' : status === 'saved' ? '저장됨' : '저장'}
       </button>
-      {status === 'error' && <div className="text-red-600 text-sm">저장 실패</div>}
+      {status === 'error' && (
+        <div className="text-red-600 text-sm whitespace-pre-wrap">
+          저장 실패: {errorMsg}
+        </div>
+      )}
     </form>
   )
 }
