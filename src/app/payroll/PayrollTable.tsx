@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import type { Instructor } from '@/lib/supabase/instructors'
 import type { PayrollRecord } from '@/lib/supabase/payroll'
-import { computePayrollTotal } from '@/lib/analytics/payroll'
+import { computePayrollTotal, computeTaxWithholding } from '@/lib/analytics/payroll'
 
 interface EditState {
   privateCount: string
@@ -62,10 +62,11 @@ export function PayrollTable({ initialMonth, instructors, initialRecords }: {
       duetCount: parseInt(edit.duetCount, 10) || 0,
       groupCount: parseInt(edit.groupCount, 10) || 0,
     })
+    const taxWithholding = computeTaxWithholding(breakdown.grossTotal)
     const bonus = parseInt(edit.bonus, 10) || 0
     const deduction = parseInt(edit.deduction, 10) || 0
-    const net = breakdown.grossTotal + bonus - deduction
-    return { ...breakdown, bonus, deduction, net }
+    const net = breakdown.grossTotal + bonus - taxWithholding - deduction
+    return { ...breakdown, taxWithholding, bonus, deduction, net }
   }
 
   async function handleSave(inst: Instructor) {
@@ -87,6 +88,7 @@ export function PayrollTable({ initialMonth, instructors, initialRecords }: {
           totalAmount: result.grossTotal,
           bonus: result.bonus,
           deduction: result.deduction,
+          taxWithholding: result.taxWithholding,
           memo: edit.memo || null,
           paid: edit.paid,
           paidAt: edit.paid ? new Date().toISOString().slice(0, 10) : null,
@@ -110,15 +112,16 @@ export function PayrollTable({ initialMonth, instructors, initialRecords }: {
   }
 
   const totals = useMemo(() => {
-    let gross = 0, bonus = 0, deduction = 0, net = 0
+    let gross = 0, tax = 0, bonus = 0, deduction = 0, net = 0
     for (const inst of instructors) {
       const c = calc(inst, edits[inst.id])
       gross += c.grossTotal
+      tax += c.taxWithholding
       bonus += c.bonus
       deduction += c.deduction
       net += c.net
     }
-    return { gross, bonus, deduction, net }
+    return { gross, tax, bonus, deduction, net }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instructors, edits])
 
@@ -139,8 +142,8 @@ export function PayrollTable({ initialMonth, instructors, initialRecords }: {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat label="총 급여 (gross)" value={`${totals.gross.toLocaleString()}원`} />
-        <Stat label="보너스 합계" value={`${totals.bonus.toLocaleString()}원`} />
-        <Stat label="공제 합계" value={`-${totals.deduction.toLocaleString()}원`} />
+        <Stat label="사업소득세 3.3%" value={`-${totals.tax.toLocaleString()}원`} />
+        <Stat label="보너스 / 기타 공제" value={`+${totals.bonus.toLocaleString()} / -${totals.deduction.toLocaleString()}원`} />
         <Stat label="실 지급 (net)" value={`${totals.net.toLocaleString()}원`} highlight />
       </div>
 
@@ -210,15 +213,21 @@ export function PayrollTable({ initialMonth, instructors, initialRecords }: {
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-2 text-sm">
-              <NumberInput label="총 급여 (gross)" value={result.grossTotal} readOnly />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+              <NumberInput label="총 급여" value={result.grossTotal} readOnly />
+              <div>
+                <label className="block text-xs text-neutral-600 mb-1">사업소득세 3.3%</label>
+                <div className="w-full border border-neutral-200 bg-red-50 rounded px-2 py-1 text-sm tabular-nums text-red-700">
+                  -{result.taxWithholding.toLocaleString()}원
+                </div>
+              </div>
               <NumberInput
                 label="보너스 (+)"
                 value={result.bonus}
                 onChange={v => updateEdit(inst.id, { bonus: String(v) })}
               />
               <NumberInput
-                label="공제 (-)"
+                label="기타 공제 (-)"
                 value={result.deduction}
                 onChange={v => updateEdit(inst.id, { deduction: String(v) })}
               />

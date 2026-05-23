@@ -11,7 +11,8 @@ export interface PayrollRecord {
   totalAmount: number
   bonus: number
   deduction: number
-  netAmount: number  // computed: total + bonus - deduction
+  taxWithholding: number
+  netAmount: number  // computed: total + bonus - taxWithholding - deduction
   memo: string | null
   paid: boolean
   paidAt: string | null
@@ -28,12 +29,14 @@ interface PayrollRow {
   total_amount: number
   bonus: number
   deduction: number
+  tax_withholding: number
   memo: string | null
   paid: boolean
   paid_at: string | null
 }
 
 function rowToPayroll(row: PayrollRow): PayrollRecord {
+  const taxWithholding = Number(row.tax_withholding ?? 0)
   return {
     id: row.id,
     instructorId: row.instructor_id,
@@ -45,7 +48,8 @@ function rowToPayroll(row: PayrollRow): PayrollRecord {
     totalAmount: Number(row.total_amount),
     bonus: Number(row.bonus),
     deduction: Number(row.deduction),
-    netAmount: Number(row.total_amount) + Number(row.bonus) - Number(row.deduction),
+    taxWithholding,
+    netAmount: Number(row.total_amount) + Number(row.bonus) - taxWithholding - Number(row.deduction),
     memo: row.memo,
     paid: row.paid,
     paidAt: row.paid_at,
@@ -76,6 +80,7 @@ export interface UpsertPayrollInput {
   totalAmount: number
   bonus?: number
   deduction?: number
+  taxWithholding?: number
   memo?: string | null
   paid?: boolean
   paidAt?: string | null
@@ -95,6 +100,7 @@ export async function upsertPayroll(input: UpsertPayrollInput): Promise<void> {
       total_amount: input.totalAmount,
       bonus: input.bonus ?? 0,
       deduction: input.deduction ?? 0,
+      tax_withholding: input.taxWithholding ?? 0,
       memo: input.memo ?? null,
       paid: input.paid ?? false,
       paid_at: input.paidAt ?? null,

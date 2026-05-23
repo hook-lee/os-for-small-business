@@ -193,3 +193,6 @@ create index if not exists message_records_created_idx on message_records (creat
 
 -- v2 추가: members에 운영자 전용 메모
 alter table members add column if not exists internal_memo text;
+
+-- v2.5.1: 급여에 사업소득세 3.3% 자동 공제 컬럼
+alter table payroll_records add column if not exists tax_withholding bigint not null default 0;

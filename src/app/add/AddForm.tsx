@@ -63,6 +63,13 @@ export function AddForm() {
     }
   }, [selectedPassProductId, products])
 
+  function setTxTypeWithSync(t: TxType) {
+    setTxType(t)
+    if (t === '매출' && rawCategory !== '매출') {
+      setRawCategory('매출')
+    }
+  }
+
   async function handleDelete(id: number, label: string) {
     if (!confirm(`${label}\n정말 삭제할까요?`)) return
     setDeletingId(id)
@@ -145,7 +152,7 @@ export function AddForm() {
   }
 
   const isSupabaseMissing = status === 'error' && errorMsg.includes('Supabase 미설정')
-  const showMemberInstructor = rawCategory === '매출'
+  const showMemberInstructor = txType === '매출' || rawCategory === '매출'
 
   return (
     <div className="space-y-6 max-w-lg">
@@ -157,7 +164,7 @@ export function AddForm() {
               <button
                 key={t}
                 type="button"
-                onClick={() => setTxType(t)}
+                onClick={() => setTxTypeWithSync(t)}
                 className={`flex-1 py-3 rounded-lg font-semibold text-base transition-colors ${
                   txType === t
                     ? t === '매출'

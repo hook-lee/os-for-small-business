@@ -15,6 +15,12 @@ export interface PayrollBreakdown {
   grossTotal: number  // 4종 합
 }
 
+export const TAX_WITHHOLDING_RATE = 0.033
+
+export function computeTaxWithholding(gross: number): number {
+  return Math.round(gross * TAX_WITHHOLDING_RATE)
+}
+
 export function computePayrollTotal(instructor: Instructor, counts: PayrollCounts): PayrollBreakdown {
   const privateTotal = counts.privateCount * instructor.ratePrivate
   const rehabTotal = counts.rehabCount * instructor.rateRehab

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computePayrollTotal } from '@/lib/analytics/payroll'
+import { computePayrollTotal, computeTaxWithholding } from '@/lib/analytics/payroll'
 import type { Instructor } from '@/lib/supabase/instructors'
 
 const instructor: Instructor = {
@@ -30,5 +30,17 @@ describe('computePayrollTotal', () => {
     const equalInst = { ...instructor, rateRehab: 30000, rateDuet: 30000, rateGroup: 30000 }
     const r = computePayrollTotal(equalInst, { privateCount: 2, rehabCount: 3, duetCount: 1, groupCount: 4 })
     expect(r.grossTotal).toBe(10 * 30000)
+  })
+})
+
+describe('computeTaxWithholding (3.3%)', () => {
+  it('100만원 → 33,000원', () => {
+    expect(computeTaxWithholding(1_000_000)).toBe(33000)
+  })
+  it('755,000원 → 24,915원 (반올림)', () => {
+    expect(computeTaxWithholding(755_000)).toBe(24915)
+  })
+  it('0원 → 0', () => {
+    expect(computeTaxWithholding(0)).toBe(0)
   })
 })
