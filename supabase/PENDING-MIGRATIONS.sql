@@ -32,3 +32,7 @@ create table if not exists pass_products (
   created_at timestamptz default now()
 );
 create index if not exists pass_products_active_idx on pass_products (active);
+
+-- ── v2.1.1: transactions에 수강권 카탈로그 연동 ──
+alter table transactions add column if not exists pass_product_id bigint references pass_products(id) on delete set null;
+create index if not exists transactions_pass_product_idx on transactions (pass_product_id);

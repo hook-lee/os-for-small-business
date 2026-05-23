@@ -34,6 +34,7 @@ export interface Transaction {
   memo: string | undefined
   memberId?: number | null            // v2.0.2: 연결된 회원
   instructorId?: number | null        // v2.0.2: 연결된 강사
+  passProductId?: number | null       // v2.1.1: 연결된 수강권 카탈로그
 }
 
 export interface TaxAttributes {

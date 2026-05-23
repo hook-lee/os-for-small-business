@@ -14,6 +14,7 @@ interface TransactionRow {
   memo: string | null
   member_id?: number | null
   instructor_id?: number | null
+  pass_product_id?: number | null
 }
 
 function rowToTransaction(row: TransactionRow): Transaction {
@@ -30,6 +31,7 @@ function rowToTransaction(row: TransactionRow): Transaction {
     memo: row.memo ?? undefined,
     memberId: row.member_id ?? null,
     instructorId: row.instructor_id ?? null,
+    passProductId: row.pass_product_id ?? null,
   }
 }
 
@@ -70,6 +72,7 @@ export interface NewTransactionInput {
   memo?: string
   memberId?: number | null
   instructorId?: number | null
+  passProductId?: number | null
 }
 
 export async function insertTransaction(input: NewTransactionInput): Promise<void> {
@@ -86,6 +89,7 @@ export async function insertTransaction(input: NewTransactionInput): Promise<voi
     memo: input.memo ?? null,
     member_id: input.memberId ?? null,
     instructor_id: input.instructorId ?? null,
+    pass_product_id: input.passProductId ?? null,
   })
   if (error) throw new Error(`Supabase insert failed: ${error.message}`)
 }

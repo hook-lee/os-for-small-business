@@ -157,3 +157,28 @@ export async function deletePass(id: number): Promise<void> {
   const { error } = await supabase.from('passes').delete().eq('id', id)
   if (error) throw new Error(`Delete pass failed: ${error.message}`)
 }
+
+export interface UpdatePassInput {
+  instructorId?: number | null
+  status?: string
+  remainingCount?: number
+  availableCount?: number
+  cancellableCount?: number
+  endDate?: string
+  paymentAmount?: number
+}
+
+export async function updatePass(id: number, patch: UpdatePassInput): Promise<void> {
+  const supabase = getSupabaseClient()
+  const dbPatch: Record<string, unknown> = { last_modified_at: new Date().toISOString().slice(0, 10) }
+  if (patch.instructorId !== undefined) dbPatch.instructor_id = patch.instructorId
+  if (patch.status !== undefined) dbPatch.status = patch.status
+  if (patch.remainingCount !== undefined) dbPatch.remaining_count = patch.remainingCount
+  if (patch.availableCount !== undefined) dbPatch.available_count = patch.availableCount
+  if (patch.cancellableCount !== undefined) dbPatch.cancellable_count = patch.cancellableCount
+  if (patch.endDate !== undefined) dbPatch.end_date = patch.endDate
+  if (patch.paymentAmount !== undefined) dbPatch.payment_amount = patch.paymentAmount
+
+  const { error } = await supabase.from('passes').update(dbPatch).eq('id', id)
+  if (error) throw new Error(`Update pass failed: ${error.message}`)
+}

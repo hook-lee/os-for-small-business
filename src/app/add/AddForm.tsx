@@ -41,17 +41,27 @@ export function AddForm() {
   const [memberQuery, setMemberQuery] = useState('')
   const [selectedMemberId, setSelectedMemberId] = useState<number|null>(null)
   const [selectedInstructorId, setSelectedInstructorId] = useState<number|null>(null)
+  const [products, setProducts] = useState<Array<{id: number; name: string; passType: string; durationDays: number; totalCount: number; price: number}>>([])
+  const [selectedPassProductId, setSelectedPassProductId] = useState<number|null>(null)
 
   useEffect(() => {
     fetchRecent()
     fetch('/api/members').then(r => r.json()).then((j: { members?: Array<{id: number; name: string; phone: string|null}> }) => setMembers(j.members ?? []))
     fetch('/api/instructors').then(r => r.json()).then((j: { instructors?: Array<{id: number; name: string}> }) => setInstructors(j.instructors ?? []))
+    fetch('/api/pass-products').then(r => r.json()).then((j: { products?: Array<{id: number; name: string; passType: string; durationDays: number; totalCount: number; price: number}> }) => setProducts(j.products ?? []))
   }, [])
 
   useEffect(() => {
     const match = members.find(m => m.name === memberQuery)
     setSelectedMemberId(match?.id ?? null)
   }, [memberQuery, members])
+
+  useEffect(() => {
+    if (selectedPassProductId) {
+      const p = products.find(pr => pr.id === selectedPassProductId)
+      if (p) setAmountStr(String(p.price))
+    }
+  }, [selectedPassProductId, products])
 
   async function handleDelete(id: number, label: string) {
     if (!confirm(`${label}\n정말 삭제할까요?`)) return
@@ -107,6 +117,7 @@ export function AddForm() {
           memo: memo || undefined,
           memberId: selectedMemberId,
           instructorId: selectedInstructorId,
+          passProductId: selectedPassProductId,
         }),
       })
       const json = await res.json() as { ok?: boolean; error?: string }
@@ -124,6 +135,7 @@ export function AddForm() {
       setMemberQuery('')
       setSelectedMemberId(null)
       setSelectedInstructorId(null)
+      setSelectedPassProductId(null)
       setTimeout(() => setStatus('idle'), 2500)
       await fetchRecent()
     } catch {
@@ -297,6 +309,22 @@ export function AddForm() {
                     <option key={i.id} value={i.id}>{i.name}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-neutral-600">수강권 (선택)</label>
+                <select
+                  value={selectedPassProductId ?? ''}
+                  onChange={e => setSelectedPassProductId(e.target.value ? parseInt(e.target.value, 10) : null)}
+                  className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">선택 안 함</option>
+                  {products.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} · {p.passType} · {p.durationDays}일/{p.totalCount}회 · {p.price.toLocaleString()}원
+                    </option>
+                  ))}
+                </select>
+                <div className="text-xs text-neutral-400 mt-1">선택하면 정가가 자동 입력됩니다 (수정 가능).</div>
               </div>
             </>
           )}

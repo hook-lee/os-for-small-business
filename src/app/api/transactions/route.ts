@@ -22,6 +22,7 @@ export async function POST(req: Request) {
       date?: string; rawCategory?: string; amount?: number; method?: string;
       counterparty?: string; person?: string; memo?: string;
       memberId?: number | null; instructorId?: number | null;
+      passProductId?: number | null;
     }
     if (!body.date || !body.rawCategory || typeof body.amount !== 'number' || !body.method) {
       return NextResponse.json({ error: 'date, rawCategory, amount, method 필수' }, { status: 400 })
@@ -45,6 +46,7 @@ export async function POST(req: Request) {
       memo: body.memo,
       memberId: body.memberId ?? null,
       instructorId: body.instructorId ?? null,
+      passProductId: body.passProductId ?? null,
     })
     invalidateCache()
     return NextResponse.json({ ok: true })

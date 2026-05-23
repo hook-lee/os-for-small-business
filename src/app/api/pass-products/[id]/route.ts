@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
+import { updatePassProduct, deletePassProduct, type UpdatePassProductInput } from '@/lib/supabase/pass-products'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
-import { deletePass, updatePass } from '@/lib/supabase/passes'
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!hasSupabaseConfig()) return NextResponse.json({ error: 'Supabase 미설정' }, { status: 503 })
@@ -8,16 +8,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const id = parseInt(idRaw, 10)
   if (!Number.isFinite(id) || id <= 0) return NextResponse.json({ error: '유효하지 않은 id' }, { status: 400 })
   try {
-    const body = await req.json() as {
-      instructorId?: number | null
-      status?: string
-      remainingCount?: number
-      availableCount?: number
-      cancellableCount?: number
-      endDate?: string
-      paymentAmount?: number
+    const body = await req.json() as UpdatePassProductInput
+    if (body.passType !== undefined && !['프라이빗', '그룹'].includes(body.passType)) {
+      return NextResponse.json({ error: '유효하지 않은 passType' }, { status: 400 })
     }
-    await updatePass(id, body)
+    await updatePassProduct(id, body)
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })
@@ -30,7 +25,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   const id = parseInt(idRaw, 10)
   if (!Number.isFinite(id) || id <= 0) return NextResponse.json({ error: '유효하지 않은 id' }, { status: 400 })
   try {
-    await deletePass(id)
+    await deletePassProduct(id)
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })
