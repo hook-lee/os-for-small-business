@@ -1,12 +1,17 @@
 // Usage: SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... npx tsx scripts/seed-v2.ts
 //
-// NOTE: passes are inserted (not upserted). If you re-run this script, passes will
-// duplicate. To reset: truncate passes, members, instructors in Supabase SQL Editor first:
-//   truncate passes, members, instructors restart identity cascade;
+// NOTE: members and passes are INSERTED (not upserted). instructors are upserted by phone.
+// If you re-run this script after a successful run, members and passes will DUPLICATE.
+// To reset: truncate in Supabase SQL Editor first:
+//   truncate passes, members restart identity cascade;
+//   -- (instructors can stay; they're upserted)
 // Then re-run this script.
 //
 // IMPORTANT: Run supabase/v2-schema-to-run.sql in Supabase SQL Editor BEFORE running this
 // script, or it will fail with "relation does not exist".
+//
+// Why not upsert for members? `members_phone_uniq` is a PARTIAL unique index
+// (where phone is not null), which PostgREST's onConflict can't target.
 
 import { createClient } from '@supabase/supabase-js'
 import { REAL_MEMBERS, REAL_PASSES } from '../tests/fixtures/real-members'
@@ -73,7 +78,8 @@ async function main() {
 
   const BATCH = 500
   for (let i = 0; i < REAL_MEMBERS.length; i += BATCH) {
-    const batch = REAL_MEMBERS.slice(i, i + BATCH).map(m => ({
+    const slice = REAL_MEMBERS.slice(i, i + BATCH)
+    const batch = slice.map(m => ({
       name: m.name,
       phone: m.phone,
       email: m.email,
@@ -88,10 +94,11 @@ async function main() {
       last_attended_at: m.lastAttendedAt,
     }))
 
+    // Plain insert (no upsert — partial unique index can't be ON CONFLICT target)
     const { data, error } = await supabase
       .from('members')
-      .upsert(batch, { onConflict: 'phone', ignoreDuplicates: false })
-      .select('id, name, phone')
+      .insert(batch)
+      .select('id')
 
     if (error) {
       if (error.message.includes('relation') && error.message.includes('does not exist')) {
@@ -99,41 +106,23 @@ async function main() {
         console.error('Run supabase/v2-schema-to-run.sql in Supabase SQL Editor first, then retry.')
         process.exit(1)
       }
+      if (error.message.includes('duplicate key') && error.message.includes('phone')) {
+        console.error('\nERROR: Duplicate phone — members already seeded? To re-seed, truncate first:')
+        console.error('  truncate passes, members restart identity cascade;')
+        process.exit(1)
+      }
       console.error(`Members batch ${i} failed:`, error.message)
       process.exit(1)
     }
 
-    // Map key → Supabase id
+    // PostgREST insert preserves input order in the returned rows
     if (data) {
-      for (const row of data) {
-        // Find matching member key from our fixture
-        const fixtureMatch = REAL_MEMBERS.find(m =>
-          (m.phone && m.phone === row.phone) ||
-          (!m.phone && m.name === row.name)
-        )
-        if (fixtureMatch) {
-          memberKeyToId.set(fixtureMatch.key, row.id)
-        }
+      for (let j = 0; j < data.length; j++) {
+        memberKeyToId.set(slice[j].key, data[j].id)
       }
     }
 
-    console.log(`  Members: inserted/upserted ${Math.min(i + BATCH, REAL_MEMBERS.length)}/${REAL_MEMBERS.length}`)
-  }
-
-  // For members without phone (upsert by phone won't work for null phone),
-  // fetch them by name to get their IDs
-  const nullPhoneMembers = REAL_MEMBERS.filter(m => !m.phone && !memberKeyToId.has(m.key))
-  if (nullPhoneMembers.length > 0) {
-    console.log(`  Fetching IDs for ${nullPhoneMembers.length} null-phone members...`)
-    for (const m of nullPhoneMembers) {
-      const { data } = await supabase
-        .from('members')
-        .select('id')
-        .eq('name', m.name)
-        .is('phone', null)
-        .maybeSingle()
-      if (data) memberKeyToId.set(m.key, data.id)
-    }
+    console.log(`  Members: inserted ${Math.min(i + BATCH, REAL_MEMBERS.length)}/${REAL_MEMBERS.length}`)
   }
 
   console.log(`  Mapped ${memberKeyToId.size}/${REAL_MEMBERS.length} member IDs`)
