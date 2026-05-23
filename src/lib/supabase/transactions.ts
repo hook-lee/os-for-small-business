@@ -12,6 +12,8 @@ interface TransactionRow {
   person: string | null
   classification: string
   memo: string | null
+  member_id?: number | null
+  instructor_id?: number | null
 }
 
 function rowToTransaction(row: TransactionRow): Transaction {
@@ -26,6 +28,8 @@ function rowToTransaction(row: TransactionRow): Transaction {
     person: row.person ?? undefined,
     classification: row.classification as TxClassification,
     memo: row.memo ?? undefined,
+    memberId: row.member_id ?? null,
+    instructorId: row.instructor_id ?? null,
   }
 }
 
@@ -37,7 +41,7 @@ export async function fetchAllTransactions(): Promise<Transaction[]> {
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await supabase
       .from('transactions')
-      .select('id, date, raw_category, category, amount, method, counterparty, person, classification, memo')
+      .select('*')
       .order('date', { ascending: true })
       .range(from, from + PAGE - 1)
     if (error) throw new Error(`Supabase fetch failed: ${error.message}`)
@@ -64,6 +68,8 @@ export interface NewTransactionInput {
   person?: string
   classification: TxClassification
   memo?: string
+  memberId?: number | null
+  instructorId?: number | null
 }
 
 export async function insertTransaction(input: NewTransactionInput): Promise<void> {
@@ -78,6 +84,8 @@ export async function insertTransaction(input: NewTransactionInput): Promise<voi
     person: input.person ?? null,
     classification: input.classification,
     memo: input.memo ?? null,
+    member_id: input.memberId ?? null,
+    instructor_id: input.instructorId ?? null,
   })
   if (error) throw new Error(`Supabase insert failed: ${error.message}`)
 }

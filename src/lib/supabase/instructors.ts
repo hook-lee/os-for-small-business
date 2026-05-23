@@ -130,3 +130,68 @@ export async function deleteInstructor(id: number): Promise<void> {
   const { error } = await supabase.from('instructors').delete().eq('id', id)
   if (error) throw new Error(`Delete instructor failed: ${error.message}`)
 }
+
+export async function fetchInstructorById(id: number): Promise<Instructor | null> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase.from('instructors').select('*').eq('id', id).maybeSingle()
+  if (error) throw new Error(`Fetch instructor failed: ${error.message}`)
+  return data ? rowToInstructor(data as InstructorRow) : null
+}
+
+// 강사가 담당하는 회원들 (passes 통해)
+export async function fetchMembersByInstructor(instructorId: number): Promise<Array<{
+  memberId: number
+  memberName: string
+  memberPhone: string | null
+  passCount: number          // 이 강사 밑에서 산 수강권 개수
+  latestPassName: string | null
+  latestPassStatus: string | null
+}>> {
+  const supabase = getSupabaseClient()
+  // passes에서 instructor_id로 필터, member join
+  const { data, error } = await supabase
+    .from('passes')
+    .select('member_id, pass_name, status, paid_at, members(id, name, phone)')
+    .eq('instructor_id', instructorId)
+    .order('paid_at', { ascending: false, nullsFirst: false })
+  if (error) throw new Error(`Fetch instructor members failed: ${error.message}`)
+
+  // 회원별 그룹화 + 카운트
+  const map = new Map<number, {
+    memberId: number; memberName: string; memberPhone: string | null;
+    passCount: number; latestPassName: string | null; latestPassStatus: string | null;
+  }>()
+  for (const row of (data ?? []) as Array<{
+    member_id: number; pass_name: string; status: string | null; paid_at: string | null;
+    members: { id: number; name: string; phone: string | null } | { id: number; name: string; phone: string | null }[] | null;
+  }>) {
+    // Supabase 1:1 join은 객체로 옴; 단 array로 올 수도 있어서 둘 다 처리
+    const member = Array.isArray(row.members) ? row.members[0] : row.members
+    if (!member) continue
+    const existing = map.get(member.id)
+    if (existing) {
+      existing.passCount++
+    } else {
+      map.set(member.id, {
+        memberId: member.id,
+        memberName: member.name,
+        memberPhone: member.phone,
+        passCount: 1,
+        latestPassName: row.pass_name,
+        latestPassStatus: row.status,
+      })
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => a.memberName.localeCompare(b.memberName))
+}
+
+export async function countMembersByInstructor(instructorId: number): Promise<number> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase
+    .from('passes')
+    .select('member_id')
+    .eq('instructor_id', instructorId)
+  if (error) return 0
+  const unique = new Set((data ?? []).map(r => (r as { member_id: number }).member_id))
+  return unique.size
+}

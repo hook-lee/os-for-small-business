@@ -36,10 +36,22 @@ export function AddForm() {
   const [errorMsg, setErrorMsg] = useState('')
   const [recent, setRecent] = useState<RecentTx[]>([])
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [members, setMembers] = useState<Array<{id: number; name: string; phone: string|null}>>([])
+  const [instructors, setInstructors] = useState<Array<{id: number; name: string}>>([])
+  const [memberQuery, setMemberQuery] = useState('')
+  const [selectedMemberId, setSelectedMemberId] = useState<number|null>(null)
+  const [selectedInstructorId, setSelectedInstructorId] = useState<number|null>(null)
 
   useEffect(() => {
     fetchRecent()
+    fetch('/api/members').then(r => r.json()).then((j: { members?: Array<{id: number; name: string; phone: string|null}> }) => setMembers(j.members ?? []))
+    fetch('/api/instructors').then(r => r.json()).then((j: { instructors?: Array<{id: number; name: string}> }) => setInstructors(j.instructors ?? []))
   }, [])
+
+  useEffect(() => {
+    const match = members.find(m => m.name === memberQuery)
+    setSelectedMemberId(match?.id ?? null)
+  }, [memberQuery, members])
 
   async function handleDelete(id: number, label: string) {
     if (!confirm(`${label}\n정말 삭제할까요?`)) return
@@ -93,6 +105,8 @@ export function AddForm() {
           counterparty: counterparty || undefined,
           person: person || undefined,
           memo: memo || undefined,
+          memberId: selectedMemberId,
+          instructorId: selectedInstructorId,
         }),
       })
       const json = await res.json() as { ok?: boolean; error?: string }
@@ -107,6 +121,9 @@ export function AddForm() {
       setPerson('')
       setMemo('')
       setDate(today())
+      setMemberQuery('')
+      setSelectedMemberId(null)
+      setSelectedInstructorId(null)
       setTimeout(() => setStatus('idle'), 2500)
       await fetchRecent()
     } catch {
@@ -116,6 +133,7 @@ export function AddForm() {
   }
 
   const isSupabaseMissing = status === 'error' && errorMsg.includes('Supabase 미설정')
+  const showMemberInstructor = rawCategory === '매출'
 
   return (
     <div className="space-y-6 max-w-lg">
@@ -245,6 +263,43 @@ export function AddForm() {
               className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
+          {/* 회원·강사 연동 (매출일 때만) */}
+          {showMemberInstructor && (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-neutral-600">회원 (선택)</label>
+                <input
+                  type="text"
+                  list="member-options"
+                  value={memberQuery}
+                  onChange={e => setMemberQuery(e.target.value)}
+                  placeholder="회원 이름으로 검색 + 선택"
+                  className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <datalist id="member-options">
+                  {members.map(m => (
+                    <option key={m.id} value={m.name}>{m.phone ?? ''}</option>
+                  ))}
+                </datalist>
+                {selectedMemberId && <div className="text-xs text-blue-600 mt-1">✓ 매칭됨 (id={selectedMemberId})</div>}
+                {memberQuery && !selectedMemberId && <div className="text-xs text-neutral-400 mt-1">매칭 없음 (저장은 됨, 회원 연결 안 됨)</div>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-neutral-600">강사 (선택)</label>
+                <select
+                  value={selectedInstructorId ?? ''}
+                  onChange={e => setSelectedInstructorId(e.target.value ? parseInt(e.target.value, 10) : null)}
+                  className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">선택 안 함</option>
+                  {instructors.map(i => (
+                    <option key={i.id} value={i.id}>{i.name}</option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
 
           {/* 저장 버튼 */}
           <button

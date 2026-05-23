@@ -32,6 +32,8 @@ export interface Transaction {
   person: string | undefined          // 비고2 (사람)
   classification: TxClassification
   memo: string | undefined
+  memberId?: number | null            // v2.0.2: 연결된 회원
+  instructorId?: number | null        // v2.0.2: 연결된 강사
 }
 
 export interface TaxAttributes {

@@ -21,6 +21,7 @@ export async function POST(req: Request) {
     const body = await req.json() as {
       date?: string; rawCategory?: string; amount?: number; method?: string;
       counterparty?: string; person?: string; memo?: string;
+      memberId?: number | null; instructorId?: number | null;
     }
     if (!body.date || !body.rawCategory || typeof body.amount !== 'number' || !body.method) {
       return NextResponse.json({ error: 'date, rawCategory, amount, method 필수' }, { status: 400 })
@@ -42,6 +43,8 @@ export async function POST(req: Request) {
       person: body.person,
       classification: classify(category),
       memo: body.memo,
+      memberId: body.memberId ?? null,
+      instructorId: body.instructorId ?? null,
     })
     invalidateCache()
     return NextResponse.json({ ok: true })

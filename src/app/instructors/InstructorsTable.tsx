@@ -20,7 +20,7 @@ function ratesSummary(inst: Instructor): string {
   return `개인 ${ratePrivate.toLocaleString()}·재활 ${rateRehab.toLocaleString()}·듀엣 ${rateDuet.toLocaleString()}·그룹 ${rateGroup.toLocaleString()}원`
 }
 
-export function InstructorsTable({ instructors: initial }: { instructors: Instructor[] }) {
+export function InstructorsTable({ instructors: initial, memberCounts = {} }: { instructors: Instructor[]; memberCounts?: Record<number, number> }) {
   const router = useRouter()
   const [instructors, setInstructors] = useState<Instructor[]>(initial)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -197,6 +197,7 @@ export function InstructorsTable({ instructors: initial }: { instructors: Instru
                 <th className="text-left px-4 py-2 font-medium">강사</th>
                 <th className="text-left px-4 py-2 font-medium">역할</th>
                 <th className="text-left px-4 py-2 font-medium">전화번호</th>
+                <th className="text-left px-4 py-2 font-medium">담당 회원</th>
                 <th className="text-left px-4 py-2 font-medium">시급 (개인·재활·듀엣·그룹)</th>
                 <th className="text-left px-4 py-2 font-medium">동작</th>
               </tr>
@@ -208,10 +209,11 @@ export function InstructorsTable({ instructors: initial }: { instructors: Instru
                     {inst.color && (
                       <span className="inline-block w-3 h-3 rounded" style={{ backgroundColor: inst.color }} />
                     )}
-                    <span className="font-medium">{inst.name}</span>
+                    <a href={`/instructors/${inst.id}`} className="font-medium text-blue-600 hover:underline">{inst.name}</a>
                   </td>
                   <td className="px-4 py-3 text-neutral-600">{roleLabel(inst.role)}</td>
                   <td className="px-4 py-3 text-neutral-600">{inst.phone ?? '—'}</td>
+                  <td className="px-4 py-3 text-neutral-600">{memberCounts[inst.id] ?? 0}명</td>
                   <td className="px-4 py-3 tabular-nums">
                     {editingId === inst.id ? (
                       <div className="grid grid-cols-2 gap-2 min-w-[260px]">
@@ -275,7 +277,7 @@ export function InstructorsTable({ instructors: initial }: { instructors: Instru
               ))}
               {instructors.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-neutral-400 text-sm">
+                  <td colSpan={6} className="px-4 py-8 text-center text-neutral-400 text-sm">
                     강사가 아직 없습니다.
                   </td>
                 </tr>
