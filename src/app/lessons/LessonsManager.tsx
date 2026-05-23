@@ -7,6 +7,25 @@ import type { LessonWithNames, LessonStatus } from '@/lib/supabase/lessons'
 import { STATUS_LABEL } from '@/lib/supabase/lessons'
 import type { Instructor } from '@/lib/supabase/instructors'
 
+function buildMonthGrid(yearMonth: string): { date: string | null }[][] {
+  const [y, m] = yearMonth.split('-').map(Number)
+  const first = new Date(y, m - 1, 1)
+  const lastDay = new Date(y, m, 0).getDate()
+  const startWeekday = first.getDay() // 0=일
+
+  const cells: { date: string | null }[] = []
+  for (let i = 0; i < startWeekday; i++) cells.push({ date: null })
+  for (let d = 1; d <= lastDay; d++) {
+    const ds = `${yearMonth}-${String(d).padStart(2, '0')}`
+    cells.push({ date: ds })
+  }
+  while (cells.length % 7 !== 0) cells.push({ date: null })
+
+  const rows: { date: string | null }[][] = []
+  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7))
+  return rows
+}
+
 const STATUS_OPTIONS: LessonStatus[] = ['scheduled', 'completed', 'cancelled_same_day', 'cancelled_advance', 'noshow']
 
 const STATUS_COLOR: Record<LessonStatus, string> = {
@@ -20,9 +39,10 @@ const STATUS_COLOR: Record<LessonStatus, string> = {
 interface Member { id: number; name: string; phone: string | null }
 interface PassOption { id: number; passName: string; remainingCount: number | null; status: string | null }
 
-export function LessonsManager({ initialDate, initialLessons, instructors }: {
+export function LessonsManager({ initialDate, initialLessons, monthLessons = [], instructors }: {
   initialDate: string
   initialLessons: LessonWithNames[]
+  monthLessons?: LessonWithNames[]
   instructors: Instructor[]
 }) {
   const router = useRouter()
@@ -134,13 +154,79 @@ export function LessonsManager({ initialDate, initialLessons, instructors }: {
 
   const deductedCount = useMemo(() => lessons.filter(l => l.deducted).length, [lessons])
 
+  const currentMonth = date.slice(0, 7)
+  const monthGrid = useMemo(() => buildMonthGrid(currentMonth), [currentMonth])
+
+  const countsByDate = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const l of monthLessons) {
+      map.set(l.lessonDate, (map.get(l.lessonDate) ?? 0) + 1)
+    }
+    return map
+  }, [monthLessons])
+
+  function shiftMonth(delta: number) {
+    const [y, m] = currentMonth.split('-').map(Number)
+    const next = new Date(y, m - 1 + delta, 1)
+    const newMonth = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}`
+    const newDate = `${newMonth}-01`
+    changeDate(newDate)
+  }
+
   return (
     <div className="space-y-4">
+      <Card>
+        <div className="flex items-center justify-between mb-3">
+          <button onClick={() => shiftMonth(-1)} className="text-sm px-2 py-1 hover:bg-neutral-100 rounded">‹ 이전달</button>
+          <div className="font-semibold">{currentMonth}</div>
+          <button onClick={() => shiftMonth(1)} className="text-sm px-2 py-1 hover:bg-neutral-100 rounded">다음달 ›</button>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 text-xs">
+          {['일', '월', '화', '수', '목', '금', '토'].map((wd, i) => (
+            <div key={wd} className={`text-center py-1 text-neutral-500 font-medium ${i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : ''}`}>{wd}</div>
+          ))}
+          {monthGrid.flat().map((cell, i) => {
+            if (!cell.date) return <div key={i} className="aspect-square" />
+            const count = countsByDate.get(cell.date) ?? 0
+            const isSelected = cell.date === date
+            const isToday = cell.date === new Date().toISOString().slice(0, 10)
+            const weekday = new Date(cell.date + 'T00:00:00').getDay()
+            return (
+              <button
+                key={cell.date}
+                onClick={() => changeDate(cell.date!)}
+                className={`aspect-square rounded p-1 text-xs hover:bg-blue-50 transition-colors flex flex-col items-center justify-center ${
+                  isSelected ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : isToday ? 'border border-blue-400'
+                  : ''
+                }`}
+              >
+                <span className={`${weekday === 0 ? 'text-red-500' : weekday === 6 ? 'text-blue-500' : ''} ${isSelected ? '!text-white' : ''}`}>
+                  {parseInt(cell.date.slice(8), 10)}
+                </span>
+                {count > 0 && (
+                  <span className={`text-xs ${isSelected ? 'text-blue-100' : 'text-blue-600'}`}>
+                    {count}건
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </Card>
+
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-xl font-semibold">
           수업 <span className="text-neutral-400 text-sm font-normal">{date} · 총 {lessons.length}건, 차감 {deductedCount}건</span>
         </h2>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => changeDate(new Date().toISOString().slice(0, 10))}
+            className="text-xs border border-neutral-300 px-2 py-1 rounded hover:bg-neutral-100"
+          >
+            오늘로
+          </button>
           <input
             type="date"
             value={date}

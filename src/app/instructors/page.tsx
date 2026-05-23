@@ -1,37 +1,54 @@
 import { fetchAllInstructors, countMembersByInstructor } from '@/lib/supabase/instructors'
 import { fetchAllPasses } from '@/lib/supabase/passes'
+import { fetchPayrollByMonth } from '@/lib/supabase/payroll'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
-import { InstructorsTable } from './InstructorsTable'
+import { InstructorsTabs } from './InstructorsTabs'
 
 export const dynamic = 'force-dynamic'
 
-export default async function InstructorsPage() {
-  const instructors = hasSupabaseConfig() ? await fetchAllInstructors() : []
+export default async function InstructorsPage({ searchParams }: { searchParams: Promise<{ tab?: string; ym?: string }> }) {
+  const params = await searchParams
+  const tab = params.tab === 'payroll' ? 'payroll' : 'list'
+  const yearMonth = params.ym || new Date().toISOString().slice(0, 7)
+
+  let instructors: Awaited<ReturnType<typeof fetchAllInstructors>> = []
+  let payrollRecords: Awaited<ReturnType<typeof fetchPayrollByMonth>> = []
   const memberCounts: Record<number, number> = {}
   const revenueByInstructor: Record<number, number> = {}
+
   if (hasSupabaseConfig()) {
-    await Promise.all(instructors.map(async i => {
-      memberCounts[i.id] = await countMembersByInstructor(i.id)
-    }))
-    try {
-      const allPasses = await fetchAllPasses()
-      for (const p of allPasses) {
-        if (p.instructorId == null) continue
-        revenueByInstructor[p.instructorId] = (revenueByInstructor[p.instructorId] ?? 0) + (p.paymentAmount ?? 0)
-      }
-    } catch {/* fallback empty */}
+    instructors = await fetchAllInstructors()
+    if (tab === 'list') {
+      await Promise.all(instructors.map(async i => {
+        memberCounts[i.id] = await countMembersByInstructor(i.id)
+      }))
+      try {
+        const allPasses = await fetchAllPasses()
+        for (const p of allPasses) {
+          if (p.instructorId == null) continue
+          revenueByInstructor[p.instructorId] = (revenueByInstructor[p.instructorId] ?? 0) + (p.paymentAmount ?? 0)
+        }
+      } catch {/* fallback */}
+    } else {
+      payrollRecords = await fetchPayrollByMonth(yearMonth)
+    }
   }
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">강사 <span className="text-neutral-400 text-sm font-normal">총 {instructors.length}명</span></h2>
-      </div>
       {!hasSupabaseConfig() && (
         <div className="rounded-lg bg-yellow-50 border border-yellow-200 px-3 py-2 text-sm text-yellow-800">
           Supabase 미설정 — 환경변수 설정 후 강사 데이터가 표시됩니다.
         </div>
       )}
-      <InstructorsTable instructors={instructors} memberCounts={memberCounts} revenueByInstructor={revenueByInstructor} />
+      <InstructorsTabs
+        tab={tab}
+        instructors={instructors}
+        memberCounts={memberCounts}
+        revenueByInstructor={revenueByInstructor}
+        payrollMonth={yearMonth}
+        payrollRecords={payrollRecords}
+      />
     </div>
   )
 }

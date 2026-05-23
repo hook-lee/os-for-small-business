@@ -31,10 +31,11 @@ function recordToEdit(r: PayrollRecord | null): EditState {
   }
 }
 
-export function PayrollTable({ initialMonth, instructors, initialRecords }: {
+export function PayrollTable({ initialMonth, instructors, initialRecords, basePath = '/payroll' }: {
   initialMonth: string
   instructors: Instructor[]
   initialRecords: PayrollRecord[]
+  basePath?: string
 }) {
   const router = useRouter()
   const [yearMonth, setYearMonth] = useState(initialMonth)
@@ -106,9 +107,28 @@ export function PayrollTable({ initialMonth, instructors, initialRecords }: {
     }
   }
 
-  async function changeMonth(newYm: string) {
+  function changeMonth(newYm: string) {
     setYearMonth(newYm)
-    router.push(`/payroll?ym=${newYm}`)
+    const params = basePath === '/instructors' ? `?tab=payroll&ym=${newYm}` : `?ym=${newYm}`
+    router.push(`${basePath}${params}`)
+  }
+
+  function resetInstructor(instId: number) {
+    setEdits(prev => ({
+      ...prev,
+      [instId]: { privateCount: '0', rehabCount: '0', duetCount: '0', groupCount: '0', bonus: '0', deduction: '0', memo: '', paid: false },
+    }))
+  }
+
+  function resetAll() {
+    if (!confirm('모든 강사 입력을 초기화할까요? (저장되지 않은 변경사항만 초기화 — DB에 저장된 데이터는 그대로)')) return
+    setEdits(() => {
+      const map: Record<number, EditState> = {}
+      for (const inst of instructors) {
+        map[inst.id] = { privateCount: '0', rehabCount: '0', duetCount: '0', groupCount: '0', bonus: '0', deduction: '0', memo: '', paid: false }
+      }
+      return map
+    })
   }
 
   const totals = useMemo(() => {
@@ -137,6 +157,12 @@ export function PayrollTable({ initialMonth, instructors, initialRecords }: {
             onChange={e => changeMonth(e.target.value)}
             className="border border-neutral-300 rounded px-2 py-1 text-sm"
           />
+          <button
+            onClick={resetAll}
+            className="text-sm border border-neutral-300 px-3 py-1 rounded hover:bg-neutral-100"
+          >
+            전체 초기화
+          </button>
         </div>
       </div>
 
@@ -176,6 +202,13 @@ export function PayrollTable({ initialMonth, instructors, initialRecords }: {
                   />
                   지급 완료
                 </label>
+                <button
+                  type="button"
+                  onClick={() => resetInstructor(inst.id)}
+                  className="text-xs text-neutral-500 hover:text-neutral-700 px-2 py-1 rounded hover:bg-neutral-100"
+                >
+                  초기화
+                </button>
                 <button
                   onClick={() => handleSave(inst)}
                   disabled={isSaving}

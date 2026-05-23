@@ -1,13 +1,25 @@
 import { NextResponse } from 'next/server'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
-import { fetchLessonsByDate, createLesson, type CreateLessonInput } from '@/lib/supabase/lessons'
+import { fetchLessonsByDate, fetchLessonsByMonth, createLesson, type CreateLessonInput } from '@/lib/supabase/lessons'
 
 export async function GET(req: Request) {
   if (!hasSupabaseConfig()) return NextResponse.json({ lessons: [] })
   const url = new URL(req.url)
+  const month = url.searchParams.get('month')
+  if (month) {
+    if (!/^\d{4}-\d{2}$/.test(month)) {
+      return NextResponse.json({ error: 'month (YYYY-MM) 필수' }, { status: 400 })
+    }
+    try {
+      const lessons = await fetchLessonsByMonth(month)
+      return NextResponse.json({ lessons })
+    } catch (error) {
+      return NextResponse.json({ error: (error as Error).message }, { status: 500 })
+    }
+  }
   const date = url.searchParams.get('date')
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return NextResponse.json({ error: 'date (YYYY-MM-DD) 필수' }, { status: 400 })
+    return NextResponse.json({ error: 'date (YYYY-MM-DD) 또는 month (YYYY-MM) 필수' }, { status: 400 })
   }
   try {
     const lessons = await fetchLessonsByDate(date)

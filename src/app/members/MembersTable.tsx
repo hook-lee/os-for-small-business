@@ -5,15 +5,25 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import type { Member } from '@/lib/supabase/members'
 
+type ActivePassInfo = {
+  passName: string
+  startDate: string | null
+  endDate: string | null
+  totalCount: number | null
+  remainingCount: number | null
+  paidAt: string | null
+}
+
 interface Props {
   members: Member[]
   currentFilter?: string
   totalCount?: number
   expiringCount?: number
   dormantCount?: number
+  activePassMap?: Record<number, ActivePassInfo>
 }
 
-export function MembersTable({ members, currentFilter = 'all', totalCount, expiringCount, dormantCount }: Props) {
+export function MembersTable({ members, currentFilter = 'all', totalCount, expiringCount, dormantCount, activePassMap = {} }: Props) {
   const router = useRouter()
 
   function changeFilter(f: string) {
@@ -217,43 +227,55 @@ export function MembersTable({ members, currentFilter = 'all', totalCount, expir
               <tr>
                 <th className="text-left px-4 py-2 font-medium">이름</th>
                 <th className="text-left px-4 py-2 font-medium">전화번호</th>
-                <th className="text-left px-4 py-2 font-medium">등록일</th>
-                <th className="text-left px-4 py-2 font-medium">최근 출석</th>
+                <th className="text-left px-4 py-2 font-medium">수강권</th>
+                <th className="text-left px-4 py-2 font-medium">기간</th>
+                <th className="text-right px-4 py-2 font-medium">총 회차</th>
+                <th className="text-right px-4 py-2 font-medium">잔여</th>
                 <th className="text-left px-4 py-2 font-medium">앱 연결</th>
-                <th className="text-left px-4 py-2 font-medium"></th>
+                <th className="px-4 py-2"></th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map(m => (
-                <tr key={m.id} className="border-t border-neutral-100 hover:bg-neutral-50">
-                  <td className="px-4 py-2">
-                    <a href={`/members/${m.id}`} className="font-medium text-blue-600 hover:underline">
-                      {m.name}
-                    </a>
-                  </td>
-                  <td className="px-4 py-2 text-neutral-600">{m.phone ?? '—'}</td>
-                  <td className="px-4 py-2 text-neutral-600">{m.registeredAt ?? '—'}</td>
-                  <td className="px-4 py-2 text-neutral-600">{m.lastAttendedAt ?? '—'}</td>
-                  <td className="px-4 py-2">
-                    {m.appConnected ? (
-                      <span className="text-xs px-2 py-0.5 rounded bg-blue-50 text-blue-700">연결</span>
-                    ) : (
-                      <span className="text-xs px-2 py-0.5 rounded bg-neutral-100 text-neutral-500">미연결</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-2">
-                    <button
-                      onClick={() => handleDelete(m)}
-                      className="text-xs px-2 py-0.5 rounded text-red-600 hover:bg-red-50"
-                    >
-                      삭제
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filtered.map(m => {
+                const ap = activePassMap[m.id]
+                const isLowRemaining = ap?.remainingCount != null && ap.remainingCount <= 1
+                return (
+                  <tr key={m.id} className="border-t border-neutral-100 hover:bg-neutral-50">
+                    <td className="px-4 py-2">
+                      <a href={`/members/${m.id}`} className="font-medium text-blue-600 hover:underline">
+                        {m.name}
+                      </a>
+                    </td>
+                    <td className="px-4 py-2 text-neutral-600">{m.phone ?? '—'}</td>
+                    <td className="px-4 py-2 text-neutral-600">{ap?.passName ?? '—'}</td>
+                    <td className="px-4 py-2 text-neutral-600 text-xs">
+                      {ap?.startDate && ap?.endDate ? `${ap.startDate} ~ ${ap.endDate}` : '—'}
+                    </td>
+                    <td className="px-4 py-2 text-right tabular-nums text-neutral-600">{ap?.totalCount ?? '—'}</td>
+                    <td className={`px-4 py-2 text-right tabular-nums ${isLowRemaining ? 'text-red-600 font-semibold' : 'text-neutral-600'}`}>
+                      {ap?.remainingCount ?? '—'}
+                    </td>
+                    <td className="px-4 py-2">
+                      {m.appConnected ? (
+                        <span className="text-xs px-2 py-0.5 rounded bg-blue-50 text-blue-700">연결</span>
+                      ) : (
+                        <span className="text-xs px-2 py-0.5 rounded bg-neutral-100 text-neutral-500">미연결</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2">
+                      <button
+                        onClick={() => handleDelete(m)}
+                        className="text-xs px-2 py-0.5 rounded text-red-600 hover:bg-red-50"
+                      >
+                        삭제
+                      </button>
+                    </td>
+                  </tr>
+                )
+              })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-neutral-400 text-sm">
+                  <td colSpan={8} className="px-4 py-8 text-center text-neutral-400 text-sm">
                     {query ? '검색 결과 없음' : '회원이 아직 없습니다.'}
                   </td>
                 </tr>

@@ -6,6 +6,15 @@ import { MembersTable } from './MembersTable'
 
 export const dynamic = 'force-dynamic'
 
+type ActivePassInfo = {
+  passName: string
+  startDate: string | null
+  endDate: string | null
+  totalCount: number | null
+  remainingCount: number | null
+  paidAt: string | null
+}
+
 export default async function MembersPage({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
   const params = await searchParams
   const filter = params.filter ?? 'all'
@@ -29,6 +38,25 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
   if (filter === 'expiring') displayed = members.filter(m => expiringIds.has(m.id))
   if (filter === 'dormant') displayed = members.filter(m => dormantIds.has(m.id))
 
+  // 회원별 가장 최근 "이용중" 패스 매핑
+  const activePassMap: Record<number, ActivePassInfo> = {}
+  const tempMap = new Map<number, ActivePassInfo>()
+  for (const p of passes) {
+    if (p.status !== '이용중') continue
+    const cur = tempMap.get(p.memberId)
+    if (!cur || (p.paidAt ?? '') > (cur.paidAt ?? '')) {
+      tempMap.set(p.memberId, {
+        passName: p.passName,
+        startDate: p.startDate,
+        endDate: p.endDate,
+        totalCount: p.totalCount,
+        remainingCount: p.remainingCount,
+        paidAt: p.paidAt,
+      })
+    }
+  }
+  for (const [id, info] of tempMap.entries()) activePassMap[id] = info
+
   return (
     <div className="space-y-4">
       {!hasSupabaseConfig() && (
@@ -42,6 +70,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
         totalCount={members.length}
         expiringCount={expiring.length}
         dormantCount={dormant.length}
+        activePassMap={activePassMap}
       />
     </div>
   )

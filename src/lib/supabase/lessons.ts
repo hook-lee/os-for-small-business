@@ -91,6 +91,39 @@ export async function fetchLessonsByDate(date: string): Promise<LessonWithNames[
   }
 }
 
+export async function fetchLessonsByMonth(yearMonth: string): Promise<LessonWithNames[]> {
+  try {
+    const supabase = getSupabaseClient()
+    const start = `${yearMonth}-01`
+    const [y, m] = yearMonth.split('-').map(Number)
+    const lastDay = new Date(y, m, 0).getDate()
+    const end = `${yearMonth}-${String(lastDay).padStart(2, '0')}`
+    const { data, error } = await supabase
+      .from('lessons')
+      .select('*, members(id, name, phone), instructors(id, name), passes(id, pass_name, remaining_count)')
+      .gte('lesson_date', start)
+      .lte('lesson_date', end)
+      .order('lesson_date', { ascending: true })
+      .order('lesson_time', { ascending: true, nullsFirst: false })
+    if (error) return []
+    type Joined = LessonRow & {
+      members: { id: number; name: string; phone: string | null } | null
+      instructors: { id: number; name: string } | null
+      passes: { id: number; pass_name: string; remaining_count: number | null } | null
+    }
+    return ((data ?? []) as Joined[]).map(row => ({
+      ...rowToLesson(row),
+      memberName: row.members?.name ?? '?',
+      memberPhone: row.members?.phone ?? null,
+      instructorName: row.instructors?.name ?? null,
+      passName: row.passes?.pass_name ?? null,
+      passRemaining: row.passes?.remaining_count ?? null,
+    }))
+  } catch {
+    return []
+  }
+}
+
 export interface CreateLessonInput {
   passId?: number | null
   memberId: number
