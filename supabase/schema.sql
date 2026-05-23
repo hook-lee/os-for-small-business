@@ -129,3 +129,26 @@ create index if not exists pass_products_active_idx on pass_products (active);
 -- v2.1.1: transactions에 수강권 카탈로그 연동
 alter table transactions add column if not exists pass_product_id bigint references pass_products(id) on delete set null;
 create index if not exists transactions_pass_product_idx on transactions (pass_product_id);
+
+-- v2.5: 강사 월별 급여 정산 기록
+create table if not exists payroll_records (
+  id bigint generated always as identity primary key,
+  instructor_id bigint not null references instructors(id) on delete cascade,
+  year_month text not null,  -- YYYY-MM
+  private_count int not null default 0,
+  rehab_count int not null default 0,
+  duet_count int not null default 0,
+  group_count int not null default 0,
+  total_amount bigint not null default 0,
+  bonus bigint not null default 0,
+  deduction bigint not null default 0,
+  memo text,
+  paid boolean not null default false,
+  paid_at date,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique (instructor_id, year_month)
+);
+
+create index if not exists payroll_instructor_idx on payroll_records (instructor_id);
+create index if not exists payroll_yearmonth_idx on payroll_records (year_month);
