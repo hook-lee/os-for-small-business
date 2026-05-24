@@ -8,6 +8,7 @@ import { IssuePassForm } from './IssuePassForm'
 import { PassesList } from './PassesList'
 import { MemberMemoEditor } from './MemberMemoEditor'
 import { MemberEditor } from './MemberEditor'
+import { MemberAccessLink } from './MemberAccessLink'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,6 +43,8 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
       </div>
 
       <MemberMemoEditor memberId={m.id} initialInternalMemo={m.internalMemo} />
+
+      <MemberAccessLink memberId={m.id} initialToken={m.accessToken ?? null} />
 
       <div>
         <div className="flex items-center justify-between mt-6 mb-2">

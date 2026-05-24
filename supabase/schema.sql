@@ -196,3 +196,7 @@ alter table members add column if not exists internal_memo text;
 
 -- v2.5.1: 급여에 사업소득세 3.3% 자동 공제 컬럼
 alter table payroll_records add column if not exists tax_withholding bigint not null default 0;
+
+-- v2.7: 회원 접근 토큰 (per-member URL access)
+alter table members add column if not exists access_token text;
+create unique index if not exists members_access_token_uniq on members (access_token) where access_token is not null;

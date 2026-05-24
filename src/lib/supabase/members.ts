@@ -15,6 +15,7 @@ export interface Member {
   appConnected: boolean
   registeredAt: string | null
   lastAttendedAt: string | null
+  accessToken?: string | null
 }
 
 interface MemberRow {
@@ -32,6 +33,7 @@ interface MemberRow {
   app_connected: boolean
   registered_at: string | null
   last_attended_at: string | null
+  access_token: string | null
 }
 
 function rowToMember(row: MemberRow): Member {
@@ -50,6 +52,7 @@ function rowToMember(row: MemberRow): Member {
     appConnected: row.app_connected,
     registeredAt: row.registered_at,
     lastAttendedAt: row.last_attended_at,
+    accessToken: row.access_token ?? null,
   }
 }
 
@@ -152,4 +155,25 @@ export async function updateMember(id: number, patch: MemberUpdate): Promise<voi
   if (patch.tier !== undefined) dbPatch.tier = patch.tier
   const { error } = await supabase.from('members').update(dbPatch).eq('id', id)
   if (error) throw new Error(`Update member failed: ${error.message}`)
+}
+
+export async function regenerateAccessToken(memberId: number): Promise<string> {
+  const token = crypto.randomUUID()
+  const supabase = getSupabaseClient()
+  const { error } = await supabase.from('members').update({ access_token: token }).eq('id', memberId)
+  if (error) throw new Error(`Token regen failed: ${error.message}`)
+  return token
+}
+
+export async function fetchMemberByToken(token: string): Promise<Member | null> {
+  try {
+    const supabase = getSupabaseClient()
+    const { data, error } = await supabase
+      .from('members')
+      .select('*')
+      .eq('access_token', token)
+      .maybeSingle()
+    if (error || !data) return null
+    return rowToMember(data as MemberRow)
+  } catch { return null }
 }
