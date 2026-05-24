@@ -1,9 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import type { Instructor } from '@/lib/supabase/instructors'
+
+// 역할 우선순위: owner(0) → admin(1) → instructor(2). 같은 역할 내에서는 이름 가나다순.
+const ROLE_RANK: Record<Instructor['role'], number> = {
+  owner: 0,
+  admin: 1,
+  instructor: 2,
+}
 
 interface RateDraft {
   ratePrivate: string
@@ -29,6 +36,16 @@ interface InstructorsTableProps {
 export function InstructorsTable({ instructors: initial, memberCounts = {}, revenueByInstructor = {} }: InstructorsTableProps) {
   const router = useRouter()
   const [instructors, setInstructors] = useState<Instructor[]>(initial)
+
+  // 역할 우선 + 이름 가나다순 2중 정렬
+  const sortedInstructors = useMemo(
+    () => [...instructors].sort((a, b) => {
+      const rankDiff = (ROLE_RANK[a.role] ?? 99) - (ROLE_RANK[b.role] ?? 99)
+      if (rankDiff !== 0) return rankDiff
+      return a.name.localeCompare(b.name, 'ko-KR')
+    }),
+    [instructors],
+  )
   const [editingId, setEditingId] = useState<number | null>(null)
   const [rateDraft, setRateDraft] = useState<RateDraft>({ ratePrivate: '', rateRehab: '', rateDuet: '', rateGroup: '' })
   const [savingId, setSavingId] = useState<number | null>(null)
@@ -200,30 +217,40 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
           <table className="w-full text-sm">
             <thead className="bg-neutral-50 text-xs text-neutral-500 uppercase">
               <tr>
-                <th className="text-left px-4 py-2 font-medium">강사</th>
-                <th className="text-left px-4 py-2 font-medium">역할</th>
-                <th className="text-left px-4 py-2 font-medium">전화번호</th>
-                <th className="text-left px-4 py-2 font-medium">담당 회원</th>
+                <th className="text-left px-4 py-2 font-medium whitespace-nowrap">강사</th>
+                <th className="text-left px-4 py-2 font-medium whitespace-nowrap">역할</th>
+                <th className="text-left px-4 py-2 font-medium whitespace-nowrap">전화번호</th>
+                <th className="text-center px-4 py-2 font-medium whitespace-nowrap">담당</th>
                 <th className="text-left px-4 py-2 font-medium">시급 (개인·재활·듀엣·그룹)</th>
-                <th className="text-right px-4 py-2 font-medium">매출 기여</th>
-                <th className="text-left px-4 py-2 font-medium">동작</th>
+                <th className="text-right px-4 py-2 font-medium whitespace-nowrap">매출 기여</th>
+                <th className="text-right px-4 py-2 font-medium whitespace-nowrap">동작</th>
               </tr>
             </thead>
             <tbody>
-              {instructors.map(inst => (
-                <tr key={inst.id} className="border-t border-neutral-100">
-                  <td className="px-4 py-3 flex items-center gap-2">
-                    {inst.color && (
-                      <span className="inline-block w-3 h-3 rounded" style={{ backgroundColor: inst.color }} />
-                    )}
-                    <a href={`/instructors/${inst.id}`} className="font-medium text-blue-600 hover:underline">{inst.name}</a>
+              {sortedInstructors.map(inst => (
+                <tr key={inst.id} className="border-t border-neutral-100 hover:bg-neutral-50/50">
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      {inst.color && (
+                        <span className="inline-block w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: inst.color }} />
+                      )}
+                      <a href={`/instructors/${inst.id}`} className="font-medium text-blue-600 hover:underline">{inst.name}</a>
+                    </div>
                   </td>
-                  <td className="px-4 py-3 text-neutral-600">{roleLabel(inst.role)}</td>
-                  <td className="px-4 py-3 text-neutral-600">{inst.phone ?? '—'}</td>
-                  <td className="px-4 py-3 text-neutral-600">{memberCounts[inst.id] ?? 0}명</td>
+                  <td className="px-4 py-3 text-neutral-600 whitespace-nowrap">
+                    {inst.role === 'owner' ? (
+                      <span className="inline-flex items-center gap-1 text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded">
+                        👑 {roleLabel(inst.role)}
+                      </span>
+                    ) : (
+                      <span className="text-sm">{roleLabel(inst.role)}</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-neutral-600 whitespace-nowrap tabular-nums">{inst.phone ?? '—'}</td>
+                  <td className="px-4 py-3 text-neutral-600 whitespace-nowrap text-center tabular-nums">{memberCounts[inst.id] ?? 0}명</td>
                   <td className="px-4 py-3 tabular-nums">
                     {editingId === inst.id ? (
-                      <div className="grid grid-cols-2 gap-2 min-w-[260px]">
+                      <div className="grid grid-cols-4 gap-2 min-w-[320px]">
                         {(['ratePrivate', 'rateRehab', 'rateDuet', 'rateGroup'] as const).map((key, i) => (
                           <div key={key}>
                             <label className="block text-xs text-neutral-400 mb-0.5">
@@ -241,15 +268,15 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
                         ))}
                       </div>
                     ) : (
-                      <span className="text-neutral-700">{ratesSummary(inst)}</span>
+                      <span className="text-neutral-700 leading-relaxed">{ratesSummary(inst)}</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums text-neutral-600">
+                  <td className="px-4 py-3 text-right tabular-nums text-neutral-700 whitespace-nowrap font-medium">
                     {(revenueByInstructor[inst.id] ?? 0).toLocaleString()}원
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap text-right">
                     {editingId === inst.id ? (
-                      <div className="flex gap-1">
+                      <div className="inline-flex gap-1">
                         <button
                           onClick={() => saveRates(inst.id)}
                           disabled={savingId === inst.id}
@@ -265,7 +292,7 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
                         </button>
                       </div>
                     ) : (
-                      <div className="flex gap-2">
+                      <div className="inline-flex gap-3">
                         <button
                           onClick={() => startEdit(inst)}
                           className="text-xs text-blue-600 hover:underline"
@@ -285,7 +312,7 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
                   </td>
                 </tr>
               ))}
-              {instructors.length === 0 && (
+              {sortedInstructors.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center text-neutral-400 text-sm">
                     강사가 아직 없습니다.
