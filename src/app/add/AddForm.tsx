@@ -3,14 +3,10 @@
 import { useState, useEffect, useMemo, type FormEvent } from 'react'
 import { Card } from '@/components/ui/Card'
 import type { ExpenseCategory } from '@/lib/supabase/categories'
+import { DEFAULT_CATEGORIES } from '@/lib/categories/defaults'
 
 type TxType = '지출' | '매출'
 type Method = '카드' | '계좌이체' | '현금'
-
-const FALLBACK_CATEGORIES = [
-  '매출', '식비', '임대료', '광고선전비', '소모품비', '수도광열비',
-  '여비교통비', '경조사비', '대표자급여', '예비비', '기타',
-]
 
 function today(): string {
   return new Date().toISOString().slice(0, 10)
@@ -44,7 +40,10 @@ export function AddForm() {
   const [products, setProducts] = useState<Array<{id: number; name: string; passType: string; durationDays: number; totalCount: number; price: number}>>([])
   const [selectedPassProductId, setSelectedPassProductId] = useState<number|null>(null)
   const [paymentType, setPaymentType] = useState<'신규결제' | '재결제'>('신규결제')
-  const [categories, setCategories] = useState<ExpenseCategory[]>([])
+  // DB에 카테고리가 있으면 그걸, 없으면 코드 안의 DEFAULT_CATEGORIES 사용.
+  // → 시드 안 돌려도 즉시 24개 + 설명 + 예시 표시됨
+  const [categories, setCategories] = useState<ExpenseCategory[]>(DEFAULT_CATEGORIES)
+  const [usingDefaults, setUsingDefaults] = useState(true)
 
   useEffect(() => {
     fetchRecent()
@@ -52,8 +51,12 @@ export function AddForm() {
     fetch('/api/instructors').then(r => r.json()).then((j: { instructors?: Array<{id: number; name: string}> }) => setInstructors(j.instructors ?? []))
     fetch('/api/pass-products').then(r => r.json()).then((j: { products?: Array<{id: number; name: string; passType: string; durationDays: number; totalCount: number; price: number}> }) => setProducts(j.products ?? []))
     fetch('/api/categories').then(r => r.json()).then((j: { categories?: ExpenseCategory[] }) => {
-      if (j.categories && j.categories.length > 0) setCategories(j.categories)
-    }).catch(() => { /* graceful — fallback */ })
+      if (j.categories && j.categories.length > 0) {
+        setCategories(j.categories)
+        setUsingDefaults(false)
+      }
+      // 비어있으면 DEFAULT_CATEGORIES 유지 (초기 state)
+    }).catch(() => { /* DEFAULT_CATEGORIES 유지 */ })
   }, [])
 
   useEffect(() => {
@@ -199,9 +202,8 @@ export function AddForm() {
     [categories, rawCategory],
   )
 
-  // 매출 모드면 매출 카테고리 외엔 가리고, 지출 모드면 매출 카테고리는 가린다
+  // 매출 모드면 매출 카테고리만, 지출 모드면 매출 외 전부
   const visibleCategories = useMemo(() => {
-    if (categories.length === 0) return FALLBACK_CATEGORIES.filter(c => isSalesMode ? c === '매출' : c !== '매출')
     return categories
       .filter(c => isSalesMode ? c.name === '매출' : c.name !== '매출')
       .map(c => c.name)
@@ -295,9 +297,12 @@ export function AddForm() {
                 ))}
               </div>
               {selectedCategoryObj?.description && (
-                <div className="text-xs text-neutral-600 bg-neutral-50 border border-neutral-200 rounded p-2 mt-2 lg:hidden">
-                  💡 {selectedCategoryObj.description}
-                </div>
+                <div
+                  className="text-xs text-neutral-600 bg-neutral-50 border border-neutral-200 rounded p-2 mt-2 lg:hidden"
+                  dangerouslySetInnerHTML={{
+                    __html: '💡 ' + selectedCategoryObj.description.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'),
+                  }}
+                />
               )}
             </div>
 
@@ -510,14 +515,21 @@ export function AddForm() {
         <Card className="space-y-3">
           <div>
             <h3 className="text-sm font-semibold text-neutral-700">📚 카테고리 가이드</h3>
-            <p className="text-xs text-neutral-500 mt-0.5">세무사가 봐도 이해할 수 있는 회계 계정과목</p>
+            <p className="text-xs text-neutral-500 mt-0.5">세무사가 봐도 이해할 수 있는 회계 계정과목 + 예시</p>
+            {usingDefaults && (
+              <p className="text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5 mt-1.5">
+                ⓘ 기본값 표시 중. DB 저장하려면 시드 1회 실행 (
+                <code className="bg-amber-100 px-0.5 rounded">scripts/seed-categories.ts</code>
+                ) — 그 전까지도 동일하게 작동.
+              </p>
+            )}
           </div>
 
           {selectedCategoryObj && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-sm text-blue-900">{selectedCategoryObj.name}</span>
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-wrap justify-end">
                   {selectedCategoryObj.vatDeductible && (
                     <span className="text-[10px] bg-blue-200 text-blue-800 px-1.5 py-0.5 rounded">부가세↓</span>
                   )}
@@ -527,14 +539,20 @@ export function AddForm() {
                 </div>
               </div>
               {selectedCategoryObj.description && (
-                <p className="text-xs text-blue-900 leading-relaxed">{selectedCategoryObj.description}</p>
+                <p
+                  className="text-xs text-blue-900 leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: selectedCategoryObj.description
+                      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'),
+                  }}
+                />
               )}
             </div>
           )}
 
-          <div className="border-t border-neutral-200 pt-3 space-y-2 max-h-[55vh] overflow-y-auto">
-            <div className="text-xs font-semibold text-neutral-500 sticky top-0 bg-white py-1">전체 항목</div>
-            {(categories.length > 0 ? categories : []).map(cat => (
+          <div className="border-t border-neutral-200 pt-3 space-y-1.5 max-h-[55vh] overflow-y-auto">
+            <div className="text-xs font-semibold text-neutral-500 sticky top-0 bg-white py-1">전체 항목 ({categories.length}개)</div>
+            {categories.map(cat => (
               <button
                 key={cat.id}
                 type="button"
@@ -552,15 +570,16 @@ export function AddForm() {
                   </span>
                 </div>
                 {cat.description && (
-                  <p className="text-[11px] text-neutral-500 mt-0.5 leading-snug">{cat.description}</p>
+                  <p
+                    className="text-[11px] text-neutral-500 mt-0.5 leading-snug"
+                    dangerouslySetInnerHTML={{
+                      __html: cat.description
+                        .replace(/\*\*(.+?)\*\*/g, '<strong class="text-neutral-700">$1</strong>'),
+                    }}
+                  />
                 )}
               </button>
             ))}
-            {categories.length === 0 && (
-              <p className="text-xs text-neutral-400 p-2">
-                카테고리 시드 미실행 — <code className="bg-neutral-100 px-1 rounded">npx tsx scripts/seed-categories.ts</code>
-              </p>
-            )}
           </div>
 
           <div className="border-t border-neutral-200 pt-2">
