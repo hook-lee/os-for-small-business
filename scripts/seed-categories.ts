@@ -1,6 +1,9 @@
-// Usage: SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... npx tsx scripts/seed-categories.ts
+// Usage: npx tsx scripts/seed-categories.ts (.env.local 자동 로드)
 import { createClient } from '@supabase/supabase-js'
+import { config } from 'dotenv'
 import { DEFAULT_CATEGORIES_RAW } from '../src/lib/categories/defaults'
+
+config({ path: '.env.local' })
 
 const url = process.env.SUPABASE_URL!
 const key = process.env.SUPABASE_SERVICE_ROLE_KEY!
