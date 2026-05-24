@@ -85,3 +85,22 @@ create table if not exists pass_adjustments (
 );
 create index if not exists pass_adjustments_pass_idx on pass_adjustments (pass_id);
 create index if not exists pass_adjustments_created_idx on pass_adjustments (created_at desc);
+
+-- v2.11: AI 비서 대화 이력 (Gemini chat sessions + messages)
+create table if not exists chat_sessions (
+  id bigint generated always as identity primary key,
+  title text not null default '새 대화',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+create index if not exists chat_sessions_updated_idx on chat_sessions (updated_at desc);
+
+create table if not exists chat_messages (
+  id bigint generated always as identity primary key,
+  session_id bigint not null references chat_sessions(id) on delete cascade,
+  role text not null check (role in ('user', 'model')),
+  text text not null,
+  tool_calls jsonb,                  -- [{name, args}] 또는 null
+  created_at timestamptz default now()
+);
+create index if not exists chat_messages_session_idx on chat_messages (session_id, created_at);

@@ -1,18 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback, type KeyboardEvent } from 'react'
+import { useState, useRef, useEffect, type KeyboardEvent } from 'react'
 import { usePathname } from 'next/navigation'
-import {
-  listSessions,
-  getSession,
-  getCurrentSessionId,
-  setCurrentSessionId,
-  createSession,
-  updateSessionMessages,
-  deleteSession,
-  type ChatSession,
-  type SessionMessage,
-} from '@/lib/storage/assistant-sessions'
 
 type Role = 'user' | 'model'
 
@@ -21,6 +10,17 @@ interface Message {
   text: string
   toolCalls?: Array<{ name: string; args: Record<string, unknown> }>
 }
+
+interface SessionMeta {
+  id: number
+  title: string
+  createdAt: string
+  updatedAt: string
+  messageCount: number
+}
+
+// 로컬: 마지막 본 세션 id만 캐시 (페이지 새로고침 후 빠른 복원). 데이터 자체는 DB.
+const LS_LAST_SESSION = 'rapa.assistant.lastSession.v2'
 
 const PAGE_EXAMPLES: Record<string, string[]> = {
   '/': ['이번 달 매출이랑 지출 알려줘', '다음 분기 부가세 얼마 적립?', '올해 종소세 예상?'],
@@ -85,71 +85,81 @@ export function FloatingAssistant() {
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
-  const [sessions, setSessions] = useState<ChatSession[]>([])
-  const [currentId, setCurrentId] = useState<string | null>(null)
+  const [sessions, setSessions] = useState<SessionMeta[]>([])
+  const [currentId, setCurrentId] = useState<number | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
+  const [loadingSession, setLoadingSession] = useState(false)
   const [error, setError] = useState('')
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const isMember = pathname?.startsWith('/m/')
 
-  // 마운트 시: 마지막 세션 로드 또는 비어둠 (open하면 새 세션 생성)
+  // 마운트 시: 세션 목록 + 마지막 세션 자동 복원
   useEffect(() => {
     if (isMember) return
-    const list = listSessions()
-    setSessions(list)
-    const lastId = getCurrentSessionId()
-    if (lastId) {
-      const s = getSession(lastId)
-      if (s) {
-        setCurrentId(s.id)
-        setMessages(s.messages.map(m => ({ role: m.role, text: m.text, toolCalls: m.toolCalls })))
-      }
-    }
+    void refreshSessions()
+    const lastId = typeof window !== 'undefined' ? Number(window.localStorage.getItem(LS_LAST_SESSION) || 0) : 0
+    if (lastId > 0) void loadSession(lastId, true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
-    if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, sending, open])
+    if (open && !showHistory) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, sending, open, showHistory])
 
   useEffect(() => {
     if (open && !showHistory) inputRef.current?.focus()
   }, [open, showHistory])
 
-  function ensureSession(): string {
-    if (currentId) return currentId
-    const fresh = createSession()
-    setSessions(prev => [fresh, ...prev])
-    setCurrentId(fresh.id)
-    return fresh.id
+  // 현재 세션 id 변경 시 localStorage에 캐시
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (currentId) window.localStorage.setItem(LS_LAST_SESSION, String(currentId))
+    else window.localStorage.removeItem(LS_LAST_SESSION)
+  }, [currentId])
+
+  async function refreshSessions() {
+    try {
+      const res = await fetch('/api/chat/sessions')
+      if (!res.ok) return
+      const json = await res.json() as { sessions?: SessionMeta[] }
+      setSessions(json.sessions ?? [])
+    } catch { /* silent */ }
   }
 
-  // 메시지 변경 시 자동 저장 (throttle 안 함 — localStorage 빠름)
-  const persistMessages = useCallback((id: string, msgs: Message[]) => {
-    const sessionMsgs: SessionMessage[] = msgs.map(m => ({
-      role: m.role,
-      text: m.text,
-      toolCalls: m.toolCalls,
-      ts: new Date().toISOString(),
-    }))
-    updateSessionMessages(id, sessionMsgs)
-    setSessions(listSessions())
-  }, [])
+  async function loadSession(id: number, silent = false) {
+    if (!silent) setLoadingSession(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/chat/sessions/${id}`)
+      if (!res.ok) {
+        if (!silent) setError('세션을 불러올 수 없습니다')
+        return
+      }
+      const json = await res.json() as {
+        session: SessionMeta
+        messages: Array<{ role: Role; text: string; toolCalls: Array<{ name: string; args: Record<string, unknown> }> | null }>
+      }
+      setCurrentId(json.session.id)
+      setMessages(json.messages.map(m => ({ role: m.role, text: m.text, toolCalls: m.toolCalls ?? undefined })))
+      setShowHistory(false)
+    } catch (e) {
+      if (!silent) setError((e as Error).message)
+    } finally {
+      setLoadingSession(false)
+    }
+  }
 
   async function send(text: string) {
     const trimmed = text.trim()
     if (!trimmed || sending) return
-    const sid = ensureSession()
     setError('')
     setInput('')
     const userMsg: Message = { role: 'user', text: trimmed }
-    const newMessages = [...messages, userMsg]
-    setMessages(newMessages)
-    persistMessages(sid, newMessages)
+    setMessages(prev => [...prev, userMsg])
     setSending(true)
     try {
       const res = await fetch('/api/chat', {
@@ -157,23 +167,30 @@ export function FloatingAssistant() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: trimmed,
-          history: messages.map(m => ({ role: m.role, text: m.text })),
+          sessionId: currentId,
           context: { pathname, pageLabel: getPageLabel(pathname || '/') },
         }),
       })
-      const json = await res.json() as { reply?: string; toolCalls?: Array<{ name: string; args: Record<string, unknown> }>; error?: string }
+      const json = await res.json() as {
+        sessionId?: number
+        reply?: string
+        toolCalls?: Array<{ name: string; args: Record<string, unknown> }>
+        error?: string
+      }
+      if (json.sessionId && !currentId) {
+        setCurrentId(json.sessionId)
+      }
       if (!res.ok) {
         setError(json.error ?? `HTTP ${res.status}`)
         return
       }
-      const reply: Message = {
+      setMessages(prev => [...prev, {
         role: 'model',
         text: json.reply ?? '(빈 답변)',
         toolCalls: json.toolCalls,
-      }
-      const finalMessages = [...newMessages, reply]
-      setMessages(finalMessages)
-      persistMessages(sid, finalMessages)
+      }])
+      // 세션 목록 갱신 (제목 자동 추출 반영 + updated_at 순서)
+      void refreshSessions()
     } catch (e) {
       setError((e as Error).message)
     } finally {
@@ -190,30 +207,29 @@ export function FloatingAssistant() {
   }
 
   function startNewSession() {
-    const fresh = createSession()
-    setSessions(prev => [fresh, ...prev])
-    setCurrentId(fresh.id)
+    setCurrentId(null)
     setMessages([])
     setError('')
     setShowHistory(false)
   }
 
-  function openSession(s: ChatSession) {
-    setCurrentId(s.id)
-    setCurrentSessionId(s.id)
-    setMessages(s.messages.map(m => ({ role: m.role, text: m.text, toolCalls: m.toolCalls })))
-    setError('')
-    setShowHistory(false)
-  }
-
-  function removeSession(id: string, e: React.MouseEvent) {
+  async function removeSession(id: number, e: React.MouseEvent) {
     e.stopPropagation()
     if (!confirm('이 대화를 삭제할까요? (복구 불가)')) return
-    deleteSession(id)
-    setSessions(listSessions())
-    if (id === currentId) {
-      setCurrentId(null)
-      setMessages([])
+    try {
+      const res = await fetch(`/api/chat/sessions/${id}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const json = await res.json() as { error?: string }
+        alert(`삭제 실패: ${json.error ?? 'unknown'}`)
+        return
+      }
+      setSessions(prev => prev.filter(s => s.id !== id))
+      if (currentId === id) {
+        setCurrentId(null)
+        setMessages([])
+      }
+    } catch (err) {
+      alert(`삭제 실패: ${(err as Error).message}`)
     }
   }
 
@@ -259,11 +275,11 @@ export function FloatingAssistant() {
             >
               <div className="text-sm font-bold flex items-center gap-1.5 min-w-0">
                 <span className="shrink-0">💬</span>
-                <span className="truncate">{currentSession?.title || 'AI 비서'}</span>
+                <span className="truncate">{currentSession?.title || (currentId ? '대화' : 'AI 비서')}</span>
                 <span className="text-[10px] opacity-70 shrink-0">{showHistory ? '▴' : '▾'}</span>
               </div>
               <div className="text-[10px] opacity-80">
-                현재: {pageLabel} · 저장된 대화 {sessions.length}개
+                현재: {pageLabel} · 저장된 대화 {sessions.length}개 · DB 동기화
               </div>
             </button>
             <div className="flex items-center gap-1 shrink-0">
@@ -284,7 +300,7 @@ export function FloatingAssistant() {
             </div>
           </div>
 
-          {/* History panel (toggle) */}
+          {/* History panel */}
           {showHistory && (
             <div className="border-b border-neutral-200 bg-neutral-50 max-h-[60%] overflow-y-auto shrink-0">
               {sessions.length === 0 ? (
@@ -294,8 +310,9 @@ export function FloatingAssistant() {
                   {sessions.map(s => (
                     <button
                       key={s.id}
-                      onClick={() => openSession(s)}
-                      className={`w-full text-left px-3 py-2 hover:bg-white transition-colors flex items-start justify-between gap-2 ${
+                      onClick={() => loadSession(s.id)}
+                      disabled={loadingSession}
+                      className={`w-full text-left px-3 py-2 hover:bg-white transition-colors flex items-start justify-between gap-2 disabled:opacity-50 ${
                         s.id === currentId ? 'bg-violet-50 border-l-2 border-violet-500' : ''
                       }`}
                     >
@@ -308,7 +325,7 @@ export function FloatingAssistant() {
                       <button
                         onClick={e => removeSession(s.id, e)}
                         className="text-[10px] text-red-500 hover:text-red-700 px-1.5 py-0.5 rounded hover:bg-red-50 shrink-0"
-                        title="이 대화 삭제"
+                        title="삭제"
                       >
                         삭제
                       </button>
@@ -322,7 +339,10 @@ export function FloatingAssistant() {
           {/* Messages */}
           {!showHistory && (
             <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-neutral-50">
-              {messages.length === 0 && (
+              {loadingSession && (
+                <div className="text-xs text-neutral-400 text-center py-2">대화 불러오는 중...</div>
+              )}
+              {!loadingSession && messages.length === 0 && (
                 <div className="space-y-2.5">
                   <div className="text-xs text-neutral-500 text-center mt-2 px-2">
                     <strong>{pageLabel}</strong> 화면을 보고 계시네요.<br />
@@ -341,7 +361,7 @@ export function FloatingAssistant() {
                     ))}
                   </div>
                   <div className="text-[10px] text-neutral-400 text-center pt-2 border-t border-neutral-200 mt-2">
-                    직접 한국어로 자유롭게 물어보세요 · 대화는 자동 저장
+                    직접 한국어로 자유롭게 물어보세요 · 대화는 자동 저장 (DB)
                   </div>
                 </div>
               )}
@@ -382,7 +402,7 @@ export function FloatingAssistant() {
             </div>
           )}
 
-          {/* Input (history 모드에선 숨김) */}
+          {/* Input */}
           {!showHistory && (
             <div className="border-t border-neutral-200 p-2 bg-white shrink-0">
               <div className="flex items-end gap-2">
