@@ -131,6 +131,42 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
     })
   }
 
+  async function applyAutoCounts(instructorId: number, silent: boolean = false) {
+    if (!silent) {
+      const current = edits[instructorId]
+      const hasManual = parseInt(current.privateCount) || parseInt(current.rehabCount) || parseInt(current.duetCount) || parseInt(current.groupCount)
+      if (hasManual && !confirm('현재 입력된 횟수가 자동 집계 값으로 덮어쓰여집니다. 계속할까요?')) return
+    }
+    try {
+      const res = await fetch(`/api/payroll/auto?instructorId=${instructorId}&yearMonth=${yearMonth}`)
+      const json = await res.json() as { counts?: { privateCount: number; rehabCount: number; duetCount: number; groupCount: number; individualLessonsCount: number; groupSessionsCount: number } | null; error?: string }
+      if (!res.ok || !json.counts) {
+        if (!silent) alert(`자동 집계 실패: ${json.error ?? 'unknown'}`)
+        return
+      }
+      const c = json.counts
+      setEdits(prev => ({
+        ...prev,
+        [instructorId]: {
+          ...prev[instructorId],
+          privateCount: String(c.privateCount),
+          rehabCount: String(c.rehabCount),
+          duetCount: String(c.duetCount),
+          groupCount: String(c.groupCount),
+        },
+      }))
+    } catch {
+      if (!silent) alert('네트워크 오류')
+    }
+  }
+
+  async function applyAutoAll() {
+    if (!confirm('모든 강사의 횟수를 자동 집계로 덮어쓸까요? (저장 안 한 변경사항은 사라집니다)')) return
+    for (const inst of instructors) {
+      await applyAutoCounts(inst.id, true)
+    }
+  }
+
   const totals = useMemo(() => {
     let gross = 0, tax = 0, bonus = 0, deduction = 0, net = 0
     for (const inst of instructors) {
@@ -158,6 +194,12 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
             className="border border-neutral-300 rounded px-2 py-1 text-sm"
           />
           <button
+            onClick={applyAutoAll}
+            className="text-sm bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded hover:bg-blue-100"
+          >
+            ✨ 전체 자동 집계
+          </button>
+          <button
             onClick={resetAll}
             className="text-sm border border-neutral-300 px-3 py-1 rounded hover:bg-neutral-100"
           >
@@ -174,7 +216,7 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
       </div>
 
       <div className="text-xs text-neutral-500 bg-blue-50 border border-blue-200 px-3 py-2 rounded">
-        수업 횟수는 수동 입력. v2.2 일정 모듈 완성 후 자동 집계 예정. 각 행 별로 &quot;저장&quot; 눌러야 반영됨.
+        💡 &quot;자동 집계&quot; 버튼으로 lessons + group_sessions 데이터에서 그 달 강사가 진행한 수업 횟수를 자동으로 채워넣어요. 보너스·공제는 별도 수동 입력.
       </div>
 
       {error && <div className="text-sm text-red-600">{error}</div>}
@@ -202,6 +244,13 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
                   />
                   지급 완료
                 </label>
+                <button
+                  type="button"
+                  onClick={() => applyAutoCounts(inst.id)}
+                  className="text-xs text-blue-600 hover:text-blue-700 px-2 py-1 rounded hover:bg-blue-50"
+                >
+                  자동 집계
+                </button>
                 <button
                   type="button"
                   onClick={() => resetInstructor(inst.id)}
