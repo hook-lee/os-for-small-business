@@ -2,6 +2,7 @@ import { loadTransactions } from '@/lib/data/loader'
 import { aggregateMonthly } from '@/lib/analytics/monthly'
 import { KpiCard } from '@/components/ui/KpiCard'
 import { MonthlyBarChart } from '@/components/Charts/MonthlyBarChart'
+import { FinancesTabBar } from '@/components/FinancesTabBar'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 300
@@ -26,6 +27,7 @@ export default async function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
+      <FinancesTabBar />
       <section>
         <h2 className="text-lg font-semibold mb-3">연도별 KPI</h2>
         {years.map(year => {

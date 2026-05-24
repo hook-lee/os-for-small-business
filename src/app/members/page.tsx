@@ -3,6 +3,7 @@ import { fetchAllPasses } from '@/lib/supabase/passes'
 import { findExpiringMembers, findDormantMembers } from '@/lib/analytics/member-segments'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { MembersTable } from './MembersTable'
+import { MembersTabBar } from '@/components/MembersTabBar'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,6 +60,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="space-y-4">
+      <MembersTabBar />
       {!hasSupabaseConfig() && (
         <div className="rounded-lg bg-yellow-50 border border-yellow-200 px-3 py-2 text-sm text-yellow-800">
           Supabase 미설정 — 환경변수 설정 후 회원 데이터가 표시됩니다.

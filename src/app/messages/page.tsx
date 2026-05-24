@@ -5,6 +5,7 @@ import { fetchAllPasses } from '@/lib/supabase/passes'
 import { findExpiringMembers, findDormantMembers } from '@/lib/analytics/member-segments'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { MessagesComposer } from './MessagesComposer'
+import { MembersTabBar } from '@/components/MembersTabBar'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,12 +25,15 @@ export default async function MessagesPage() {
   const expiring = findExpiringMembers(members, passes, today, 7).map(e => e.member)
   const dormant = findDormantMembers(members, today, 60).map(d => d.member)
   return (
-    <MessagesComposer
-      members={members.map(m => ({ id: m.id, name: m.name, phone: m.phone }))}
-      instructors={instructors.map(i => ({ id: i.id, name: i.name, phone: i.phone }))}
-      expiringIds={expiring.map(m => m.id)}
-      dormantIds={dormant.map(m => m.id)}
-      recent={recent}
-    />
+    <>
+      <MembersTabBar />
+      <MessagesComposer
+        members={members.map(m => ({ id: m.id, name: m.name, phone: m.phone }))}
+        instructors={instructors.map(i => ({ id: i.id, name: i.name, phone: i.phone }))}
+        expiringIds={expiring.map(m => m.id)}
+        dormantIds={dormant.map(m => m.id)}
+        recent={recent}
+      />
+    </>
   )
 }

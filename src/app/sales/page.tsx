@@ -3,6 +3,7 @@ import { fetchAllInstructors } from '@/lib/supabase/instructors'
 import { loadTransactions } from '@/lib/data/loader'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { SalesReport } from './SalesReport'
+import { FinancesTabBar } from '@/components/FinancesTabBar'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,11 +28,14 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
   }
 
   return (
-    <SalesReport
-      initialMonth={yearMonth}
-      passes={passes}
-      instructors={instructors}
-      transactions={transactions}
-    />
+    <>
+      <FinancesTabBar />
+      <SalesReport
+        initialMonth={yearMonth}
+        passes={passes}
+        instructors={instructors}
+        transactions={transactions}
+      />
+    </>
   )
 }

@@ -4,6 +4,7 @@ import { simulateVAT, type Quarter } from '@/lib/tax/vat'
 import { simulateIncomeTax } from '@/lib/tax/income-tax'
 import { Card } from '@/components/ui/Card'
 import { KpiCard } from '@/components/ui/KpiCard'
+import { FinancesTabBar } from '@/components/FinancesTabBar'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 300
@@ -23,6 +24,7 @@ export default async function TaxPage() {
 
   return (
     <div className="space-y-6">
+      <FinancesTabBar />
       <section>
         <h2 className="text-lg font-semibold mb-3">부가세 (분기별)</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
