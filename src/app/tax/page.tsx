@@ -14,7 +14,7 @@ export default async function TaxPage() {
   const today = new Date().toISOString().slice(0, 10)
   const year = parseInt(today.slice(0, 4), 10)
 
-  const vatByQuarter = [1, 2, 3, 4].map(q => simulateVAT(transactions, year, q as Quarter))
+  const vatByQuarter = [1, 2, 3, 4].map(q => simulateVAT(transactions, year, q as Quarter, { taxPayerType: profile.taxPayerType ?? 'general' }))
   const annualVAT = vatByQuarter.reduce((sum, v) => sum + Math.max(0, v.estimatedVAT), 0)
   const incomeTax = simulateIncomeTax(transactions, today, {
     noranusanContribution: profile.noranusanAnnualContribution,

@@ -55,3 +55,22 @@ create table if not exists group_reservations (
 );
 create index if not exists group_reservations_session_idx on group_reservations (session_id);
 create index if not exists group_reservations_member_idx on group_reservations (member_id);
+
+-- v2.9: 비용 카테고리 마스터 (회계 계정과목 + 설명)
+create table if not exists expense_categories (
+  id bigint generated always as identity primary key,
+  name text not null unique,
+  description text,  -- 세무사가 봤을 때 이게 뭔지 알 수 있게
+  classification text not null default 'living' check (classification in ('business','living','owner_draw','reserve','capital')),
+  vat_deductible boolean not null default false,
+  income_tax_deductible boolean not null default false,
+  display_order int default 0,
+  active boolean not null default true,
+  is_default boolean not null default false,  -- seed 데이터 마킹용
+  created_at timestamptz default now()
+);
+create index if not exists expense_categories_active_idx on expense_categories (active);
+create index if not exists expense_categories_order_idx on expense_categories (display_order);
+
+-- v2.9: 사업자 유형 (일반/간이)
+alter table profile add column if not exists tax_payer_type text not null default 'general' check (tax_payer_type in ('general', 'simplified'));

@@ -7,7 +7,7 @@ const ITEMS: Array<{ href: string; label: string; matchPrefixes?: string[] }> = 
   { href: '/lessons', label: '수업', matchPrefixes: ['/lessons'] },
   { href: '/members', label: '회원', matchPrefixes: ['/members', '/pass-products', '/messages'] },
   { href: '/instructors', label: '강사', matchPrefixes: ['/instructors'] },
-  { href: '/finances', label: '재무', matchPrefixes: ['/finances', '/add', '/sales', '/tax', '/analytics'] },
+  { href: '/finances', label: '재무', matchPrefixes: ['/finances', '/add', '/sales', '/tax', '/analytics', '/finances/categories'] },
 ]
 
 export function Nav() {

@@ -18,6 +18,9 @@ export async function POST(req: Request) {
     if (typeof merged.noranusanAnnualContribution !== 'number' || merged.noranusanAnnualContribution < 0) {
       return NextResponse.json({ error: 'invalid noranusan amount' }, { status: 400 })
     }
+    if (!['general', 'simplified'].includes(merged.taxPayerType)) {
+      merged.taxPayerType = 'general'
+    }
     await saveProfile(merged)
     return NextResponse.json(merged)
   } catch (e) {

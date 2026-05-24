@@ -108,6 +108,28 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
         />
       </div>
 
+      <div>
+        <label className="block text-sm font-medium mb-1">사업자 유형</label>
+        <div className="flex gap-4 text-sm">
+          {(['general', 'simplified'] as const).map(t => (
+            <label key={t} className="flex items-center gap-1">
+              <input
+                type="radio"
+                name="taxPayerType"
+                checked={profile.taxPayerType === t}
+                onChange={() => setProfile({ ...profile, taxPayerType: t })}
+              />
+              {t === 'general' ? '일반과세자' : '간이과세자'}
+            </label>
+          ))}
+        </div>
+        <div className="text-xs text-neutral-500 mt-1">
+          {profile.taxPayerType === 'general'
+            ? '일반과세자: 부가세 = 매출세액 - 매입세액 공제'
+            : '간이과세자: 부가세 ≈ 매출 × 3% (서비스업). 연 매출 4,800만원 미만 시 면제.'}
+        </div>
+      </div>
+
       <button
         type="submit"
         className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"

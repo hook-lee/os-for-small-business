@@ -7,6 +7,7 @@ const TABS = [
   { href: '/sales', label: '매출' },
   { href: '/tax', label: '세금' },
   { href: '/analytics', label: '분석' },
+  { href: '/finances/categories', label: '카테고리' },
 ]
 
 export function FinancesTabBar() {

@@ -76,11 +76,12 @@ export default async function HomePage() {
   const unpaidInstructors = instructors.filter(i => i.role !== 'owner' && !paidInstructorIds.has(i.id))
 
   // Tax data (기존)
-  const vatResult = simulateVAT(transactions, year, quarter)
+  const vatResult = simulateVAT(transactions, year, quarter, { taxPayerType: profile?.taxPayerType ?? 'general' })
   const reserveResult = recommendReserve(transactions, today, {
     noranusanContribution: profile?.noranusanAnnualContribution ?? 0,
     pensionSavings: profile?.pensionAnnualContribution ?? 0,
     youngStartupReduction: (profile?.isYoungStartupEligible ? profile.youngStartupReductionRate : 0),
+    taxPayerType: profile?.taxPayerType ?? 'general',
   })
   const dueDates = getUpcomingDueDates(today)
   const nextDue = dueDates[0]

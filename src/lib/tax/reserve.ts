@@ -1,6 +1,10 @@
 import type { Transaction, ReserveRecommendation } from '@/types/domain'
-import { simulateVAT, type Quarter } from './vat'
+import { simulateVAT, type Quarter, type VATOptions } from './vat'
 import { simulateIncomeTax, type IncomeTaxOptions } from './income-tax'
+
+export interface ReserveOptions extends IncomeTaxOptions {
+  taxPayerType?: 'general' | 'simplified'
+}
 
 /**
  * 권장 월 예비비.
@@ -13,15 +17,17 @@ import { simulateIncomeTax, type IncomeTaxOptions } from './income-tax'
 export function recommendReserve(
   transactions: Transaction[],
   asOfDate: string,
-  options: IncomeTaxOptions = {},
+  options: ReserveOptions = {},
 ): ReserveRecommendation {
   const year = parseInt(asOfDate.slice(0, 4), 10)
   const month = parseInt(asOfDate.slice(5, 7), 10)
   const currentQuarter = Math.ceil(month / 3) as Quarter
 
+  const vatOptions: VATOptions = { taxPayerType: options.taxPayerType ?? 'general' }
+
   let vatSoFar = 0
   for (let q = 1; q <= currentQuarter; q++) {
-    const result = simulateVAT(transactions, year, q as Quarter)
+    const result = simulateVAT(transactions, year, q as Quarter, vatOptions)
     vatSoFar += Math.max(0, result.estimatedVAT)
   }
   const vatTotal = Math.round((vatSoFar * 4) / currentQuarter)

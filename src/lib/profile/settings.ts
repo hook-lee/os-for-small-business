@@ -7,6 +7,7 @@ export interface UserProfile {
   youngStartupReductionRate: 0 | 0.5 | 1.0
   noranusanAnnualContribution: number
   pensionAnnualContribution: number
+  taxPayerType: 'general' | 'simplified'
 }
 
 export const DEFAULT_PROFILE: UserProfile = {
@@ -16,6 +17,7 @@ export const DEFAULT_PROFILE: UserProfile = {
   youngStartupReductionRate: 0,
   noranusanAnnualContribution: 0,
   pensionAnnualContribution: 0,
+  taxPayerType: 'general',
 }
 
 interface ProfileRow {
@@ -26,6 +28,7 @@ interface ProfileRow {
   young_startup_reduction_rate: string | number  // PostgREST는 numeric을 문자열로 줌
   noranusan_annual_contribution: string | number
   pension_annual_contribution: string | number
+  tax_payer_type?: string | null
 }
 
 function rowToProfile(row: ProfileRow): UserProfile {
@@ -39,6 +42,7 @@ function rowToProfile(row: ProfileRow): UserProfile {
     youngStartupReductionRate,
     noranusanAnnualContribution: Number(row.noranusan_annual_contribution),
     pensionAnnualContribution: Number(row.pension_annual_contribution),
+    taxPayerType: (row.tax_payer_type === 'simplified' ? 'simplified' : 'general') as 'general' | 'simplified',
   }
 }
 
@@ -81,6 +85,7 @@ export async function saveProfile(profile: UserProfile): Promise<void> {
         young_startup_reduction_rate: profile.youngStartupReductionRate,
         noranusan_annual_contribution: profile.noranusanAnnualContribution,
         pension_annual_contribution: profile.pensionAnnualContribution,
+        tax_payer_type: profile.taxPayerType ?? 'general',
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'id' },

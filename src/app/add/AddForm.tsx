@@ -2,13 +2,14 @@
 
 import { useState, useEffect, type FormEvent } from 'react'
 import { Card } from '@/components/ui/Card'
+import type { ExpenseCategory } from '@/lib/supabase/categories'
 
 type TxType = '지출' | '매출'
 type Method = '카드' | '계좌이체' | '현금'
 
-const QUICK_CATEGORIES = [
-  '매출', '식비', '임대료', '마케팅비', '소모품', '공과금',
-  '교통비', '경조사비', '유진 급여', '예비비', '기타',
+const FALLBACK_CATEGORIES = [
+  '매출', '식비', '임대료', '광고선전비', '소모품비', '수도광열비',
+  '여비교통비', '경조사비', '대표자급여', '예비비', '기타',
 ]
 
 function today(): string {
@@ -30,7 +31,6 @@ export function AddForm() {
   const [amountStr, setAmountStr] = useState('')
   const [method, setMethod] = useState<Method>('카드')
   const [counterparty, setCounterparty] = useState('')
-  const [person, setPerson] = useState('')
   const [memo, setMemo] = useState('')
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
@@ -44,12 +44,16 @@ export function AddForm() {
   const [products, setProducts] = useState<Array<{id: number; name: string; passType: string; durationDays: number; totalCount: number; price: number}>>([])
   const [selectedPassProductId, setSelectedPassProductId] = useState<number|null>(null)
   const [paymentType, setPaymentType] = useState<'신규결제' | '재결제'>('신규결제')
+  const [categories, setCategories] = useState<ExpenseCategory[]>([])
 
   useEffect(() => {
     fetchRecent()
     fetch('/api/members').then(r => r.json()).then((j: { members?: Array<{id: number; name: string; phone: string|null}> }) => setMembers(j.members ?? []))
     fetch('/api/instructors').then(r => r.json()).then((j: { instructors?: Array<{id: number; name: string}> }) => setInstructors(j.instructors ?? []))
     fetch('/api/pass-products').then(r => r.json()).then((j: { products?: Array<{id: number; name: string; passType: string; durationDays: number; totalCount: number; price: number}> }) => setProducts(j.products ?? []))
+    fetch('/api/categories').then(r => r.json()).then((j: { categories?: ExpenseCategory[] }) => {
+      if (j.categories && j.categories.length > 0) setCategories(j.categories)
+    }).catch(() => { /* graceful — fallback */ })
   }, [])
 
   useEffect(() => {
@@ -148,7 +152,6 @@ export function AddForm() {
             amount: signedAmount,
             method,
             counterparty: counterparty || undefined,
-            person: person || undefined,
             memo: memo || undefined,
             memberId: selectedMemberId,
             instructorId: selectedInstructorId,
@@ -166,7 +169,6 @@ export function AddForm() {
       setStatus('saved')
       setAmountStr('')
       setCounterparty('')
-      setPerson('')
       setMemo('')
       setDate(today())
       setMemberQuery('')
@@ -229,7 +231,7 @@ export function AddForm() {
           <div>
             <label className="block text-sm font-medium mb-2 text-neutral-600">카테고리</label>
             <div className="flex flex-wrap gap-2">
-              {QUICK_CATEGORIES.map(cat => (
+              {(categories.length > 0 ? categories.map(c => c.name) : FALLBACK_CATEGORIES).map(cat => (
                 <button
                   key={cat}
                   type="button"
@@ -244,6 +246,14 @@ export function AddForm() {
                 </button>
               ))}
             </div>
+            {(() => {
+              const selectedCategoryObj = categories.find(c => c.name === rawCategory)
+              return selectedCategoryObj?.description ? (
+                <div className="text-xs text-neutral-600 bg-neutral-50 border border-neutral-200 rounded p-2 mt-1">
+                  💡 {selectedCategoryObj.description}
+                </div>
+              ) : null
+            })()}
           </div>
 
           {/* 결제 수단 */}
@@ -278,28 +288,16 @@ export function AddForm() {
             />
           </div>
 
-          {/* 거래처 / 사람 (선택) */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-neutral-600">거래처 (선택)</label>
-              <input
-                type="text"
-                value={counterparty}
-                onChange={e => setCounterparty(e.target.value)}
-                placeholder="예: 쿠팡"
-                className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-neutral-600">사람 (선택)</label>
-              <input
-                type="text"
-                value={person}
-                onChange={e => setPerson(e.target.value)}
-                placeholder="예: 유진"
-                className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+          {/* 거래처 (선택) */}
+          <div>
+            <label className="block text-sm font-medium mb-1 text-neutral-600">거래처 (선택)</label>
+            <input
+              type="text"
+              value={counterparty}
+              onChange={e => setCounterparty(e.target.value)}
+              placeholder="예: 쿠팡"
+              className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
 
           {/* 메모 */}
@@ -321,7 +319,8 @@ export function AddForm() {
                 💡 회원 + 수강권 둘 다 선택하시면 <strong>수강권 발급</strong>으로 자동 처리되어 매출 리포트의 신규결제/재결제로 분류됩니다. 둘 중 하나라도 비우면 잡매출(가계부)로 기록.
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1 text-neutral-600">회원 (선택)</label>
+                <label className="block text-sm font-medium mb-1 text-neutral-600">회원</label>
+                <div className="text-xs text-neutral-400 mb-1">수강권 발급 시 필수</div>
                 <input
                   type="text"
                   list="member-options"
@@ -368,8 +367,8 @@ export function AddForm() {
                 <div className="text-xs text-neutral-400 mt-1">선택하면 정가가 자동 입력됩니다 (수정 가능).</div>
               </div>
               {selectedMemberId && selectedPassProductId && (
-                <div>
-                  <label className="block text-sm font-medium mb-2 text-neutral-600">결제 구분</label>
+                <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                  <label className="block text-sm font-bold mb-2 text-blue-800">결제 구분</label>
                   <div className="flex gap-2">
                     {(['신규결제', '재결제'] as const).map(t => (
                       <button
@@ -379,15 +378,15 @@ export function AddForm() {
                         className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
                           paymentType === t
                             ? 'bg-blue-600 text-white'
-                            : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                            : 'bg-white text-neutral-700 hover:bg-blue-100 border border-blue-200'
                         }`}
                       >
                         {t}
                       </button>
                     ))}
                   </div>
-                  <div className="text-xs text-neutral-400 mt-1">
-                    회원 + 수강권 선택했으니 수강권 발급으로 처리됩니다. 매출 리포트의 &ldquo;{paymentType}&rdquo;으로 분류됨.
+                  <div className="text-xs text-blue-700 mt-1">
+                    매출 리포트의 &ldquo;{paymentType}&rdquo;으로 분류됩니다. 직접 선택하세요.
                   </div>
                 </div>
               )}
