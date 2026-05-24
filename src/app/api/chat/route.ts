@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic'
 interface ChatRequestBody {
   message: string
   history?: ChatMessage[]
+  context?: { pathname?: string; pageLabel?: string }
 }
 
 export async function POST(req: Request) {
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
 
   try {
     const result = await chatWithTools({
-      systemInstruction: buildSystemPrompt(),
+      systemInstruction: buildSystemPrompt(body.context ?? {}),
       history,
       userMessage: message,
       tools: ALL_TOOLS,

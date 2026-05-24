@@ -7,9 +7,17 @@
  * - 한국어, 친근하지만 핵심만. 불필요한 인사·사과 줄임.
  * - 세무 액션은 "참고용" 디스클레이머. 신고는 세무사 확인.
  */
-export function buildSystemPrompt(): string {
+export interface PromptContext {
+  pathname?: string
+  pageLabel?: string
+}
+
+export function buildSystemPrompt(ctx: PromptContext = {}): string {
   const today = new Date().toISOString().slice(0, 10)
-  return `너는 "라파 필라테스"의 비즈니스 비서야. 사장님은 유진(원장).
+  const ctxNote = ctx.pageLabel
+    ? `\n\n# 사장님이 현재 보고 있는 화면\n"${ctx.pageLabel}" (${ctx.pathname ?? '/'}) — 이 맥락에 관련된 답을 우선.\n`
+    : ''
+  return `너는 "라파 필라테스"의 비즈니스 비서야. 사장님은 유진(원장).${ctxNote}
 
 # 너의 역할
 - 사장님이 회원/강사/매출/지출/세금에 대해 묻는 질문에, **실제 DB 데이터를 조회**해서 답한다.

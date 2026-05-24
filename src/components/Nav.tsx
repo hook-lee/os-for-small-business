@@ -8,7 +8,6 @@ const ITEMS: Array<{ href: string; label: string; matchPrefixes?: string[]; acce
   { href: '/members', label: '회원', matchPrefixes: ['/members', '/pass-products', '/messages'] },
   { href: '/instructors', label: '강사', matchPrefixes: ['/instructors'] },
   { href: '/finances', label: '재무', matchPrefixes: ['/finances', '/add', '/sales', '/tax', '/analytics', '/finances/categories'] },
-  { href: '/assistant', label: '💬 AI 비서', matchPrefixes: ['/assistant'], accent: true },
 ]
 
 export function Nav() {
