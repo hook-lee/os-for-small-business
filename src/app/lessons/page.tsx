@@ -2,6 +2,7 @@ import { fetchLessonsByDate, fetchLessonsByMonth } from '@/lib/supabase/lessons'
 import { fetchAllInstructors } from '@/lib/supabase/instructors'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { LessonsManager } from './LessonsManager'
+import { LessonsTabs } from './LessonsTabs'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,11 +16,14 @@ export default async function LessonsPage({ searchParams }: { searchParams: Prom
     : [[], [], []]
 
   return (
-    <LessonsManager
-      initialDate={date}
-      initialLessons={lessons}
-      monthLessons={monthLessons}
-      instructors={instructors}
-    />
+    <>
+      <LessonsTabs current="individual" />
+      <LessonsManager
+        initialDate={date}
+        initialLessons={lessons}
+        monthLessons={monthLessons}
+        instructors={instructors}
+      />
+    </>
   )
 }

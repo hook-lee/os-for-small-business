@@ -24,3 +24,34 @@ alter table payroll_records add column if not exists tax_withholding bigint not 
 -- v2.7: 회원 접근 토큰 (per-member URL access)
 alter table members add column if not exists access_token text;
 create unique index if not exists members_access_token_uniq on members (access_token) where access_token is not null;
+
+-- v2.8: 그룹 수업 세션 + 예약
+create table if not exists group_sessions (
+  id bigint generated always as identity primary key,
+  instructor_id bigint references instructors(id) on delete set null,
+  session_name text not null,
+  lesson_date date not null,
+  lesson_time text not null,
+  duration_minutes int default 50,
+  capacity int not null default 4,
+  notes text,
+  active boolean not null default true,
+  created_at timestamptz default now()
+);
+create index if not exists group_sessions_date_idx on group_sessions (lesson_date);
+create index if not exists group_sessions_active_idx on group_sessions (active);
+
+create table if not exists group_reservations (
+  id bigint generated always as identity primary key,
+  session_id bigint not null references group_sessions(id) on delete cascade,
+  member_id bigint not null references members(id) on delete cascade,
+  pass_id bigint references passes(id) on delete set null,
+  status text not null default 'reserved' check (status in ('reserved','cancelled','attended','noshow')),
+  deducted boolean not null default false,
+  reserved_at timestamptz default now(),
+  cancelled_at timestamptz,
+  created_at timestamptz default now(),
+  unique (session_id, member_id)
+);
+create index if not exists group_reservations_session_idx on group_reservations (session_id);
+create index if not exists group_reservations_member_idx on group_reservations (member_id);
