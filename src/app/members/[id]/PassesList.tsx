@@ -87,6 +87,38 @@ export function PassesList({ initial }: { initial: Pass[] }) {
     }
   }
 
+  async function handleBonus(p: Pass) {
+    const deltaStr = prompt(`${p.passName} 보너스 회차 추가\n\n+회차 입력 (예: 1, 2)\n차감하려면 -1, -2 등 음수`, '1')
+    if (deltaStr === null) return
+    const delta = parseInt(deltaStr, 10)
+    if (!Number.isFinite(delta) || delta === 0) { alert('0 아닌 정수 입력 필요'); return }
+    const reason = prompt('사유 입력 (예: 신규 10회 결제 서비스, 강사 노쇼 보상)')
+    if (!reason || !reason.trim()) { alert('사유는 필수입니다'); return }
+    try {
+      const res = await fetch(`/api/passes/${p.id}/bonus`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delta, reason: reason.trim() }),
+      })
+      const json = await res.json() as { ok?: boolean; error?: string }
+      if (!res.ok) { alert(`실패: ${json.error ?? 'unknown'}`); return }
+      // optimistic
+      setPasses(prev => prev.map(pp =>
+        pp.id === p.id
+          ? {
+              ...pp,
+              totalCount: (pp.totalCount ?? 0) + delta,
+              remainingCount: (pp.remainingCount ?? 0) + delta,
+              availableCount: (pp.availableCount ?? 0) + delta,
+            }
+          : pp
+      ))
+      router.refresh()
+    } catch {
+      alert('실패: 네트워크 오류')
+    }
+  }
+
   if (passes.length === 0) return <div className="text-sm text-neutral-400">수강권 이력 없음</div>
 
   return (
@@ -174,6 +206,13 @@ export function PassesList({ initial }: { initial: Pass[] }) {
                     >
                       {p.status ?? '—'}
                     </span>
+                    <button
+                      onClick={() => handleBonus(p)}
+                      className="text-xs text-emerald-700 hover:text-emerald-900 px-2 py-1 rounded hover:bg-emerald-50 border border-emerald-200"
+                      title="회차 보너스/차감"
+                    >
+                      +회차
+                    </button>
                     <button
                       onClick={() => startEdit(p)}
                       className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50"

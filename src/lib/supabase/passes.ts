@@ -187,3 +187,73 @@ export async function updatePass(id: number, patch: UpdatePassInput): Promise<vo
   const { error } = await supabase.from('passes').update(dbPatch).eq('id', id)
   if (error) throw new Error(`Update pass failed: ${error.message}`)
 }
+
+/**
+ * 수강권 회차 보너스/차감.
+ * delta > 0: 보너스 (예: 신규 10회 결제 시 +1)
+ * delta < 0: 차감
+ * total_count, remaining_count, available_count 모두 delta만큼 조정.
+ * pass_adjustments에 로그 기록.
+ */
+export async function adjustPassCount(passId: number, delta: number, reason: string): Promise<void> {
+  if (!Number.isFinite(delta) || delta === 0) throw new Error('delta must be a non-zero integer')
+  if (!reason || !reason.trim()) throw new Error('reason 필수')
+
+  const supabase = getSupabaseClient()
+  // 현재 값 조회
+  const { data: row, error: readErr } = await supabase
+    .from('passes')
+    .select('total_count, remaining_count, available_count')
+    .eq('id', passId)
+    .single()
+  if (readErr || !row) throw new Error(`Pass not found: ${readErr?.message ?? passId}`)
+
+  const r = row as { total_count: number | null; remaining_count: number | null; available_count: number | null }
+  const newTotal = (r.total_count ?? 0) + delta
+  const newRemaining = (r.remaining_count ?? 0) + delta
+  const newAvailable = (r.available_count ?? 0) + delta
+
+  if (newRemaining < 0 || newAvailable < 0) throw new Error('잔여/사용가능 회차가 0 미만이 됩니다')
+
+  const { error: updErr } = await supabase
+    .from('passes')
+    .update({
+      total_count: newTotal,
+      remaining_count: newRemaining,
+      available_count: newAvailable,
+      last_modified_at: new Date().toISOString().slice(0, 10),
+    })
+    .eq('id', passId)
+  if (updErr) throw new Error(`Adjust pass failed: ${updErr.message}`)
+
+  // 로그 기록 (실패해도 메인 작업은 성공으로 처리 — 로그 부재가 비즈니스 차단점은 아님)
+  const { error: logErr } = await supabase
+    .from('pass_adjustments')
+    .insert({ pass_id: passId, delta, reason: reason.trim() })
+  if (logErr) console.warn(`pass_adjustments log failed: ${logErr.message}`)
+}
+
+export interface PassAdjustment {
+  id: number
+  passId: number
+  delta: number
+  reason: string
+  createdAt: string
+}
+
+export async function fetchAdjustmentsByPass(passId: number): Promise<PassAdjustment[]> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase
+    .from('pass_adjustments')
+    .select('*')
+    .eq('pass_id', passId)
+    .order('created_at', { ascending: false })
+  if (error) return []
+  return ((data ?? []) as Array<{ id: number; pass_id: number; delta: number; reason: string; created_at: string }>).map(r => ({
+    id: r.id,
+    passId: r.pass_id,
+    delta: r.delta,
+    reason: r.reason,
+    createdAt: r.created_at,
+  }))
+}

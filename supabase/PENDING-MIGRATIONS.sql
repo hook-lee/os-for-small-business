@@ -74,3 +74,14 @@ create index if not exists expense_categories_order_idx on expense_categories (d
 
 -- v2.9: 사업자 유형 (일반/간이)
 alter table profile add column if not exists tax_payer_type text not null default 'general' check (tax_payer_type in ('general', 'simplified'));
+
+-- v2.10: 수강권 회차 조정 이력 (보너스/차감 로그)
+create table if not exists pass_adjustments (
+  id bigint generated always as identity primary key,
+  pass_id bigint not null references passes(id) on delete cascade,
+  delta int not null,            -- +N (보너스) / -N (차감)
+  reason text not null,           -- 사유 (예: 신규 10회 결제 서비스)
+  created_at timestamptz default now()
+);
+create index if not exists pass_adjustments_pass_idx on pass_adjustments (pass_id);
+create index if not exists pass_adjustments_created_idx on pass_adjustments (created_at desc);
