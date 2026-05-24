@@ -1,9 +1,39 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useState, useMemo, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import type { PassProduct } from '@/lib/supabase/pass-products'
+
+const GROUP_COLORS: Record<string, string> = {
+  '개인': '#a855f7',
+  '듀엣': '#6366f1',
+  '재활': '#f43f5e',
+  '2:1 소그룹': '#f97316',
+  '체험': '#14b8a6',
+  '듀엣 체험': '#10b981',
+}
+
+const GROUP_BG: Record<string, string> = {
+  '개인': 'bg-purple-50',
+  '듀엣': 'bg-indigo-50',
+  '재활': 'bg-rose-50',
+  '2:1 소그룹': 'bg-orange-50',
+  '체험': 'bg-teal-50',
+  '듀엣 체험': 'bg-emerald-50',
+}
+
+const GROUP_ORDER = ['개인', '듀엣', '재활', '2:1 소그룹', '체험', '듀엣 체험', '기타']
+
+function normalizeGroupKey(name: string): string {
+  const trimmed = name.trim()
+  if (trimmed === '2:1소그룹') return '2:1 소그룹'
+  return trimmed
+}
+
+function getGroupColor(groupKey: string): string {
+  return GROUP_COLORS[groupKey] ?? '#9ca3af'
+}
 
 type FormState = {
   name: string
@@ -89,6 +119,30 @@ export function PassProductsManager({ initial }: { initial: PassProduct[] }) {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
+  const grouped = useMemo(() => {
+    const map = new Map<string, PassProduct[]>()
+    for (const p of initial) {
+      const key = normalizeGroupKey(p.name)
+      const arr = map.get(key) ?? []
+      arr.push(p)
+      map.set(key, arr)
+    }
+    for (const [, arr] of map) {
+      arr.sort((a, b) => a.durationDays - b.durationDays || a.totalCount - b.totalCount)
+    }
+    const sortedGroups: Array<{ key: string; products: PassProduct[] }> = []
+    for (const key of GROUP_ORDER) {
+      if (map.has(key)) {
+        sortedGroups.push({ key, products: map.get(key)! })
+        map.delete(key)
+      }
+    }
+    for (const [key, products] of [...map.entries()].sort()) {
+      sortedGroups.push({ key, products })
+    }
+    return sortedGroups
+  }, [initial])
+
   async function handleAdd(e: FormEvent) {
     e.preventDefault()
     const v = formToPayload(addForm)
@@ -170,51 +224,69 @@ export function PassProductsManager({ initial }: { initial: PassProduct[] }) {
 
       {error && <div className="text-sm text-red-600">{error}</div>}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {initial.map(p => (
-          <Card key={p.id} className="space-y-2" style={p.color ? { borderTop: `4px solid ${p.color}` } : undefined}>
-            {editingId === p.id ? (
-              <>
-                <FormFields form={editForm} setForm={setEditForm} />
-                <div className="flex gap-2 mt-3">
-                  <button onClick={() => handleSaveEdit(p.id)} disabled={busy} className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm disabled:bg-blue-300">
-                    {busy ? '저장 중...' : '저장'}
-                  </button>
-                  <button onClick={() => { setEditingId(null); setError('') }} className="text-sm text-neutral-500">취소</button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="font-semibold text-base">{p.name}</div>
-                    <div className="text-xs text-neutral-500">{p.passType} · {p.durationDays}일 · {p.totalCount}회</div>
-                  </div>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => { setEditingId(p.id); setEditForm(productToForm(p)); setError('') }}
-                      className="text-xs text-blue-600 hover:text-blue-800 px-1.5 py-0.5 rounded hover:bg-blue-50"
-                    >
-                      수정
-                    </button>
-                    <button
-                      onClick={() => handleDelete(p)}
-                      className="text-xs text-red-500 hover:text-red-700 px-1.5 py-0.5 rounded hover:bg-red-50"
-                    >
-                      삭제
-                    </button>
-                  </div>
-                </div>
-                <div className="text-xl font-bold tabular-nums">{p.price.toLocaleString()}원</div>
-                {p.perUnitPrice && <div className="text-xs text-neutral-500">회당 {p.perUnitPrice.toLocaleString()}원</div>}
-              </>
-            )}
-          </Card>
-        ))}
-        {initial.length === 0 && (
-          <div className="text-sm text-neutral-500 col-span-full">상품이 아직 없습니다. + 상품 추가 버튼을 누르세요.</div>
-        )}
-      </div>
+      {initial.length === 0 && (
+        <div className="text-sm text-neutral-500">상품이 아직 없습니다. + 상품 추가 버튼을 누르세요.</div>
+      )}
+
+      {grouped.map(({ key, products }) => {
+        const color = getGroupColor(key)
+        const bg = GROUP_BG[key] ?? 'bg-neutral-50'
+        return (
+          <section key={key} className="space-y-3">
+            <div className="flex items-center gap-2 mt-4">
+              <span className="inline-block w-4 h-4 rounded" style={{ backgroundColor: color }} />
+              <h3 className="text-base font-semibold">{key}</h3>
+              <span className="text-xs text-neutral-500">{products.length}개 상품</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {products.map(p => (
+                <Card
+                  key={p.id}
+                  className={`${bg} space-y-2`}
+                  style={{ borderTop: `4px solid ${color}` }}
+                >
+                  {editingId === p.id ? (
+                    <>
+                      <FormFields form={editForm} setForm={setEditForm} />
+                      <div className="flex gap-2 mt-3">
+                        <button onClick={() => handleSaveEdit(p.id)} disabled={busy} className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm disabled:bg-blue-300">
+                          {busy ? '저장 중...' : '저장'}
+                        </button>
+                        <button onClick={() => { setEditingId(null); setError('') }} className="text-sm text-neutral-500">취소</button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-xs text-neutral-500">{p.passType}</div>
+                          <div className="font-semibold text-sm mt-0.5">{p.durationDays}일 · {p.totalCount}회</div>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => { setEditingId(p.id); setEditForm(productToForm(p)); setError('') }}
+                            className="text-xs text-blue-600 hover:text-blue-800 px-1.5 py-0.5 rounded hover:bg-white"
+                          >
+                            수정
+                          </button>
+                          <button
+                            onClick={() => handleDelete(p)}
+                            className="text-xs text-red-500 hover:text-red-700 px-1.5 py-0.5 rounded hover:bg-white"
+                          >
+                            삭제
+                          </button>
+                        </div>
+                      </div>
+                      <div className="text-xl font-bold tabular-nums">{p.price.toLocaleString()}원</div>
+                      {p.perUnitPrice && <div className="text-xs text-neutral-500">회당 {p.perUnitPrice.toLocaleString()}원</div>}
+                    </>
+                  )}
+                </Card>
+              ))}
+            </div>
+          </section>
+        )
+      })}
     </div>
   )
 }

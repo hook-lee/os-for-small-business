@@ -43,6 +43,7 @@ export function AddForm() {
   const [selectedInstructorId, setSelectedInstructorId] = useState<number|null>(null)
   const [products, setProducts] = useState<Array<{id: number; name: string; passType: string; durationDays: number; totalCount: number; price: number}>>([])
   const [selectedPassProductId, setSelectedPassProductId] = useState<number|null>(null)
+  const [paymentType, setPaymentType] = useState<'신규결제' | '재결제'>('신규결제')
 
   useEffect(() => {
     fetchRecent()
@@ -109,30 +110,59 @@ export function AddForm() {
     }
     setStatus('saving')
     setErrorMsg('')
-    const signedAmount = txType === '매출' ? Math.abs(amount) : -Math.abs(amount)
+
+    const isPassIssuance = txType === '매출' && selectedMemberId && selectedPassProductId
+
     try {
-      const res = await fetch('/api/transactions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          date,
-          rawCategory,
-          amount: signedAmount,
-          method,
-          counterparty: counterparty || undefined,
-          person: person || undefined,
-          memo: memo || undefined,
-          memberId: selectedMemberId,
-          instructorId: selectedInstructorId,
-          passProductId: selectedPassProductId,
-        }),
-      })
-      const json = await res.json() as { ok?: boolean; error?: string }
-      if (!res.ok) {
-        setErrorMsg(json.error ?? '저장 실패')
-        setStatus('error')
-        return
+      if (isPassIssuance) {
+        // 수강권 발급 모드 → /api/passes POST
+        const res = await fetch('/api/passes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            memberId: selectedMemberId,
+            instructorId: selectedInstructorId,
+            productId: selectedPassProductId,
+            startDate: date,
+            paymentAmount: Math.abs(amount),
+            paymentMethod: method,
+            paymentType,
+            installment: '일시불',
+          }),
+        })
+        const json = await res.json() as { ok?: boolean; error?: string }
+        if (!res.ok) {
+          setErrorMsg(json.error ?? '발급 실패')
+          setStatus('error')
+          return
+        }
+      } else {
+        // 잡매출 or 지출 → /api/transactions POST (기존 로직)
+        const signedAmount = txType === '매출' ? Math.abs(amount) : -Math.abs(amount)
+        const res = await fetch('/api/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            date,
+            rawCategory,
+            amount: signedAmount,
+            method,
+            counterparty: counterparty || undefined,
+            person: person || undefined,
+            memo: memo || undefined,
+            memberId: selectedMemberId,
+            instructorId: selectedInstructorId,
+            passProductId: selectedPassProductId,
+          }),
+        })
+        const json = await res.json() as { ok?: boolean; error?: string }
+        if (!res.ok) {
+          setErrorMsg(json.error ?? '저장 실패')
+          setStatus('error')
+          return
+        }
       }
+
       setStatus('saved')
       setAmountStr('')
       setCounterparty('')
@@ -143,6 +173,7 @@ export function AddForm() {
       setSelectedMemberId(null)
       setSelectedInstructorId(null)
       setSelectedPassProductId(null)
+      setPaymentType('신규결제')
       setTimeout(() => setStatus('idle'), 2500)
       await fetchRecent()
     } catch {
@@ -286,6 +317,9 @@ export function AddForm() {
           {/* 회원·강사 연동 (매출일 때만) */}
           {showMemberInstructor && (
             <>
+              <div className="text-xs text-neutral-600 bg-blue-50 border border-blue-200 px-3 py-2 rounded">
+                💡 회원 + 수강권 둘 다 선택하시면 <strong>수강권 발급</strong>으로 자동 처리되어 매출 리포트의 신규결제/재결제로 분류됩니다. 둘 중 하나라도 비우면 잡매출(가계부)로 기록.
+              </div>
               <div>
                 <label className="block text-sm font-medium mb-1 text-neutral-600">회원 (선택)</label>
                 <input
@@ -333,7 +367,38 @@ export function AddForm() {
                 </select>
                 <div className="text-xs text-neutral-400 mt-1">선택하면 정가가 자동 입력됩니다 (수정 가능).</div>
               </div>
+              {selectedMemberId && selectedPassProductId && (
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-neutral-600">결제 구분</label>
+                  <div className="flex gap-2">
+                    {(['신규결제', '재결제'] as const).map(t => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setPaymentType(t)}
+                        className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          paymentType === t
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="text-xs text-neutral-400 mt-1">
+                    회원 + 수강권 선택했으니 수강권 발급으로 처리됩니다. 매출 리포트의 &ldquo;{paymentType}&rdquo;으로 분류됨.
+                  </div>
+                </div>
+              )}
             </>
+          )}
+
+          {/* 수강권 발급 힌트 */}
+          {(txType === '매출' || rawCategory === '매출') && selectedMemberId !== null && selectedPassProductId !== null && (
+            <div className="text-xs text-blue-600 text-center">
+              💡 저장 시 회원에게 수강권 발급됩니다 ({paymentType})
+            </div>
           )}
 
           {/* 저장 버튼 */}
@@ -348,7 +413,10 @@ export function AddForm() {
                   : 'bg-blue-600 hover:bg-blue-700'
             }`}
           >
-            {status === 'saving' ? '저장 중...' : status === 'saved' ? '저장됨' : '저장'}
+            {status === 'saving' ? '저장 중...'
+              : status === 'saved' ? '저장됨'
+              : (txType === '매출' && selectedMemberId && selectedPassProductId) ? `${paymentType} 발급`
+              : '저장'}
           </button>
 
           {/* 오류 메시지 */}
