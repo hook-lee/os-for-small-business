@@ -1,0 +1,48 @@
+import { NextResponse } from 'next/server'
+import { hasSupabaseConfig, getSupabaseClient } from '@/lib/supabase/client'
+
+interface BulkSessionInput {
+  sessionName: string
+  instructorId?: number | null
+  lessonTime: string
+  capacity?: number
+  durationMinutes?: number
+  notes?: string
+  dates: string[]   // YYYY-MM-DD[]
+}
+
+export async function POST(req: Request) {
+  if (!hasSupabaseConfig()) return NextResponse.json({ error: 'Supabase 미설정' }, { status: 503 })
+  try {
+    const body = await req.json() as Partial<BulkSessionInput>
+    if (!body.sessionName) return NextResponse.json({ error: 'sessionName 필수' }, { status: 400 })
+    if (!body.lessonTime) return NextResponse.json({ error: 'lessonTime 필수' }, { status: 400 })
+    if (!Array.isArray(body.dates) || body.dates.length === 0) {
+      return NextResponse.json({ error: 'dates 배열 필수 (1개 이상)' }, { status: 400 })
+    }
+    for (const d of body.dates) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        return NextResponse.json({ error: `잘못된 날짜 형식: ${d}` }, { status: 400 })
+      }
+    }
+    const uniqueDates = Array.from(new Set(body.dates))
+
+    const supabase = getSupabaseClient()
+    const rows = uniqueDates.map(d => ({
+      session_name: body.sessionName!,
+      instructor_id: body.instructorId ?? null,
+      lesson_date: d,
+      lesson_time: body.lessonTime!,
+      duration_minutes: body.durationMinutes ?? 50,
+      capacity: body.capacity ?? 4,
+      notes: body.notes ?? null,
+      active: true,
+    }))
+    const { data, error } = await supabase.from('group_sessions').insert(rows).select('id')
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    return NextResponse.json({ ok: true, count: data?.length ?? 0, ids: (data ?? []).map((r: { id: number }) => r.id) })
+  } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
+  }
+}

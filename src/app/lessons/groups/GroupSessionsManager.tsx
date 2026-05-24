@@ -1,12 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import type { GroupSession } from '@/lib/supabase/group-sessions'
 import type { Instructor } from '@/lib/supabase/instructors'
+import { generateRepeatDates, WEEKDAY_LABELS } from '@/lib/dates/repeat'
 
 interface Props {
   initialSessions: GroupSession[]
   instructors: Instructor[]
+}
+
+const DEFAULT_FORM = {
+  sessionName: '',
+  instructorId: '',
+  lessonDate: new Date().toISOString().slice(0, 10),
+  lessonTime: '10:00',
+  capacity: '4',
+  durationMinutes: '50',
+  notes: '',
 }
 
 export function GroupSessionsManager({ initialSessions, instructors }: Props) {
@@ -14,55 +25,81 @@ export function GroupSessionsManager({ initialSessions, instructors }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  const [form, setForm] = useState({
-    sessionName: '',
-    instructorId: '',
-    lessonDate: new Date().toISOString().slice(0, 10),
-    lessonTime: '10:00',
-    capacity: '4',
-    durationMinutes: '50',
-    notes: '',
-  })
+  const [form, setForm] = useState(DEFAULT_FORM)
+  // 반복 옵션
+  const [repeatEnabled, setRepeatEnabled] = useState(false)
+  const [repeatEnd, setRepeatEnd] = useState(new Date().toISOString().slice(0, 10))
+  const [repeatWeekdays, setRepeatWeekdays] = useState<Set<number>>(new Set())
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }))
   }
+
+  function toggleWeekday(d: number) {
+    setRepeatWeekdays(prev => {
+      const next = new Set(prev)
+      if (next.has(d)) next.delete(d); else next.add(d)
+      return next
+    })
+  }
+
+  const repeatPreviewCount = useMemo(() => {
+    if (!repeatEnabled) return 0
+    return generateRepeatDates(form.lessonDate, repeatEnd, Array.from(repeatWeekdays)).length
+  }, [repeatEnabled, form.lessonDate, repeatEnd, repeatWeekdays])
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
     setSaving(true)
     try {
-      const res = await fetch('/api/group-sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionName: form.sessionName,
-          instructorId: form.instructorId ? Number(form.instructorId) : null,
-          lessonDate: form.lessonDate,
-          lessonTime: form.lessonTime,
-          capacity: Number(form.capacity),
-          durationMinutes: Number(form.durationMinutes),
-          notes: form.notes || undefined,
-        }),
-      })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? '생성 실패')
+      if (repeatEnabled) {
+        const weekdayArr = Array.from(repeatWeekdays)
+        if (weekdayArr.length === 0) { setError('요일 1개 이상 선택'); setSaving(false); return }
+        const dates = generateRepeatDates(form.lessonDate, repeatEnd, weekdayArr)
+        if (dates.length === 0) { setError('생성될 날짜가 없습니다'); setSaving(false); return }
+        if (dates.length > 200) { setError(`너무 많습니다 (${dates.length}건). 200건 이하로`); setSaving(false); return }
+
+        const res = await fetch('/api/group-sessions/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionName: form.sessionName,
+            instructorId: form.instructorId ? Number(form.instructorId) : null,
+            lessonTime: form.lessonTime,
+            capacity: Number(form.capacity),
+            durationMinutes: Number(form.durationMinutes),
+            notes: form.notes || undefined,
+            dates,
+          }),
+        })
+        const json = await res.json()
+        if (!res.ok) throw new Error(json.error ?? '생성 실패')
+        alert(`✓ ${json.count}개의 그룹 세션이 생성되었습니다`)
+      } else {
+        const res = await fetch('/api/group-sessions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            sessionName: form.sessionName,
+            instructorId: form.instructorId ? Number(form.instructorId) : null,
+            lessonDate: form.lessonDate,
+            lessonTime: form.lessonTime,
+            capacity: Number(form.capacity),
+            durationMinutes: Number(form.durationMinutes),
+            notes: form.notes || undefined,
+          }),
+        })
+        const json = await res.json()
+        if (!res.ok) throw new Error(json.error ?? '생성 실패')
+      }
       // Refresh list
       const listRes = await fetch('/api/group-sessions')
       const listJson = await listRes.json()
       setSessions(listJson.sessions ?? [])
       setShowForm(false)
-      setForm({
-        sessionName: '',
-        instructorId: '',
-        lessonDate: new Date().toISOString().slice(0, 10),
-        lessonTime: '10:00',
-        capacity: '4',
-        durationMinutes: '50',
-        notes: '',
-      })
+      setForm(DEFAULT_FORM)
+      setRepeatEnabled(false); setRepeatWeekdays(new Set())
     } catch (err) {
       setError((err as Error).message)
     } finally {
@@ -171,13 +208,78 @@ export function GroupSessionsManager({ initialSessions, instructors }: Props) {
               className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </div>
+
+          {/* 반복 옵션 */}
+          <div className="border border-neutral-200 rounded-lg p-3 bg-neutral-50 space-y-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={repeatEnabled}
+                onChange={e => setRepeatEnabled(e.target.checked)}
+              />
+              <span className="text-sm font-medium">🔁 반복 등록 (정기 그룹 수업)</span>
+            </label>
+            {repeatEnabled && (
+              <div className="space-y-2 pt-1">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-neutral-600 mb-1">시작일</label>
+                    <input
+                      type="date"
+                      value={form.lessonDate}
+                      onChange={e => setForm(f => ({ ...f, lessonDate: e.target.value }))}
+                      className="w-full border border-neutral-300 rounded px-2 py-1 text-sm"
+                    />
+                    <div className="text-[10px] text-neutral-400 mt-0.5">위 &lsquo;날짜&rsquo;와 동일 — 시작일로 사용</div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-neutral-600 mb-1">종료일</label>
+                    <input
+                      type="date"
+                      value={repeatEnd}
+                      onChange={e => setRepeatEnd(e.target.value)}
+                      className="w-full border border-neutral-300 rounded px-2 py-1 text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-neutral-600 mb-1">요일 (복수 선택)</label>
+                  <div className="flex gap-1 flex-wrap">
+                    {WEEKDAY_LABELS.map((label, i) => {
+                      const checked = repeatWeekdays.has(i)
+                      const isWeekend = i === 0 || i === 6
+                      return (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => toggleWeekday(i)}
+                          className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${
+                            checked
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : `bg-white border-neutral-300 hover:bg-neutral-100 ${isWeekend ? (i === 0 ? 'text-red-500' : 'text-blue-500') : 'text-neutral-700'}`
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div className="text-xs text-blue-700 bg-blue-50 rounded px-2 py-1.5">
+                  💡 예상 생성: <strong>{repeatPreviewCount}개</strong> 세션 · 시간 <strong>{form.lessonTime}</strong> · 정원 {form.capacity}명/세션
+                  {repeatPreviewCount > 200 && <span className="text-red-600"> (200개 초과 — 범위 줄이세요)</span>}
+                </div>
+              </div>
+            )}
+          </div>
+
           {error && <div className="text-red-500 text-xs">{error}</div>}
           <button
             type="submit"
             disabled={saving}
             className="w-full py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
-            {saving ? '저장 중...' : '세션 생성'}
+            {saving ? '저장 중...' : repeatEnabled ? `반복 ${repeatPreviewCount}개 일괄 생성` : '세션 생성'}
           </button>
         </form>
       )}

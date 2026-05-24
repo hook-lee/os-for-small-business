@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card'
 import type { LessonWithNames, LessonStatus } from '@/lib/supabase/lessons'
 import { STATUS_LABEL } from '@/lib/supabase/lessons'
 import type { Instructor } from '@/lib/supabase/instructors'
+import { generateRepeatDates, WEEKDAY_LABELS } from '@/lib/dates/repeat'
 
 function buildMonthGrid(yearMonth: string): { date: string | null }[][] {
   const [y, m] = yearMonth.split('-').map(Number)
@@ -61,6 +62,11 @@ export function LessonsManager({ initialDate, initialLessons, monthLessons = [],
   const [lessonTime, setLessonTime] = useState('10:00')
   const [memo, setMemo] = useState('')
   const [saving, setSaving] = useState(false)
+  // 반복 옵션
+  const [repeatEnabled, setRepeatEnabled] = useState(false)
+  const [repeatStart, setRepeatStart] = useState(initialDate)
+  const [repeatEnd, setRepeatEnd] = useState(initialDate)
+  const [repeatWeekdays, setRepeatWeekdays] = useState<Set<number>>(new Set())
 
   useEffect(() => {
     if (addOpen && members.length === 0) {
@@ -76,7 +82,13 @@ export function LessonsManager({ initialDate, initialLessons, monthLessons = [],
   useEffect(() => {
     if (selectedMemberId) {
       fetch(`/api/members/${selectedMemberId}/passes`).then(r => r.json())
-        .then((j: { passes?: PassOption[] }) => setMemberPasses(j.passes ?? []))
+        .then((j: { passes?: PassOption[] }) => {
+          const list = j.passes ?? []
+          setMemberPasses(list)
+          // 활성 수강권 자동 선택 (이용중 + 잔여 > 0 첫 번째)
+          const active = list.find(p => p.status === '이용중' && (p.remainingCount ?? 0) > 0)
+          setSelectedPassId(active?.id ?? null)
+        })
         .catch(() => setMemberPasses([]))
     } else {
       setMemberPasses([])
@@ -102,31 +114,72 @@ export function LessonsManager({ initialDate, initialLessons, monthLessons = [],
     if (!selectedMemberId) { setError('회원을 선택하세요'); return }
     setSaving(true); setError('')
     try {
-      const res = await fetch('/api/lessons', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          memberId: selectedMemberId,
-          passId: selectedPassId,
-          instructorId: selectedInstructorId,
-          lessonDate: date,
-          lessonTime,
-          memo: memo || undefined,
-        }),
-      })
-      const json = await res.json() as { ok?: boolean; error?: string }
-      if (!res.ok) { setError(json.error ?? '저장 실패'); return }
+      if (repeatEnabled) {
+        // 반복 모드: 날짜 배열 생성 + bulk POST
+        const weekdayArr = Array.from(repeatWeekdays)
+        if (weekdayArr.length === 0) { setError('요일을 1개 이상 선택하세요'); setSaving(false); return }
+        if (repeatStart > repeatEnd) { setError('시작일이 종료일보다 늦습니다'); setSaving(false); return }
+        const dates = generateRepeatDates(repeatStart, repeatEnd, weekdayArr)
+        if (dates.length === 0) { setError('생성될 날짜가 없습니다 (범위 또는 요일 확인)'); setSaving(false); return }
+        if (dates.length > 200) { setError(`너무 많습니다 (${dates.length}건). 200건 이하로 줄이세요`); setSaving(false); return }
+
+        const res = await fetch('/api/lessons/bulk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            memberId: selectedMemberId,
+            passId: selectedPassId,
+            instructorId: selectedInstructorId,
+            lessonTime,
+            memo: memo || undefined,
+            dates,
+          }),
+        })
+        const json = await res.json() as { ok?: boolean; count?: number; error?: string }
+        if (!res.ok) { setError(json.error ?? '저장 실패'); return }
+        alert(`✓ ${json.count}건의 수업이 등록되었습니다`)
+      } else {
+        const res = await fetch('/api/lessons', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            memberId: selectedMemberId,
+            passId: selectedPassId,
+            instructorId: selectedInstructorId,
+            lessonDate: date,
+            lessonTime,
+            memo: memo || undefined,
+          }),
+        })
+        const json = await res.json() as { ok?: boolean; error?: string }
+        if (!res.ok) { setError(json.error ?? '저장 실패'); return }
+      }
       // Reset form
       setMemberQuery(''); setSelectedMemberId(null); setSelectedPassId(null)
       setSelectedInstructorId(null); setMemo('')
+      setRepeatEnabled(false); setRepeatWeekdays(new Set())
       setAddOpen(false)
       await reloadLessons()
+      router.refresh()
     } catch {
       setError('네트워크 오류')
     } finally {
       setSaving(false)
     }
   }
+
+  function toggleWeekday(d: number) {
+    setRepeatWeekdays(prev => {
+      const next = new Set(prev)
+      if (next.has(d)) next.delete(d); else next.add(d)
+      return next
+    })
+  }
+
+  const repeatPreviewCount = useMemo(() => {
+    if (!repeatEnabled) return 0
+    return generateRepeatDates(repeatStart, repeatEnd, Array.from(repeatWeekdays)).length
+  }, [repeatEnabled, repeatStart, repeatEnd, repeatWeekdays])
 
   async function handleStatusChange(lessonId: number, newStatus: LessonStatus) {
     try {
@@ -282,6 +335,12 @@ export function LessonsManager({ initialDate, initialLessons, monthLessons = [],
                     </option>
                   ))}
                 </select>
+                {selectedMemberId && memberPasses.length === 0 && (
+                  <div className="text-[11px] text-amber-700 mt-0.5">⚠ 이 회원은 활성 수강권이 없습니다 (차감 없이 기록됨)</div>
+                )}
+                {selectedMemberId && memberPasses.length > 0 && selectedPassId !== null && (
+                  <div className="text-[11px] text-emerald-700 mt-0.5">✓ 완료/당일취소/노쇼 시 자동 차감됨</div>
+                )}
               </div>
               <div>
                 <label className="block text-xs text-neutral-600 mb-1">담당 강사</label>
@@ -318,6 +377,68 @@ export function LessonsManager({ initialDate, initialLessons, monthLessons = [],
               </div>
             </div>
 
+            {/* 반복 옵션 */}
+            <div className="border border-neutral-200 rounded p-3 bg-neutral-50 space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={repeatEnabled}
+                  onChange={e => setRepeatEnabled(e.target.checked)}
+                />
+                <span className="text-sm font-medium">🔁 반복 등록 (정기 수업)</span>
+              </label>
+              {repeatEnabled && (
+                <div className="space-y-2 pt-1">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-neutral-600 mb-1">시작일</label>
+                      <input
+                        type="date"
+                        value={repeatStart}
+                        onChange={e => setRepeatStart(e.target.value)}
+                        className="w-full border border-neutral-300 rounded px-2 py-1 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-neutral-600 mb-1">종료일</label>
+                      <input
+                        type="date"
+                        value={repeatEnd}
+                        onChange={e => setRepeatEnd(e.target.value)}
+                        className="w-full border border-neutral-300 rounded px-2 py-1 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-neutral-600 mb-1">요일 (복수 선택)</label>
+                    <div className="flex gap-1 flex-wrap">
+                      {WEEKDAY_LABELS.map((label, i) => {
+                        const checked = repeatWeekdays.has(i)
+                        const isWeekend = i === 0 || i === 6
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => toggleWeekday(i)}
+                            className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${
+                              checked
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : `bg-white border-neutral-300 hover:bg-neutral-100 ${isWeekend ? (i === 0 ? 'text-red-500' : 'text-blue-500') : 'text-neutral-700'}`
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                  <div className="text-xs text-blue-700 bg-blue-50 rounded px-2 py-1.5">
+                    💡 예상 생성: <strong>{repeatPreviewCount}건</strong> · 시간 <strong>{lessonTime}</strong> · {repeatPreviewCount > 200 ? <span className="text-red-600">200건 초과 — 범위 줄이세요</span> : `한 번에 ${repeatPreviewCount}건 일괄 등록됩니다`}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {error && <div className="text-sm text-red-600">{error}</div>}
 
             <div className="flex gap-2">
@@ -326,7 +447,7 @@ export function LessonsManager({ initialDate, initialLessons, monthLessons = [],
                 disabled={saving || !selectedMemberId}
                 className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm disabled:bg-blue-300"
               >
-                {saving ? '저장 중...' : '예약 추가'}
+                {saving ? '저장 중...' : repeatEnabled ? `반복 ${repeatPreviewCount}건 일괄 등록` : '예약 추가'}
               </button>
             </div>
           </div>
