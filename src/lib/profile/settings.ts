@@ -68,27 +68,52 @@ export async function loadProfile(): Promise<UserProfile> {
 /**
  * 프로필 저장 (upsert, id=1 고정). 실패 시 throw — API route가 400/500 응답.
  * Vercel serverless는 fs write가 불가능해 Supabase로 영속.
+ *
+ * v2.9 마이그레이션(tax_payer_type 컬럼) 미실행 환경 graceful 처리:
+ * 컬럼 부재 에러 발생 시 그 필드만 빼고 재시도. 마이그레이션 후엔 정상 저장.
  */
 export async function saveProfile(profile: UserProfile): Promise<void> {
   if (!hasSupabaseConfig()) {
     throw new Error('Supabase 미설정 — SUPABASE_URL/SERVICE_ROLE_KEY 환경변수 필요')
   }
   const supabase = getSupabaseClient()
+  const baseFields: Record<string, unknown> = {
+    id: 1,
+    birth_date: profile.birthDate,
+    business_address: profile.businessAddress,
+    is_young_startup_eligible: profile.isYoungStartupEligible,
+    young_startup_reduction_rate: profile.youngStartupReductionRate,
+    noranusan_annual_contribution: profile.noranusanAnnualContribution,
+    pension_annual_contribution: profile.pensionAnnualContribution,
+    updated_at: new Date().toISOString(),
+  }
+
+  // 1차 시도: tax_payer_type 포함
   const { error } = await supabase
     .from('profile')
     .upsert(
-      {
-        id: 1,
-        birth_date: profile.birthDate,
-        business_address: profile.businessAddress,
-        is_young_startup_eligible: profile.isYoungStartupEligible,
-        young_startup_reduction_rate: profile.youngStartupReductionRate,
-        noranusan_annual_contribution: profile.noranusanAnnualContribution,
-        pension_annual_contribution: profile.pensionAnnualContribution,
-        tax_payer_type: profile.taxPayerType ?? 'general',
-        updated_at: new Date().toISOString(),
-      },
+      { ...baseFields, tax_payer_type: profile.taxPayerType ?? 'general' },
       { onConflict: 'id' },
     )
-  if (error) throw new Error(`프로필 저장 실패: ${error.message}`)
+
+  if (!error) return
+
+  // tax_payer_type 컬럼이 아직 없으면(=v2.9 마이그레이션 미실행) → 그 필드만 빼고 재시도
+  const isTaxPayerTypeMissing =
+    error.message.includes('tax_payer_type') &&
+    (error.message.includes('column') || error.message.includes('schema cache'))
+
+  if (isTaxPayerTypeMissing) {
+    const { error: retryError } = await supabase
+      .from('profile')
+      .upsert(baseFields, { onConflict: 'id' })
+    if (retryError) {
+      throw new Error(`프로필 저장 실패: ${retryError.message}`)
+    }
+    // 다른 필드는 저장 성공. tax_payer_type만 누락 → 콘솔 경고
+    console.warn('[profile] tax_payer_type 저장 누락: v2.9 마이그레이션 필요 (PENDING-MIGRATIONS.sql)')
+    return
+  }
+
+  throw new Error(`프로필 저장 실패: ${error.message}`)
 }
