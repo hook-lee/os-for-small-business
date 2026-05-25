@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { updateCategory, deleteCategory } from '@/lib/supabase/categories'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export async function PATCH(
   req: Request,
@@ -9,6 +10,8 @@ export async function PATCH(
   if (!hasSupabaseConfig()) {
     return NextResponse.json({ error: 'Supabase 미설정' }, { status: 503 })
   }
+  let ownerId: string
+  try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   try {
     const { id: idStr } = await params
     const id = parseInt(idStr, 10)
@@ -34,7 +37,7 @@ export async function PATCH(
       incomeTaxDeductible: body.incomeTaxDeductible,
       displayOrder: body.displayOrder,
       active: body.active,
-    })
+    }, ownerId)
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })
@@ -48,11 +51,13 @@ export async function DELETE(
   if (!hasSupabaseConfig()) {
     return NextResponse.json({ error: 'Supabase 미설정' }, { status: 503 })
   }
+  let ownerId: string
+  try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   try {
     const { id: idStr } = await params
     const id = parseInt(idStr, 10)
     if (isNaN(id)) return NextResponse.json({ error: 'invalid id' }, { status: 400 })
-    await deleteCategory(id)
+    await deleteCategory(id, ownerId)
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })

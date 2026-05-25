@@ -9,6 +9,7 @@ import { PassesList } from './PassesList'
 import { MemberMemoEditor } from './MemberMemoEditor'
 import { MemberEditor } from './MemberEditor'
 import { MemberAccessLink } from './MemberAccessLink'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,12 +18,13 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
   const { id: idRaw } = await params
   const id = parseInt(idRaw, 10)
   if (!Number.isFinite(id)) notFound()
+  const ownerId = await requireOwnerId().catch(() => 'no-auth')
 
   const today = new Date().toISOString().slice(0, 10)
   const [m, passes, lessons] = await Promise.all([
-    fetchMemberById(id),
-    fetchPassesByMember(id),
-    fetchLessonsByMember(id),
+    fetchMemberById(id, ownerId),
+    fetchPassesByMember(id, ownerId),
+    fetchLessonsByMember(id, ownerId),
   ])
   if (!m) notFound()
 

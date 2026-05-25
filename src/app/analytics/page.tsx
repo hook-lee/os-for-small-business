@@ -3,12 +3,14 @@ import { aggregateMonthly } from '@/lib/analytics/monthly'
 import { KpiCard } from '@/components/ui/KpiCard'
 import { MonthlyBarChart } from '@/components/Charts/MonthlyBarChart'
 import { FinancesTabBar } from '@/components/FinancesTabBar'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 300
 
 export default async function AnalyticsPage() {
-  const transactions = await loadTransactions()
+  const ownerId = await requireOwnerId().catch(() => 'no-auth')
+  const transactions = await loadTransactions(ownerId)
   const monthly = aggregateMonthly(transactions)
   const currentYear = new Date().getFullYear()
 

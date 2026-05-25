@@ -3,10 +3,13 @@ import { loadTransactions, invalidateCache } from '@/lib/data/loader'
 import { normalizeCategory, classify } from '@/lib/categories/normalize'
 import { insertTransaction } from '@/lib/supabase/transactions'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export async function GET() {
+  let ownerId: string
+  try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   try {
-    const transactions = await loadTransactions()
+    const transactions = await loadTransactions(ownerId)
     return NextResponse.json({ transactions, cachedAt: new Date().toISOString() })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })
@@ -17,6 +20,8 @@ export async function POST(req: Request) {
   if (!hasSupabaseConfig()) {
     return NextResponse.json({ error: 'Supabase 미설정 — 입력하려면 SUPABASE_URL/SERVICE_ROLE_KEY 필요' }, { status: 503 })
   }
+  let ownerId: string
+  try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   try {
     const body = await req.json() as {
       date?: string; rawCategory?: string; amount?: number; method?: string;
@@ -47,8 +52,8 @@ export async function POST(req: Request) {
       memberId: body.memberId ?? null,
       instructorId: body.instructorId ?? null,
       passProductId: body.passProductId ?? null,
-    })
-    invalidateCache()
+    }, ownerId)
+    invalidateCache(ownerId)
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })

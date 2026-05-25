@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server'
 import { fetchAllMembers, insertMember, type NewMemberInput } from '@/lib/supabase/members'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export async function GET() {
   if (!hasSupabaseConfig()) {
     return NextResponse.json({ members: [] })
   }
+  let ownerId: string
+  try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   try {
-    const members = await fetchAllMembers()
+    const members = await fetchAllMembers(ownerId)
     return NextResponse.json({ members })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })
@@ -16,6 +19,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   if (!hasSupabaseConfig()) return NextResponse.json({ error: 'Supabase 미설정' }, { status: 503 })
+  let ownerId: string
+  try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   try {
     const body = await req.json() as Partial<NewMemberInput> & { name?: string }
     if (!body.name || typeof body.name !== 'string') {
@@ -32,7 +37,7 @@ export async function POST(req: Request) {
       memo: body.memo ?? null,
       tier: body.tier ?? null,
       appConnected: body.appConnected ?? false,
-    })
+    }, ownerId)
     return NextResponse.json({ ok: true, id })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })

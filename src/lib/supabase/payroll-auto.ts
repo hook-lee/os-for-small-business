@@ -1,7 +1,7 @@
 import { getSupabaseClient } from './client'
 import { bucketLessonCounts } from '@/lib/analytics/payroll-auto'
 
-export async function fetchAutoPayrollCounts(instructorId: number, yearMonth: string): Promise<{
+export async function fetchAutoPayrollCounts(instructorId: number, yearMonth: string, ownerId: string): Promise<{
   privateCount: number; rehabCount: number; duetCount: number; groupCount: number;
   individualLessonsCount: number;
   groupSessionsCount: number;
@@ -13,21 +13,25 @@ export async function fetchAutoPayrollCounts(instructorId: number, yearMonth: st
     const start = `${yearMonth}-01`
     const end = `${yearMonth}-${String(lastDay).padStart(2, '0')}`
 
-    const { data: lessons } = await supabase
+    let lessonsQ = supabase
       .from('lessons')
       .select('pass_id, passes(pass_name)')
       .eq('instructor_id', instructorId)
       .gte('lesson_date', start)
       .lte('lesson_date', end)
       .in('status', ['completed', 'cancelled_same_day', 'noshow'])
+    if (ownerId !== 'no-auth') lessonsQ = lessonsQ.eq('owner_id', ownerId)
+    const { data: lessons } = await lessonsQ
 
-    const { data: groupSessions } = await supabase
+    let groupQ = supabase
       .from('group_sessions')
       .select('id')
       .eq('instructor_id', instructorId)
       .eq('active', true)
       .gte('lesson_date', start)
       .lte('lesson_date', end)
+    if (ownerId !== 'no-auth') groupQ = groupQ.eq('owner_id', ownerId)
+    const { data: groupSessions } = await groupQ
 
     type LessonRow = { pass_id: number | null; passes: { pass_name: string } | { pass_name: string }[] | null }
     const passNames = ((lessons ?? []) as LessonRow[]).map(l => {

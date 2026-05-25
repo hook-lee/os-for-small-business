@@ -6,6 +6,7 @@ import { fetchPayrollByMonth } from '@/lib/supabase/payroll'
 import { loadTransactions } from '@/lib/data/loader'
 import { loadProfile } from '@/lib/profile/settings'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 import { findExpiringMembers, findDormantMembers } from '@/lib/analytics/member-segments'
 import { computePassesKPI, filterPassesByRange } from '@/lib/analytics/sales-report'
 import { simulateVAT, type Quarter } from '@/lib/tax/vat'
@@ -40,23 +41,24 @@ export default async function HomePage() {
   let todayLessons: Awaited<ReturnType<typeof fetchLessonsByDate>> = []
   let payrollRecords: Awaited<ReturnType<typeof fetchPayrollByMonth>> = []
 
+  const ownerId = await requireOwnerId().catch(() => 'no-auth')
   try {
-    transactions = await loadTransactions()
+    transactions = await loadTransactions(ownerId)
   } catch {}
 
   if (hasSupabaseConfig()) {
     try {
       ;[members, passes, instructors, todayLessons, payrollRecords] = await Promise.all([
-        fetchAllMembers(),
-        fetchAllPasses(),
-        fetchAllInstructors(),
-        fetchLessonsByDate(today),
-        fetchPayrollByMonth(yearMonth),
+        fetchAllMembers(ownerId),
+        fetchAllPasses(ownerId),
+        fetchAllInstructors(ownerId),
+        fetchLessonsByDate(today, ownerId),
+        fetchPayrollByMonth(yearMonth, ownerId),
       ])
     } catch {}
   }
 
-  const profile = await loadProfile().catch(() => null)
+  const profile = await loadProfile(ownerId).catch(() => null)
 
   // KPIs
   const activeMemberIds = new Set<number>()

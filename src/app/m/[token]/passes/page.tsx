@@ -11,7 +11,7 @@ export default async function MemberPassesPage({ params }: { params: Promise<{ t
   const member = await fetchMemberByToken(token)
   if (!member) notFound()
 
-  const passes = await fetchPassesByMember(member.id)
+  const passes = await fetchPassesByMember(member.id, member.ownerId ?? 'no-auth')
   const active = passes.filter(p => p.status === '이용중')
   const expired = passes.filter(p => p.status !== '이용중')
 

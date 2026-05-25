@@ -12,9 +12,10 @@ export default async function MemberHome({ params }: { params: Promise<{ token: 
   const member = await fetchMemberByToken(token)
   if (!member) notFound()
 
+  const memberOwnerId = member.ownerId ?? 'no-auth'
   const [activePasses, allLessons] = await Promise.all([
-    fetchActivePassesByMember(member.id),
-    fetchLessonsByMember(member.id),
+    fetchActivePassesByMember(member.id, memberOwnerId),
+    fetchLessonsByMember(member.id, memberOwnerId),
   ])
 
   const today = new Date().toISOString().slice(0, 10)

@@ -4,6 +4,7 @@ import { computeInstructorKPI, groupPassesByMember } from '@/lib/analytics/instr
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/Card'
 import { notFound } from 'next/navigation'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,16 +17,17 @@ export default async function InstructorDetailPage({
   const { id: idRaw } = await params
   const id = parseInt(idRaw, 10)
   if (!Number.isFinite(id)) notFound()
+  const ownerId = await requireOwnerId().catch(() => 'no-auth')
 
-  const instructor = await fetchInstructorById(id)
+  const instructor = await fetchInstructorById(id, ownerId)
   if (!instructor) notFound()
 
-  const members = await fetchMembersByInstructor(id)
+  const members = await fetchMembersByInstructor(id, ownerId)
 
   // KPI 계산
   let kpi: ReturnType<typeof computeInstructorKPI> | null = null
   try {
-    const allPasses = await fetchAllPasses()
+    const allPasses = await fetchAllPasses(ownerId)
     const instructorPasses = allPasses.filter(p => p.instructorId === id)
     const allByMember = groupPassesByMember(allPasses)
     kpi = computeInstructorKPI(id, instructorPasses, allByMember)

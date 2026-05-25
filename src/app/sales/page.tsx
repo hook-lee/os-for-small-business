@@ -4,6 +4,7 @@ import { loadTransactions } from '@/lib/data/loader'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { SalesReport } from './SalesReport'
 import { FinancesTabBar } from '@/components/FinancesTabBar'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,13 +15,14 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
   let passes: Awaited<ReturnType<typeof fetchAllPasses>> = []
   let instructors: Awaited<ReturnType<typeof fetchAllInstructors>> = []
   let transactions: Awaited<ReturnType<typeof loadTransactions>> = []
+  const ownerId = await requireOwnerId().catch(() => 'no-auth')
 
   if (hasSupabaseConfig()) {
     try {
       ;[passes, instructors, transactions] = await Promise.all([
-        fetchAllPasses(),
-        fetchAllInstructors(),
-        loadTransactions(),
+        fetchAllPasses(ownerId),
+        fetchAllInstructors(ownerId),
+        loadTransactions(ownerId),
       ])
     } catch {
       // fallback to empty

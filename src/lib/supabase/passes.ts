@@ -71,19 +71,21 @@ export function rowToPass(row: PassRow): Pass {
   }
 }
 
-export async function fetchPassesByMember(memberId: number): Promise<Pass[]> {
+export async function fetchPassesByMember(memberId: number, ownerId: string): Promise<Pass[]> {
   const supabase = getSupabaseClient()
-  const { data, error } = await supabase
+  let q = supabase
     .from('passes')
     .select('*')
     .eq('member_id', memberId)
     .order('paid_at', { ascending: false, nullsFirst: false })
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { data, error } = await q
   if (error) throw new Error(`Supabase passes fetch failed: ${error.message}`)
   return ((data ?? []) as PassRow[]).map(rowToPass)
 }
 
-export async function fetchActivePassesByMember(memberId: number): Promise<Pass[]> {
-  const all = await fetchPassesByMember(memberId)
+export async function fetchActivePassesByMember(memberId: number, ownerId: string): Promise<Pass[]> {
+  const all = await fetchPassesByMember(memberId, ownerId)
   return all.filter(p => p.status === '이용중' && (p.remainingCount ?? 0) > 0)
 }
 
@@ -100,7 +102,8 @@ export interface IssuePassInput {
 
 export async function issuePass(
   input: IssuePassInput,
-  product: { name: string; passType: '프라이빗' | '그룹'; durationDays: number; totalCount: number; price: number }
+  product: { name: string; passType: '프라이빗' | '그룹'; durationDays: number; totalCount: number; price: number },
+  ownerId: string,
 ): Promise<number> {
   const supabase = getSupabaseClient()
   // end_date 계산: start_date + duration_days
@@ -110,44 +113,48 @@ export async function issuePass(
   const endDate = end.toISOString().slice(0, 10)
   const today = new Date().toISOString().slice(0, 10)
 
+  const row: Record<string, unknown> = {
+    member_id: input.memberId,
+    instructor_id: input.instructorId,
+    pass_name: product.name,
+    pass_type: product.passType,
+    start_date: input.startDate,
+    end_date: endDate,
+    total_count: product.totalCount,
+    remaining_count: product.totalCount,
+    available_count: product.totalCount,
+    cancellable_count: product.totalCount,
+    status: '이용중',
+    payment_type: input.paymentType ?? '신규결제',
+    payment_amount: input.paymentAmount ?? product.price,
+    paid_at: today,
+    payment_method: input.paymentMethod ?? '카드',
+    installment: input.installment ?? '일시불',
+    is_family: false,
+    issued_at: today,
+  }
+  if (ownerId !== 'no-auth') row.owner_id = ownerId
   const { data, error } = await supabase
     .from('passes')
-    .insert({
-      member_id: input.memberId,
-      instructor_id: input.instructorId,
-      pass_name: product.name,
-      pass_type: product.passType,
-      start_date: input.startDate,
-      end_date: endDate,
-      total_count: product.totalCount,
-      remaining_count: product.totalCount,
-      available_count: product.totalCount,
-      cancellable_count: product.totalCount,
-      status: '이용중',
-      payment_type: input.paymentType ?? '신규결제',
-      payment_amount: input.paymentAmount ?? product.price,
-      paid_at: today,
-      payment_method: input.paymentMethod ?? '카드',
-      installment: input.installment ?? '일시불',
-      is_family: false,
-      issued_at: today,
-    })
+    .insert(row)
     .select('id')
     .single()
   if (error) throw new Error(`Issue pass failed: ${error.message}`)
   return (data as { id: number }).id
 }
 
-export async function fetchAllPasses(): Promise<Pass[]> {
+export async function fetchAllPasses(ownerId: string): Promise<Pass[]> {
   const supabase = getSupabaseClient()
   const PAGE = 1000
   const all: Pass[] = []
   for (let from = 0; ; from += PAGE) {
-    const { data, error } = await supabase
+    let q = supabase
       .from('passes')
       .select('*')
       .order('paid_at', { ascending: true, nullsFirst: false })
       .range(from, from + PAGE - 1)
+    if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+    const { data, error } = await q
     if (error) throw new Error(`Supabase passes fetch failed: ${error.message}`)
     const rows = (data ?? []) as PassRow[]
     if (rows.length === 0) break
@@ -157,9 +164,11 @@ export async function fetchAllPasses(): Promise<Pass[]> {
   return all
 }
 
-export async function deletePass(id: number): Promise<void> {
+export async function deletePass(id: number, ownerId: string): Promise<void> {
   const supabase = getSupabaseClient()
-  const { error } = await supabase.from('passes').delete().eq('id', id)
+  let q = supabase.from('passes').delete().eq('id', id)
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { error } = await q
   if (error) throw new Error(`Delete pass failed: ${error.message}`)
 }
 
@@ -173,7 +182,7 @@ export interface UpdatePassInput {
   paymentAmount?: number
 }
 
-export async function updatePass(id: number, patch: UpdatePassInput): Promise<void> {
+export async function updatePass(id: number, patch: UpdatePassInput, ownerId: string): Promise<void> {
   const supabase = getSupabaseClient()
   const dbPatch: Record<string, unknown> = { last_modified_at: new Date().toISOString().slice(0, 10) }
   if (patch.instructorId !== undefined) dbPatch.instructor_id = patch.instructorId
@@ -184,7 +193,9 @@ export async function updatePass(id: number, patch: UpdatePassInput): Promise<vo
   if (patch.endDate !== undefined) dbPatch.end_date = patch.endDate
   if (patch.paymentAmount !== undefined) dbPatch.payment_amount = patch.paymentAmount
 
-  const { error } = await supabase.from('passes').update(dbPatch).eq('id', id)
+  let q = supabase.from('passes').update(dbPatch).eq('id', id)
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { error } = await q
   if (error) throw new Error(`Update pass failed: ${error.message}`)
 }
 
@@ -195,17 +206,18 @@ export async function updatePass(id: number, patch: UpdatePassInput): Promise<vo
  * total_count, remaining_count, available_count 모두 delta만큼 조정.
  * pass_adjustments에 로그 기록.
  */
-export async function adjustPassCount(passId: number, delta: number, reason: string): Promise<void> {
+export async function adjustPassCount(passId: number, delta: number, reason: string, ownerId: string): Promise<void> {
   if (!Number.isFinite(delta) || delta === 0) throw new Error('delta must be a non-zero integer')
   if (!reason || !reason.trim()) throw new Error('reason 필수')
 
   const supabase = getSupabaseClient()
-  // 현재 값 조회
-  const { data: row, error: readErr } = await supabase
+  // 현재 값 조회 (owner_id 격리)
+  let readQ = supabase
     .from('passes')
     .select('total_count, remaining_count, available_count')
     .eq('id', passId)
-    .single()
+  if (ownerId !== 'no-auth') readQ = readQ.eq('owner_id', ownerId)
+  const { data: row, error: readErr } = await readQ.single()
   if (readErr || !row) throw new Error(`Pass not found: ${readErr?.message ?? passId}`)
 
   const r = row as { total_count: number | null; remaining_count: number | null; available_count: number | null }
@@ -215,7 +227,7 @@ export async function adjustPassCount(passId: number, delta: number, reason: str
 
   if (newRemaining < 0 || newAvailable < 0) throw new Error('잔여/사용가능 회차가 0 미만이 됩니다')
 
-  const { error: updErr } = await supabase
+  let updQ = supabase
     .from('passes')
     .update({
       total_count: newTotal,
@@ -224,9 +236,12 @@ export async function adjustPassCount(passId: number, delta: number, reason: str
       last_modified_at: new Date().toISOString().slice(0, 10),
     })
     .eq('id', passId)
+  if (ownerId !== 'no-auth') updQ = updQ.eq('owner_id', ownerId)
+  const { error: updErr } = await updQ
   if (updErr) throw new Error(`Adjust pass failed: ${updErr.message}`)
 
   // 로그 기록 (실패해도 메인 작업은 성공으로 처리 — 로그 부재가 비즈니스 차단점은 아님)
+  // pass_adjustments는 owner_id 컬럼 없음 (마이그레이션 SQL 12개 테이블에 포함 안 됨) → 기존 그대로
   const { error: logErr } = await supabase
     .from('pass_adjustments')
     .insert({ pass_id: passId, delta, reason: reason.trim() })

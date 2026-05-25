@@ -11,7 +11,7 @@ export default async function MemberLessonsPage({ params }: { params: Promise<{ 
   const member = await fetchMemberByToken(token)
   if (!member) notFound()
 
-  const lessons = await fetchLessonsByMember(member.id)
+  const lessons = await fetchLessonsByMember(member.id, member.ownerId ?? 'no-auth')
   const today = new Date().toISOString().slice(0, 10)
   const upcoming = lessons.filter(l => l.lessonDate >= today).sort((a, b) =>
     a.lessonDate.localeCompare(b.lessonDate) || (a.lessonTime ?? '').localeCompare(b.lessonTime ?? '')

@@ -6,6 +6,7 @@ import { findExpiringMembers, findDormantMembers } from '@/lib/analytics/member-
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { MessagesComposer } from './MessagesComposer'
 import { MembersTabBar } from '@/components/MembersTabBar'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,10 +16,11 @@ export default async function MessagesPage() {
   let instructors: Awaited<ReturnType<typeof fetchAllInstructors>> = []
   let passes: Awaited<ReturnType<typeof fetchAllPasses>> = []
   let recent: Awaited<ReturnType<typeof fetchRecentMessages>> = []
+  const ownerId = await requireOwnerId().catch(() => 'no-auth')
   if (hasSupabaseConfig()) {
     try {
       ;[members, instructors, passes, recent] = await Promise.all([
-        fetchAllMembers(), fetchAllInstructors(), fetchAllPasses(), fetchRecentMessages(20),
+        fetchAllMembers(ownerId), fetchAllInstructors(ownerId), fetchAllPasses(ownerId), fetchRecentMessages(ownerId, 20),
       ])
     } catch {}
   }

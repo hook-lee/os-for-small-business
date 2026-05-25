@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server'
 import { fetchAllPassProducts, insertPassProduct } from '@/lib/supabase/pass-products'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export async function GET() {
   if (!hasSupabaseConfig()) return NextResponse.json({ products: [] })
+  let ownerId: string
+  try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   try {
-    const products = await fetchAllPassProducts()
+    const products = await fetchAllPassProducts(ownerId)
     return NextResponse.json({ products })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })
@@ -14,6 +17,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   if (!hasSupabaseConfig()) return NextResponse.json({ error: 'Supabase 미설정' }, { status: 503 })
+  let ownerId: string
+  try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   try {
     const body = await req.json() as {
       name?: string
@@ -40,7 +45,7 @@ export async function POST(req: Request) {
       perUnitPrice: body.perUnitPrice ?? null,
       displayOrder: body.displayOrder ?? 0,
       color: body.color ?? null,
-    })
+    }, ownerId)
     return NextResponse.json({ ok: true, id })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })

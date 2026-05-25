@@ -2,15 +2,17 @@ import { fetchAllCategories } from '@/lib/supabase/categories'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { FinancesTabBar } from '@/components/FinancesTabBar'
 import { CategoriesManager } from './CategoriesManager'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export const dynamic = 'force-dynamic'
 
 export default async function CategoriesPage() {
   let categories: Awaited<ReturnType<typeof fetchAllCategories>> = []
+  const ownerId = await requireOwnerId().catch(() => 'no-auth')
 
   if (hasSupabaseConfig()) {
     try {
-      categories = await fetchAllCategories()
+      categories = await fetchAllCategories(ownerId)
     } catch {
       // graceful fallback
     }

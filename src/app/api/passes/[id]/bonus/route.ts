@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { adjustPassCount } from '@/lib/supabase/passes'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!hasSupabaseConfig()) return NextResponse.json({ error: 'Supabase 미설정' }, { status: 503 })
+  let ownerId: string
+  try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   const { id: idRaw } = await params
   const passId = parseInt(idRaw, 10)
   if (!Number.isFinite(passId) || passId <= 0) {
@@ -19,7 +22,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!reason.trim()) {
       return NextResponse.json({ error: '사유는 필수' }, { status: 400 })
     }
-    await adjustPassCount(passId, Math.trunc(delta), reason)
+    await adjustPassCount(passId, Math.trunc(delta), reason, ownerId)
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })

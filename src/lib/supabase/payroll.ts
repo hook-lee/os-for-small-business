@@ -56,13 +56,15 @@ function rowToPayroll(row: PayrollRow): PayrollRecord {
   }
 }
 
-export async function fetchPayrollByMonth(yearMonth: string): Promise<PayrollRecord[]> {
+export async function fetchPayrollByMonth(yearMonth: string, ownerId: string): Promise<PayrollRecord[]> {
   try {
     const supabase = getSupabaseClient()
-    const { data, error } = await supabase
+    let q = supabase
       .from('payroll_records')
       .select('*')
       .eq('year_month', yearMonth)
+    if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+    const { data, error } = await q
     if (error) return []
     return ((data ?? []) as PayrollRow[]).map(rowToPayroll)
   } catch {
@@ -86,25 +88,27 @@ export interface UpsertPayrollInput {
   paidAt?: string | null
 }
 
-export async function upsertPayroll(input: UpsertPayrollInput): Promise<void> {
+export async function upsertPayroll(input: UpsertPayrollInput, ownerId: string): Promise<void> {
   const supabase = getSupabaseClient()
+  const row: Record<string, unknown> = {
+    instructor_id: input.instructorId,
+    year_month: input.yearMonth,
+    private_count: input.privateCount,
+    rehab_count: input.rehabCount,
+    duet_count: input.duetCount,
+    group_count: input.groupCount,
+    total_amount: input.totalAmount,
+    bonus: input.bonus ?? 0,
+    deduction: input.deduction ?? 0,
+    tax_withholding: input.taxWithholding ?? 0,
+    memo: input.memo ?? null,
+    paid: input.paid ?? false,
+    paid_at: input.paidAt ?? null,
+    updated_at: new Date().toISOString(),
+  }
+  if (ownerId !== 'no-auth') row.owner_id = ownerId
   const { error } = await supabase
     .from('payroll_records')
-    .upsert({
-      instructor_id: input.instructorId,
-      year_month: input.yearMonth,
-      private_count: input.privateCount,
-      rehab_count: input.rehabCount,
-      duet_count: input.duetCount,
-      group_count: input.groupCount,
-      total_amount: input.totalAmount,
-      bonus: input.bonus ?? 0,
-      deduction: input.deduction ?? 0,
-      tax_withholding: input.taxWithholding ?? 0,
-      memo: input.memo ?? null,
-      paid: input.paid ?? false,
-      paid_at: input.paidAt ?? null,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'instructor_id,year_month' })
+    .upsert(row, { onConflict: 'instructor_id,year_month' })
   if (error) throw new Error(`Upsert payroll failed: ${error.message}`)
 }

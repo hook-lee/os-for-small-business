@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
 import { updatePassProduct, deletePassProduct, type UpdatePassProductInput } from '@/lib/supabase/pass-products'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!hasSupabaseConfig()) return NextResponse.json({ error: 'Supabase 미설정' }, { status: 503 })
+  let ownerId: string
+  try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   const { id: idRaw } = await params
   const id = parseInt(idRaw, 10)
   if (!Number.isFinite(id) || id <= 0) return NextResponse.json({ error: '유효하지 않은 id' }, { status: 400 })
@@ -12,7 +15,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (body.passType !== undefined && !['프라이빗', '그룹'].includes(body.passType)) {
       return NextResponse.json({ error: '유효하지 않은 passType' }, { status: 400 })
     }
-    await updatePassProduct(id, body)
+    await updatePassProduct(id, body, ownerId)
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })
@@ -21,11 +24,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!hasSupabaseConfig()) return NextResponse.json({ error: 'Supabase 미설정' }, { status: 503 })
+  let ownerId: string
+  try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   const { id: idRaw } = await params
   const id = parseInt(idRaw, 10)
   if (!Number.isFinite(id) || id <= 0) return NextResponse.json({ error: '유효하지 않은 id' }, { status: 400 })
   try {
-    await deletePassProduct(id)
+    await deletePassProduct(id, ownerId)
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })

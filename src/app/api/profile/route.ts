@@ -1,15 +1,29 @@
 import { NextResponse } from 'next/server'
-import { loadProfile, saveProfile, DEFAULT_PROFILE, type UserProfile } from '@/lib/profile/settings'
+import { loadProfile, saveProfile, type UserProfile } from '@/lib/profile/settings'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
+
+async function authGuard(): Promise<{ ownerId: string } | NextResponse> {
+  try {
+    const ownerId = await requireOwnerId()
+    return { ownerId }
+  } catch {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+}
 
 export async function GET() {
-  const profile = await loadProfile()
+  const auth = await authGuard()
+  if (auth instanceof NextResponse) return auth
+  const profile = await loadProfile(auth.ownerId)
   return NextResponse.json(profile)
 }
 
 export async function POST(req: Request) {
+  const auth = await authGuard()
+  if (auth instanceof NextResponse) return auth
   try {
     const body = await req.json() as Partial<UserProfile>
-    const current = await loadProfile()
+    const current = await loadProfile(auth.ownerId)
     const merged: UserProfile = { ...current, ...body } as UserProfile
     // validation
     if (![0, 0.5, 1.0].includes(merged.youngStartupReductionRate as number)) {
@@ -21,7 +35,7 @@ export async function POST(req: Request) {
     if (!['general', 'simplified'].includes(merged.taxPayerType)) {
       merged.taxPayerType = 'general'
     }
-    await saveProfile(merged)
+    await saveProfile(merged, auth.ownerId)
     return NextResponse.json(merged)
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 400 })

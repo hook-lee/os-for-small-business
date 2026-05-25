@@ -47,13 +47,15 @@ function rowToInstructor(row: InstructorRow): Instructor {
   }
 }
 
-export async function fetchAllInstructors(): Promise<Instructor[]> {
+export async function fetchAllInstructors(ownerId: string): Promise<Instructor[]> {
   const supabase = getSupabaseClient()
-  const { data, error } = await supabase
+  let q = supabase
     .from('instructors')
     .select('*')
     .eq('active', true)
     .order('id', { ascending: true })
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { data, error } = await q
   if (error) throw new Error(`Supabase instructors fetch failed: ${error.message}`)
   return ((data ?? []) as InstructorRow[]).map(rowToInstructor)
 }
@@ -72,7 +74,7 @@ export interface InstructorUpdate {
   active?: boolean
 }
 
-export async function updateInstructor(id: number, patch: InstructorUpdate): Promise<void> {
+export async function updateInstructor(id: number, patch: InstructorUpdate, ownerId: string): Promise<void> {
   const supabase = getSupabaseClient()
   const dbPatch: Record<string, unknown> = {}
   if (patch.name !== undefined) dbPatch.name = patch.name
@@ -87,7 +89,9 @@ export async function updateInstructor(id: number, patch: InstructorUpdate): Pro
   if (patch.color !== undefined) dbPatch.color = patch.color
   if (patch.active !== undefined) dbPatch.active = patch.active
 
-  const { error } = await supabase.from('instructors').update(dbPatch).eq('id', id)
+  let q = supabase.from('instructors').update(dbPatch).eq('id', id)
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { error } = await q
   if (error) throw new Error(`Supabase instructor update failed: ${error.message}`)
 }
 
@@ -103,43 +107,49 @@ export interface NewInstructorInput {
   color?: string | null
 }
 
-export async function insertInstructor(input: NewInstructorInput): Promise<number> {
+export async function insertInstructor(input: NewInstructorInput, ownerId: string): Promise<number> {
   const supabase = getSupabaseClient()
+  const row: Record<string, unknown> = {
+    name: input.name,
+    phone: input.phone,
+    role: input.role,
+    default_hourly_rate: input.defaultHourlyRate ?? 30000,
+    rate_private: input.ratePrivate ?? 30000,
+    rate_rehab: input.rateRehab ?? 30000,
+    rate_duet: input.rateDuet ?? 30000,
+    rate_group: input.rateGroup ?? 30000,
+    color: input.color ?? null,
+    active: true,
+  }
+  if (ownerId !== 'no-auth') row.owner_id = ownerId
   const { data, error } = await supabase
     .from('instructors')
-    .insert({
-      name: input.name,
-      phone: input.phone,
-      role: input.role,
-      default_hourly_rate: input.defaultHourlyRate ?? 30000,
-      rate_private: input.ratePrivate ?? 30000,
-      rate_rehab: input.rateRehab ?? 30000,
-      rate_duet: input.rateDuet ?? 30000,
-      rate_group: input.rateGroup ?? 30000,
-      color: input.color ?? null,
-      active: true,
-    })
+    .insert(row)
     .select('id')
     .single()
   if (error) throw new Error(`Insert instructor failed: ${error.message}`)
   return (data as { id: number }).id
 }
 
-export async function deleteInstructor(id: number): Promise<void> {
+export async function deleteInstructor(id: number, ownerId: string): Promise<void> {
   const supabase = getSupabaseClient()
-  const { error } = await supabase.from('instructors').delete().eq('id', id)
+  let q = supabase.from('instructors').delete().eq('id', id)
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { error } = await q
   if (error) throw new Error(`Delete instructor failed: ${error.message}`)
 }
 
-export async function fetchInstructorById(id: number): Promise<Instructor | null> {
+export async function fetchInstructorById(id: number, ownerId: string): Promise<Instructor | null> {
   const supabase = getSupabaseClient()
-  const { data, error } = await supabase.from('instructors').select('*').eq('id', id).maybeSingle()
+  let q = supabase.from('instructors').select('*').eq('id', id)
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { data, error } = await q.maybeSingle()
   if (error) throw new Error(`Fetch instructor failed: ${error.message}`)
   return data ? rowToInstructor(data as InstructorRow) : null
 }
 
 // 강사가 담당하는 회원들 (passes 통해)
-export async function fetchMembersByInstructor(instructorId: number): Promise<Array<{
+export async function fetchMembersByInstructor(instructorId: number, ownerId: string): Promise<Array<{
   memberId: number
   memberName: string
   memberPhone: string | null
@@ -148,12 +158,14 @@ export async function fetchMembersByInstructor(instructorId: number): Promise<Ar
   latestPassStatus: string | null
 }>> {
   const supabase = getSupabaseClient()
-  // passes에서 instructor_id로 필터, member join
-  const { data, error } = await supabase
+  // passes에서 instructor_id로 필터, member join. owner_id로 한 번 더 격리.
+  let q = supabase
     .from('passes')
     .select('member_id, pass_name, status, paid_at, members(id, name, phone)')
     .eq('instructor_id', instructorId)
     .order('paid_at', { ascending: false, nullsFirst: false })
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { data, error } = await q
   if (error) throw new Error(`Fetch instructor members failed: ${error.message}`)
 
   // 회원별 그룹화 + 카운트
@@ -185,12 +197,14 @@ export async function fetchMembersByInstructor(instructorId: number): Promise<Ar
   return Array.from(map.values()).sort((a, b) => a.memberName.localeCompare(b.memberName))
 }
 
-export async function countMembersByInstructor(instructorId: number): Promise<number> {
+export async function countMembersByInstructor(instructorId: number, ownerId: string): Promise<number> {
   const supabase = getSupabaseClient()
-  const { data, error } = await supabase
+  let q = supabase
     .from('passes')
     .select('member_id')
     .eq('instructor_id', instructorId)
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { data, error } = await q
   if (error) return 0
   const unique = new Set((data ?? []).map(r => (r as { member_id: number }).member_id))
   return unique.size

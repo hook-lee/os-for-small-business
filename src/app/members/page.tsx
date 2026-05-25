@@ -4,6 +4,7 @@ import { findExpiringMembers, findDormantMembers } from '@/lib/analytics/member-
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { MembersTable } from './MembersTable'
 import { MembersTabBar } from '@/components/MembersTabBar'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,9 +24,10 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
 
   let members: Awaited<ReturnType<typeof fetchAllMembers>> = []
   let passes: Awaited<ReturnType<typeof fetchAllPasses>> = []
+  const ownerId = await requireOwnerId().catch(() => 'no-auth')
   if (hasSupabaseConfig()) {
     try {
-      ;[members, passes] = await Promise.all([fetchAllMembers(), fetchAllPasses()])
+      ;[members, passes] = await Promise.all([fetchAllMembers(ownerId), fetchAllPasses(ownerId)])
     } catch {}
   }
 

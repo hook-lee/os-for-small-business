@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { hasSupabaseConfig, getSupabaseClient } from '@/lib/supabase/client'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 interface BulkLessonInput {
   memberId: number
@@ -13,6 +14,8 @@ interface BulkLessonInput {
 
 export async function POST(req: Request) {
   if (!hasSupabaseConfig()) return NextResponse.json({ error: 'Supabase 미설정' }, { status: 503 })
+  let ownerId: string
+  try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   try {
     const body = await req.json() as Partial<BulkLessonInput>
     if (!body.memberId) return NextResponse.json({ error: 'memberId 필수' }, { status: 400 })
@@ -29,17 +32,21 @@ export async function POST(req: Request) {
     const uniqueDates = Array.from(new Set(body.dates))
 
     const supabase = getSupabaseClient()
-    const rows = uniqueDates.map(d => ({
-      pass_id: body.passId ?? null,
-      member_id: body.memberId!,
-      instructor_id: body.instructorId ?? null,
-      lesson_date: d,
-      lesson_time: body.lessonTime ?? null,
-      duration_minutes: body.durationMinutes ?? 50,
-      status: 'scheduled',
-      deducted: false,
-      memo: body.memo ?? null,
-    }))
+    const rows = uniqueDates.map(d => {
+      const row: Record<string, unknown> = {
+        pass_id: body.passId ?? null,
+        member_id: body.memberId!,
+        instructor_id: body.instructorId ?? null,
+        lesson_date: d,
+        lesson_time: body.lessonTime ?? null,
+        duration_minutes: body.durationMinutes ?? 50,
+        status: 'scheduled',
+        deducted: false,
+        memo: body.memo ?? null,
+      }
+      if (ownerId !== 'no-auth') row.owner_id = ownerId
+      return row
+    })
     const { data, error } = await supabase.from('lessons').insert(rows).select('id')
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

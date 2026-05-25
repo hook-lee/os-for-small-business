@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { fetchAutoPayrollCounts } from '@/lib/supabase/payroll-auto'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export async function GET(req: Request) {
   if (!hasSupabaseConfig()) return NextResponse.json({ counts: null })
+  let ownerId: string
+  try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   const url = new URL(req.url)
   const instructorIdRaw = url.searchParams.get('instructorId')
   const yearMonth = url.searchParams.get('yearMonth')
@@ -15,7 +18,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: '유효하지 않은 instructorId' }, { status: 400 })
   }
   try {
-    const counts = await fetchAutoPayrollCounts(instructorId, yearMonth)
+    const counts = await fetchAutoPayrollCounts(instructorId, yearMonth, ownerId)
     return NextResponse.json({ counts })
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 })

@@ -64,14 +64,16 @@ export interface LessonWithNames extends Lesson {
   passRemaining: number | null
 }
 
-export async function fetchLessonsByDate(date: string): Promise<LessonWithNames[]> {
+export async function fetchLessonsByDate(date: string, ownerId: string): Promise<LessonWithNames[]> {
   try {
     const supabase = getSupabaseClient()
-    const { data, error } = await supabase
+    let q = supabase
       .from('lessons')
       .select('*, members(id, name, phone), instructors(id, name), passes(id, pass_name, remaining_count)')
       .eq('lesson_date', date)
       .order('lesson_time', { ascending: true, nullsFirst: false })
+    if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+    const { data, error } = await q
     if (error) return []
     type Joined = LessonRow & {
       members: { id: number; name: string; phone: string | null } | null
@@ -91,20 +93,22 @@ export async function fetchLessonsByDate(date: string): Promise<LessonWithNames[
   }
 }
 
-export async function fetchLessonsByMonth(yearMonth: string): Promise<LessonWithNames[]> {
+export async function fetchLessonsByMonth(yearMonth: string, ownerId: string): Promise<LessonWithNames[]> {
   try {
     const supabase = getSupabaseClient()
     const start = `${yearMonth}-01`
     const [y, m] = yearMonth.split('-').map(Number)
     const lastDay = new Date(y, m, 0).getDate()
     const end = `${yearMonth}-${String(lastDay).padStart(2, '0')}`
-    const { data, error } = await supabase
+    let q = supabase
       .from('lessons')
       .select('*, members(id, name, phone), instructors(id, name), passes(id, pass_name, remaining_count)')
       .gte('lesson_date', start)
       .lte('lesson_date', end)
       .order('lesson_date', { ascending: true })
       .order('lesson_time', { ascending: true, nullsFirst: false })
+    if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+    const { data, error } = await q
     if (error) return []
     type Joined = LessonRow & {
       members: { id: number; name: string; phone: string | null } | null
@@ -134,21 +138,23 @@ export interface CreateLessonInput {
   memo?: string
 }
 
-export async function createLesson(input: CreateLessonInput): Promise<number> {
+export async function createLesson(input: CreateLessonInput, ownerId: string): Promise<number> {
   const supabase = getSupabaseClient()
+  const row: Record<string, unknown> = {
+    pass_id: input.passId ?? null,
+    member_id: input.memberId,
+    instructor_id: input.instructorId ?? null,
+    lesson_date: input.lessonDate,
+    lesson_time: input.lessonTime ?? null,
+    duration_minutes: input.durationMinutes ?? 50,
+    status: 'scheduled',
+    deducted: false,
+    memo: input.memo ?? null,
+  }
+  if (ownerId !== 'no-auth') row.owner_id = ownerId
   const { data, error } = await supabase
     .from('lessons')
-    .insert({
-      pass_id: input.passId ?? null,
-      member_id: input.memberId,
-      instructor_id: input.instructorId ?? null,
-      lesson_date: input.lessonDate,
-      lesson_time: input.lessonTime ?? null,
-      duration_minutes: input.durationMinutes ?? 50,
-      status: 'scheduled',
-      deducted: false,
-      memo: input.memo ?? null,
-    })
+    .insert(row)
     .select('id')
     .single()
   if (error) throw new Error(`Create lesson failed: ${error.message}`)
@@ -159,15 +165,16 @@ export async function createLesson(input: CreateLessonInput): Promise<number> {
  * 상태 변경 + 회차 자동 +/-.
  * 반환: 차감 변화량 (-1, 0, +1) — UI에서 즉시 반영용.
  */
-export async function setLessonStatus(lessonId: number, newStatus: LessonStatus): Promise<{ deductionDelta: number }> {
+export async function setLessonStatus(lessonId: number, newStatus: LessonStatus, ownerId: string): Promise<{ deductionDelta: number }> {
   const supabase = getSupabaseClient()
 
   // 1. Fetch current
-  const { data: current, error: fetchError } = await supabase
+  let curQ = supabase
     .from('lessons')
     .select('id, pass_id, status, deducted')
     .eq('id', lessonId)
-    .single()
+  if (ownerId !== 'no-auth') curQ = curQ.eq('owner_id', ownerId)
+  const { data: current, error: fetchError } = await curQ.single()
   if (fetchError || !current) throw new Error(`Lesson fetch failed: ${fetchError?.message ?? 'not found'}`)
 
   const currentDeducted = (current as { deducted: boolean }).deducted
@@ -184,12 +191,12 @@ export async function setLessonStatus(lessonId: number, newStatus: LessonStatus)
 
   // 2. Update pass.remaining_count if linked + delta != 0
   if (passId && delta !== 0) {
-    // Atomic: 단순 select + 산술 + update. Postgres RPC 없으면 단순 race condition 있지만 단일 사용자 가정.
-    const { data: pass } = await supabase
+    let passQ = supabase
       .from('passes')
       .select('remaining_count, available_count, status')
       .eq('id', passId)
-      .single()
+    if (ownerId !== 'no-auth') passQ = passQ.eq('owner_id', ownerId)
+    const { data: pass } = await passQ.single()
     if (pass) {
       const cur = (pass as { remaining_count: number | null }).remaining_count ?? 0
       const newRemaining = Math.max(0, cur + delta)
@@ -203,12 +210,14 @@ export async function setLessonStatus(lessonId: number, newStatus: LessonStatus)
       if (newRemaining > 0 && passStatus === '이용만료' && delta > 0) {
         updates.status = '이용중'
       }
-      await supabase.from('passes').update(updates).eq('id', passId)
+      let updPassQ = supabase.from('passes').update(updates).eq('id', passId)
+      if (ownerId !== 'no-auth') updPassQ = updPassQ.eq('owner_id', ownerId)
+      await updPassQ
     }
   }
 
   // 3. Update lesson status + deducted
-  const { error: updateError } = await supabase
+  let updQ = supabase
     .from('lessons')
     .update({
       status: newStatus,
@@ -216,19 +225,23 @@ export async function setLessonStatus(lessonId: number, newStatus: LessonStatus)
       updated_at: new Date().toISOString(),
     })
     .eq('id', lessonId)
+  if (ownerId !== 'no-auth') updQ = updQ.eq('owner_id', ownerId)
+  const { error: updateError } = await updQ
   if (updateError) throw new Error(`Update lesson failed: ${updateError.message}`)
 
   return { deductionDelta: delta }
 }
 
-export async function fetchLessonsByMember(memberId: number): Promise<Lesson[]> {
+export async function fetchLessonsByMember(memberId: number, ownerId: string): Promise<Lesson[]> {
   try {
     const supabase = getSupabaseClient()
-    const { data, error } = await supabase
+    let q = supabase
       .from('lessons')
       .select('*')
       .eq('member_id', memberId)
       .order('lesson_date', { ascending: false })
+    if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+    const { data, error } = await q
     if (error) return []
     return ((data ?? []) as LessonRow[]).map(rowToLesson)
   } catch {
@@ -236,34 +249,41 @@ export async function fetchLessonsByMember(memberId: number): Promise<Lesson[]> 
   }
 }
 
-export async function deleteLesson(lessonId: number): Promise<{ deductionDelta: number }> {
+export async function deleteLesson(lessonId: number, ownerId: string): Promise<{ deductionDelta: number }> {
   // 삭제 = 차감 되돌림 (있었다면)
   const supabase = getSupabaseClient()
 
-  const { data: current } = await supabase
+  let curQ = supabase
     .from('lessons')
     .select('pass_id, deducted')
     .eq('id', lessonId)
-    .single()
+  if (ownerId !== 'no-auth') curQ = curQ.eq('owner_id', ownerId)
+  const { data: current } = await curQ.single()
 
   let delta = 0
   if (current && (current as { deducted: boolean }).deducted) {
     const passId = (current as { pass_id: number | null }).pass_id
     if (passId) {
-      const { data: pass } = await supabase.from('passes').select('remaining_count, status').eq('id', passId).single()
+      let passQ = supabase.from('passes').select('remaining_count, status').eq('id', passId)
+      if (ownerId !== 'no-auth') passQ = passQ.eq('owner_id', ownerId)
+      const { data: pass } = await passQ.single()
       if (pass) {
         const cur = (pass as { remaining_count: number | null }).remaining_count ?? 0
         const newRemaining = cur + 1
         const passStatus = (pass as { status: string | null }).status
         const updates: Record<string, unknown> = { remaining_count: newRemaining, last_modified_at: new Date().toISOString().slice(0, 10) }
         if (passStatus === '이용만료' && newRemaining > 0) updates.status = '이용중'
-        await supabase.from('passes').update(updates).eq('id', passId)
+        let updPassQ = supabase.from('passes').update(updates).eq('id', passId)
+        if (ownerId !== 'no-auth') updPassQ = updPassQ.eq('owner_id', ownerId)
+        await updPassQ
         delta = +1
       }
     }
   }
 
-  const { error } = await supabase.from('lessons').delete().eq('id', lessonId)
+  let delQ = supabase.from('lessons').delete().eq('id', lessonId)
+  if (ownerId !== 'no-auth') delQ = delQ.eq('owner_id', ownerId)
+  const { error } = await delQ
   if (error) throw new Error(`Delete lesson failed: ${error.message}`)
   return { deductionDelta: delta }
 }

@@ -47,16 +47,18 @@ function rowToProfile(row: ProfileRow): UserProfile {
 }
 
 /**
- * 프로필 읽기. Supabase 미설정/오류/테이블 부재 시 DEFAULT_PROFILE 반환 (앱은 계속 동작).
+ * 프로필 읽기 (owner별 1행).
+ * Supabase 미설정/오류/테이블 부재/ownerId='no-auth' 시 DEFAULT_PROFILE 반환.
  */
-export async function loadProfile(): Promise<UserProfile> {
+export async function loadProfile(ownerId: string): Promise<UserProfile> {
   if (!hasSupabaseConfig()) return DEFAULT_PROFILE
+  if (ownerId === 'no-auth') return DEFAULT_PROFILE
   try {
     const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('profile')
       .select('*')
-      .eq('id', 1)
+      .eq('owner_id', ownerId)
       .maybeSingle()
     if (error || !data) return DEFAULT_PROFILE
     return rowToProfile(data as ProfileRow)
@@ -66,19 +68,21 @@ export async function loadProfile(): Promise<UserProfile> {
 }
 
 /**
- * 프로필 저장 (upsert, id=1 고정). 실패 시 throw — API route가 400/500 응답.
- * Vercel serverless는 fs write가 불가능해 Supabase로 영속.
+ * 프로필 저장 (owner_id 기준 upsert). 실패 시 throw.
  *
  * v2.9 마이그레이션(tax_payer_type 컬럼) 미실행 환경 graceful 처리:
- * 컬럼 부재 에러 발생 시 그 필드만 빼고 재시도. 마이그레이션 후엔 정상 저장.
+ * 컬럼 부재 에러 발생 시 그 필드만 빼고 재시도.
  */
-export async function saveProfile(profile: UserProfile): Promise<void> {
+export async function saveProfile(profile: UserProfile, ownerId: string): Promise<void> {
   if (!hasSupabaseConfig()) {
     throw new Error('Supabase 미설정 — SUPABASE_URL/SERVICE_ROLE_KEY 환경변수 필요')
   }
+  if (ownerId === 'no-auth') {
+    throw new Error('로그인이 필요합니다 (프로필 저장)')
+  }
   const supabase = getSupabaseClient()
   const baseFields: Record<string, unknown> = {
-    id: 1,
+    owner_id: ownerId,
     birth_date: profile.birthDate,
     business_address: profile.businessAddress,
     is_young_startup_eligible: profile.isYoungStartupEligible,
@@ -93,7 +97,7 @@ export async function saveProfile(profile: UserProfile): Promise<void> {
     .from('profile')
     .upsert(
       { ...baseFields, tax_payer_type: profile.taxPayerType ?? 'general' },
-      { onConflict: 'id' },
+      { onConflict: 'owner_id' },
     )
 
   if (!error) return
@@ -106,7 +110,7 @@ export async function saveProfile(profile: UserProfile): Promise<void> {
   if (isTaxPayerTypeMissing) {
     const { error: retryError } = await supabase
       .from('profile')
-      .upsert(baseFields, { onConflict: 'id' })
+      .upsert(baseFields, { onConflict: 'owner_id' })
     if (retryError) {
       throw new Error(`프로필 저장 실패: ${retryError.message}`)
     }

@@ -3,6 +3,7 @@ import { fetchAllPasses } from '@/lib/supabase/passes'
 import { fetchPayrollByMonth } from '@/lib/supabase/payroll'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { InstructorsTabs } from './InstructorsTabs'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,22 +16,23 @@ export default async function InstructorsPage({ searchParams }: { searchParams: 
   let payrollRecords: Awaited<ReturnType<typeof fetchPayrollByMonth>> = []
   const memberCounts: Record<number, number> = {}
   const revenueByInstructor: Record<number, number> = {}
+  const ownerId = await requireOwnerId().catch(() => 'no-auth')
 
   if (hasSupabaseConfig()) {
-    instructors = await fetchAllInstructors()
+    instructors = await fetchAllInstructors(ownerId)
     if (tab === 'list') {
       await Promise.all(instructors.map(async i => {
-        memberCounts[i.id] = await countMembersByInstructor(i.id)
+        memberCounts[i.id] = await countMembersByInstructor(i.id, ownerId)
       }))
       try {
-        const allPasses = await fetchAllPasses()
+        const allPasses = await fetchAllPasses(ownerId)
         for (const p of allPasses) {
           if (p.instructorId == null) continue
           revenueByInstructor[p.instructorId] = (revenueByInstructor[p.instructorId] ?? 0) + (p.paymentAmount ?? 0)
         }
       } catch {/* fallback */}
     } else {
-      payrollRecords = await fetchPayrollByMonth(yearMonth)
+      payrollRecords = await fetchPayrollByMonth(yearMonth, ownerId)
     }
   }
 

@@ -1,10 +1,12 @@
 import { loadProfile } from '@/lib/profile/settings'
 import { SettingsForm } from './SettingsForm'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export const dynamic = 'force-dynamic'
 
 export default async function SettingsPage() {
-  const profile = await loadProfile()
+  const ownerId = await requireOwnerId().catch(() => 'no-auth')
+  const profile = await loadProfile(ownerId)
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">설정</h2>

@@ -5,12 +5,14 @@ import { simulateIncomeTax } from '@/lib/tax/income-tax'
 import { Card } from '@/components/ui/Card'
 import { KpiCard } from '@/components/ui/KpiCard'
 import { FinancesTabBar } from '@/components/FinancesTabBar'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 300
 
 export default async function TaxPage() {
-  const [transactions, profile] = await Promise.all([loadTransactions(), loadProfile()])
+  const ownerId = await requireOwnerId().catch(() => 'no-auth')
+  const [transactions, profile] = await Promise.all([loadTransactions(ownerId), loadProfile(ownerId)])
   const today = new Date().toISOString().slice(0, 10)
   const year = parseInt(today.slice(0, 4), 10)
 

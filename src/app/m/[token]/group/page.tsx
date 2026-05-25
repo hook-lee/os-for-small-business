@@ -14,9 +14,10 @@ export default async function MemberGroupPage({ params }: { params: Promise<{ to
   const member = await fetchMemberByToken(token)
   if (!member) notFound()
 
+  const memberOwnerId = member.ownerId ?? 'no-auth'
   const [sessions, allActivePasses, myReservations] = await Promise.all([
-    fetchUpcomingGroupSessions(),
-    fetchActivePassesByMember(member.id),
+    fetchUpcomingGroupSessions(memberOwnerId),
+    fetchActivePassesByMember(member.id, memberOwnerId),
     fetchReservationsByMember(member.id),
   ])
 

@@ -47,14 +47,16 @@ function rowToMessage(row: MessageRow): MessageRecord {
   }
 }
 
-export async function fetchRecentMessages(limit: number = 20): Promise<MessageRecord[]> {
+export async function fetchRecentMessages(ownerId: string, limit: number = 20): Promise<MessageRecord[]> {
   try {
     const supabase = getSupabaseClient()
-    const { data, error } = await supabase
+    let q = supabase
       .from('message_records')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(limit)
+    if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+    const { data, error } = await q
     if (error) return []
     return ((data ?? []) as MessageRow[]).map(rowToMessage)
   } catch { return [] }
@@ -70,32 +72,36 @@ export interface CreateMessageInput {
   memo?: string
 }
 
-export async function createMessage(input: CreateMessageInput): Promise<number> {
+export async function createMessage(input: CreateMessageInput, ownerId: string): Promise<number> {
   const supabase = getSupabaseClient()
+  const row: Record<string, unknown> = {
+    channel: input.channel ?? 'manual',
+    recipient_group: input.recipientGroup,
+    recipient_count: input.recipientIds.length,
+    recipient_ids: input.recipientIds,
+    subject: input.subject ?? null,
+    body: input.body,
+    status: input.status ?? 'draft',
+    sent_at: input.status === 'sent' ? new Date().toISOString() : null,
+    memo: input.memo ?? null,
+  }
+  if (ownerId !== 'no-auth') row.owner_id = ownerId
   const { data, error } = await supabase
     .from('message_records')
-    .insert({
-      channel: input.channel ?? 'manual',
-      recipient_group: input.recipientGroup,
-      recipient_count: input.recipientIds.length,
-      recipient_ids: input.recipientIds,
-      subject: input.subject ?? null,
-      body: input.body,
-      status: input.status ?? 'draft',
-      sent_at: input.status === 'sent' ? new Date().toISOString() : null,
-      memo: input.memo ?? null,
-    })
+    .insert(row)
     .select('id')
     .single()
   if (error) throw new Error(`Create message failed: ${error.message}`)
   return (data as { id: number }).id
 }
 
-export async function markMessageSent(id: number): Promise<void> {
+export async function markMessageSent(id: number, ownerId: string): Promise<void> {
   const supabase = getSupabaseClient()
-  const { error } = await supabase
+  let q = supabase
     .from('message_records')
     .update({ status: 'sent', sent_at: new Date().toISOString() })
     .eq('id', id)
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { error } = await q
   if (error) throw new Error(`Mark sent failed: ${error.message}`)
 }

@@ -55,21 +55,22 @@ function deriveTitle(firstUserText: string): string {
 /**
  * 세션 목록 + 각 세션의 메시지 수 (group count).
  * Supabase는 group count를 직접 select 못 해서 일단 sessions + messages 각각 fetch.
- * 단일 운영자 가정 시 세션 50개 이내 → 부담 X.
  */
-export async function listChatSessions(): Promise<ChatSessionMeta[]> {
+export async function listChatSessions(ownerId: string): Promise<ChatSessionMeta[]> {
   if (!hasSupabaseConfig()) return []
   try {
     const supabase = getSupabaseClient()
-    const { data: sessions, error } = await supabase
+    let sQ = supabase
       .from('chat_sessions')
       .select('id, title, created_at, updated_at')
       .order('updated_at', { ascending: false })
       .limit(100)
+    if (ownerId !== 'no-auth') sQ = sQ.eq('owner_id', ownerId)
+    const { data: sessions, error } = await sQ
     if (error || !sessions) return []
     const sessionIds = (sessions as SessionRow[]).map(s => s.id)
     if (sessionIds.length === 0) return []
-    // 한 번에 group count
+    // chat_messages는 owner_id 없음 — session_id로만 격리됨 (cascade)
     const { data: msgs } = await supabase
       .from('chat_messages')
       .select('session_id')
@@ -90,15 +91,16 @@ export async function listChatSessions(): Promise<ChatSessionMeta[]> {
   }
 }
 
-export async function fetchChatSession(id: number): Promise<{ session: ChatSessionMeta; messages: ChatMessage[] } | null> {
+export async function fetchChatSession(id: number, ownerId: string): Promise<{ session: ChatSessionMeta; messages: ChatMessage[] } | null> {
   if (!hasSupabaseConfig()) return null
   try {
     const supabase = getSupabaseClient()
-    const { data: session, error: sErr } = await supabase
+    let sQ = supabase
       .from('chat_sessions')
       .select('id, title, created_at, updated_at')
       .eq('id', id)
-      .maybeSingle()
+    if (ownerId !== 'no-auth') sQ = sQ.eq('owner_id', ownerId)
+    const { data: session, error: sErr } = await sQ.maybeSingle()
     if (sErr || !session) return null
     const { data: msgs, error: mErr } = await supabase
       .from('chat_messages')
@@ -123,12 +125,14 @@ export async function fetchChatSession(id: number): Promise<{ session: ChatSessi
   }
 }
 
-export async function createChatSession(): Promise<number> {
+export async function createChatSession(ownerId: string): Promise<number> {
   if (!hasSupabaseConfig()) throw new Error('Supabase 미설정')
   const supabase = getSupabaseClient()
+  const row: Record<string, unknown> = {}
+  if (ownerId !== 'no-auth') row.owner_id = ownerId
   const { data, error } = await supabase
     .from('chat_sessions')
-    .insert({})
+    .insert(row)
     .select('id')
     .single()
   if (error) throw new Error(`세션 생성 실패: ${error.message}`)
@@ -144,9 +148,11 @@ export async function appendChatMessage(
   role: 'user' | 'model',
   text: string,
   toolCalls: Array<{ name: string; args: Record<string, unknown> }> | null,
+  ownerId: string,
 ): Promise<void> {
   if (!hasSupabaseConfig()) throw new Error('Supabase 미설정')
   const supabase = getSupabaseClient()
+  // chat_messages는 owner_id 컬럼 없음 — session_id로 격리 (cascade)
   const { error: insertErr } = await supabase
     .from('chat_messages')
     .insert({
@@ -160,33 +166,40 @@ export async function appendChatMessage(
   // session updated_at 갱신 + title 자동 추출 (필요 시)
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
   if (role === 'user') {
-    const { data: sess } = await supabase
+    let titleQ = supabase
       .from('chat_sessions')
       .select('title')
       .eq('id', sessionId)
-      .maybeSingle()
+    if (ownerId !== 'no-auth') titleQ = titleQ.eq('owner_id', ownerId)
+    const { data: sess } = await titleQ.maybeSingle()
     if (sess && (sess as { title: string }).title === '새 대화') {
       updates.title = deriveTitle(text)
     }
   }
-  await supabase.from('chat_sessions').update(updates).eq('id', sessionId)
+  let updQ = supabase.from('chat_sessions').update(updates).eq('id', sessionId)
+  if (ownerId !== 'no-auth') updQ = updQ.eq('owner_id', ownerId)
+  await updQ
 }
 
-export async function renameChatSession(sessionId: number, title: string): Promise<void> {
+export async function renameChatSession(sessionId: number, title: string, ownerId: string): Promise<void> {
   if (!hasSupabaseConfig()) throw new Error('Supabase 미설정')
   const supabase = getSupabaseClient()
   const trimmed = title.trim() || '새 대화'
-  const { error } = await supabase
+  let q = supabase
     .from('chat_sessions')
     .update({ title: trimmed, updated_at: new Date().toISOString() })
     .eq('id', sessionId)
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { error } = await q
   if (error) throw new Error(`이름 변경 실패: ${error.message}`)
 }
 
-export async function deleteChatSession(sessionId: number): Promise<void> {
+export async function deleteChatSession(sessionId: number, ownerId: string): Promise<void> {
   if (!hasSupabaseConfig()) throw new Error('Supabase 미설정')
   const supabase = getSupabaseClient()
   // chat_messages는 on delete cascade로 자동 정리됨
-  const { error } = await supabase.from('chat_sessions').delete().eq('id', sessionId)
+  let q = supabase.from('chat_sessions').delete().eq('id', sessionId)
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { error } = await q
   if (error) throw new Error(`삭제 실패: ${error.message}`)
 }

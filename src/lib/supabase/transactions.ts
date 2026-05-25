@@ -35,17 +35,19 @@ function rowToTransaction(row: TransactionRow): Transaction {
   }
 }
 
-export async function fetchAllTransactions(): Promise<Transaction[]> {
+export async function fetchAllTransactions(ownerId: string): Promise<Transaction[]> {
   const supabase = getSupabaseClient()
   // PostgREST는 요청당 최대 1000행(기본 max-rows)만 반환하므로 range로 페이지네이션.
   const PAGE = 1000
   const all: TransactionRow[] = []
   for (let from = 0; ; from += PAGE) {
-    const { data, error } = await supabase
+    let q = supabase
       .from('transactions')
       .select('*')
       .order('date', { ascending: true })
       .range(from, from + PAGE - 1)
+    if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+    const { data, error } = await q
     if (error) throw new Error(`Supabase fetch failed: ${error.message}`)
     const rows = (data ?? []) as TransactionRow[]
     all.push(...rows)
@@ -54,9 +56,11 @@ export async function fetchAllTransactions(): Promise<Transaction[]> {
   return all.map(rowToTransaction)
 }
 
-export async function deleteTransaction(id: number): Promise<void> {
+export async function deleteTransaction(id: number, ownerId: string): Promise<void> {
   const supabase = getSupabaseClient()
-  const { error } = await supabase.from('transactions').delete().eq('id', id)
+  let q = supabase.from('transactions').delete().eq('id', id)
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { error } = await q
   if (error) throw new Error(`Supabase delete failed: ${error.message}`)
 }
 
@@ -75,9 +79,9 @@ export interface NewTransactionInput {
   passProductId?: number | null
 }
 
-export async function insertTransaction(input: NewTransactionInput): Promise<void> {
+export async function insertTransaction(input: NewTransactionInput, ownerId: string): Promise<void> {
   const supabase = getSupabaseClient()
-  const { error } = await supabase.from('transactions').insert({
+  const row: Record<string, unknown> = {
     date: input.date,
     raw_category: input.rawCategory,
     category: input.category,
@@ -90,6 +94,8 @@ export async function insertTransaction(input: NewTransactionInput): Promise<voi
     member_id: input.memberId ?? null,
     instructor_id: input.instructorId ?? null,
     pass_product_id: input.passProductId ?? null,
-  })
+  }
+  if (ownerId !== 'no-auth') row.owner_id = ownerId
+  const { error } = await supabase.from('transactions').insert(row)
   if (error) throw new Error(`Supabase insert failed: ${error.message}`)
 }

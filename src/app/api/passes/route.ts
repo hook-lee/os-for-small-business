@@ -2,9 +2,12 @@ import { NextResponse } from 'next/server'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { fetchPassProductById } from '@/lib/supabase/pass-products'
 import { issuePass } from '@/lib/supabase/passes'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export async function POST(req: Request) {
   if (!hasSupabaseConfig()) return NextResponse.json({ error: 'Supabase 미설정' }, { status: 503 })
+  let ownerId: string
+  try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   try {
     const body = await req.json() as {
       memberId?: number
@@ -19,7 +22,7 @@ export async function POST(req: Request) {
     if (!body.memberId || !body.productId || !body.startDate) {
       return NextResponse.json({ error: 'memberId, productId, startDate 필수' }, { status: 400 })
     }
-    const product = await fetchPassProductById(body.productId)
+    const product = await fetchPassProductById(body.productId, ownerId)
     if (!product) return NextResponse.json({ error: '존재하지 않는 상품' }, { status: 404 })
     const id = await issuePass(
       {
@@ -32,7 +35,8 @@ export async function POST(req: Request) {
         installment: body.installment,
         paymentType: body.paymentType as '신규결제' | '재결제' | undefined,
       },
-      product
+      product,
+      ownerId,
     )
     return NextResponse.json({ ok: true, id })
   } catch (error) {

@@ -46,23 +46,26 @@ function rowToSession(row: GroupSessionRow, reservedCount = 0, attendedCount = 0
   }
 }
 
-export async function fetchUpcomingGroupSessions(): Promise<GroupSession[]> {
+export async function fetchUpcomingGroupSessions(ownerId: string): Promise<GroupSession[]> {
   try {
     const supabase = getSupabaseClient()
     const today = new Date().toISOString().slice(0, 10)
-    const { data, error } = await supabase
+    let q = supabase
       .from('group_sessions')
       .select('*, instructors(id, name)')
       .gte('lesson_date', today)
       .eq('active', true)
       .order('lesson_date', { ascending: true })
       .order('lesson_time', { ascending: true })
+    if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+    const { data, error } = await q
     if (error) return []
 
     const sessions = (data ?? []) as GroupSessionRow[]
     if (sessions.length === 0) return []
 
     const sessionIds = sessions.map(s => s.id)
+    // group_reservations는 마이그레이션 12개 테이블 목록에 없음 — owner_id 컬럼 없으므로 sessionIds로만 필터.
     const { data: reservations } = await supabase
       .from('group_reservations')
       .select('session_id, status')
@@ -87,14 +90,15 @@ export async function fetchUpcomingGroupSessions(): Promise<GroupSession[]> {
   }
 }
 
-export async function fetchSessionById(id: number): Promise<GroupSession | null> {
+export async function fetchSessionById(id: number, ownerId: string): Promise<GroupSession | null> {
   try {
     const supabase = getSupabaseClient()
-    const { data, error } = await supabase
+    let q = supabase
       .from('group_sessions')
       .select('*, instructors(id, name)')
       .eq('id', id)
-      .maybeSingle()
+    if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+    const { data, error } = await q.maybeSingle()
     if (error || !data) return null
 
     const row = data as GroupSessionRow
@@ -126,28 +130,32 @@ export interface CreateGroupSessionInput {
   notes?: string
 }
 
-export async function createGroupSession(input: CreateGroupSessionInput): Promise<number> {
+export async function createGroupSession(input: CreateGroupSessionInput, ownerId: string): Promise<number> {
   const supabase = getSupabaseClient()
+  const row: Record<string, unknown> = {
+    instructor_id: input.instructorId ?? null,
+    session_name: input.sessionName,
+    lesson_date: input.lessonDate,
+    lesson_time: input.lessonTime,
+    duration_minutes: input.durationMinutes ?? 50,
+    capacity: input.capacity ?? 4,
+    notes: input.notes ?? null,
+    active: true,
+  }
+  if (ownerId !== 'no-auth') row.owner_id = ownerId
   const { data, error } = await supabase
     .from('group_sessions')
-    .insert({
-      instructor_id: input.instructorId ?? null,
-      session_name: input.sessionName,
-      lesson_date: input.lessonDate,
-      lesson_time: input.lessonTime,
-      duration_minutes: input.durationMinutes ?? 50,
-      capacity: input.capacity ?? 4,
-      notes: input.notes ?? null,
-      active: true,
-    })
+    .insert(row)
     .select('id')
     .single()
   if (error) throw new Error(`Create group session failed: ${error.message}`)
   return (data as { id: number }).id
 }
 
-export async function deleteGroupSession(id: number): Promise<void> {
+export async function deleteGroupSession(id: number, ownerId: string): Promise<void> {
   const supabase = getSupabaseClient()
-  const { error } = await supabase.from('group_sessions').delete().eq('id', id)
+  let q = supabase.from('group_sessions').delete().eq('id', id)
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { error } = await q
   if (error) throw new Error(`Delete group session failed: ${error.message}`)
 }

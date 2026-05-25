@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { chatWithTools, hasGeminiKey, type ChatMessage as GeminiMessage } from '@/lib/ai/gemini'
-import { ALL_TOOLS } from '@/lib/ai/tools'
+import { buildTools } from '@/lib/ai/tools'
 import { buildSystemPrompt } from '@/lib/ai/system-prompt'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import {
@@ -8,6 +8,7 @@ import {
   appendChatMessage,
   fetchChatSession,
 } from '@/lib/supabase/chat-sessions'
+import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -25,6 +26,8 @@ export async function POST(req: Request) {
       { status: 503 },
     )
   }
+  let ownerId: string
+  try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   let body: ChatRequestBody
   try {
     body = await req.json() as ChatRequestBody
@@ -43,20 +46,20 @@ export async function POST(req: Request) {
   if (hasSupabaseConfig()) {
     try {
       if (!sessionId) {
-        sessionId = await createChatSession()
+        sessionId = await createChatSession(ownerId)
       } else {
         // 기존 세션 → 메시지 가져와서 history 구성
-        const data = await fetchChatSession(sessionId)
+        const data = await fetchChatSession(sessionId, ownerId)
         if (data) {
           // 최근 12턴만 (LLM 컨텍스트 절약)
           history = data.messages.slice(-12).map(m => ({ role: m.role, text: m.text }))
         } else {
           // 세션 id가 유효하지 않으면 새로 생성
-          sessionId = await createChatSession()
+          sessionId = await createChatSession(ownerId)
         }
       }
       // user 메시지 영속화 (Gemini 호출 실패해도 user 발언은 남김)
-      await appendChatMessage(sessionId, 'user', message, null)
+      await appendChatMessage(sessionId, 'user', message, null, ownerId)
     } catch (e) {
       // DB 저장 실패는 치명적이지 않음 — 로그만 남기고 Gemini는 시도
       console.warn('[/api/chat] session persist failed:', (e as Error).message)
@@ -69,14 +72,14 @@ export async function POST(req: Request) {
       systemInstruction: buildSystemPrompt(body.context ?? {}),
       history,
       userMessage: message,
-      tools: ALL_TOOLS,
+      tools: buildTools(ownerId),
     })
 
     // 3. model 답변 영속화
     if (sessionId && hasSupabaseConfig()) {
       try {
         const toolCalls = result.toolCalls.map(t => ({ name: t.name, args: t.args }))
-        await appendChatMessage(sessionId, 'model', result.reply, toolCalls.length > 0 ? toolCalls : null)
+        await appendChatMessage(sessionId, 'model', result.reply, toolCalls.length > 0 ? toolCalls : null, ownerId)
       } catch (e) {
         console.warn('[/api/chat] model reply persist failed:', (e as Error).message)
       }
