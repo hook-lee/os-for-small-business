@@ -32,7 +32,9 @@ export function AppShell({
       <header className="border-b bg-white">
         <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
           <h1 className="text-lg font-semibold">
-            <span className="bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">Onmove</span>
+            <a href="/" className="bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent hover:opacity-80 transition-opacity" aria-label="홈으로">
+              Onmove
+            </a>
             {userEmail && workspaceName && (
               <span className="text-neutral-400 text-sm font-normal"> · {workspaceName}</span>
             )}

@@ -80,10 +80,14 @@ export async function loadProfile(ownerId: string): Promise<UserProfile> {
 }
 
 /**
- * 프로필 저장 (owner_id 기준 upsert). 실패 시 throw.
+ * 프로필 저장 — INSERT/UPDATE 분기 방식.
  *
- * v2.9 마이그레이션(tax_payer_type 컬럼) 미실행 환경 graceful 처리:
- * 컬럼 부재 에러 발생 시 그 필드만 빼고 재시도.
+ * 왜 upsert 대신 분기?
+ * profile.id가 default 1로 박혀있어 새 row insert 시 PK 충돌
+ * (라파 owner의 첫 row가 id=1을 차지). owner_id로 직접 select 후 분기.
+ *
+ * 누락 컬럼 (tax_payer_type, role, business_phone, workspace_name)
+ * graceful fallback도 유지.
  */
 export async function saveProfile(profile: UserProfile, ownerId: string): Promise<void> {
   if (!hasSupabaseConfig()) {
@@ -93,7 +97,7 @@ export async function saveProfile(profile: UserProfile, ownerId: string): Promis
     throw new Error('로그인이 필요합니다 (프로필 저장)')
   }
   const supabase = getSupabaseClient()
-  const baseFields: Record<string, unknown> = {
+  const fullFields: Record<string, unknown> = {
     owner_id: ownerId,
     workspace_name: profile.workspaceName,
     role: profile.role,
@@ -104,44 +108,59 @@ export async function saveProfile(profile: UserProfile, ownerId: string): Promis
     young_startup_reduction_rate: profile.youngStartupReductionRate,
     noranusan_annual_contribution: profile.noranusanAnnualContribution,
     pension_annual_contribution: profile.pensionAnnualContribution,
+    tax_payer_type: profile.taxPayerType ?? 'general',
     updated_at: new Date().toISOString(),
   }
 
-  // 1차 시도: tax_payer_type 포함
-  const { error } = await supabase
+  // 1. 기존 row 확인
+  const { data: existing } = await supabase
     .from('profile')
-    .upsert(
-      { ...baseFields, tax_payer_type: profile.taxPayerType ?? 'general' },
-      { onConflict: 'owner_id' },
-    )
+    .select('id')
+    .eq('owner_id', ownerId)
+    .maybeSingle()
 
-  if (!error) return
-
-  // tax_payer_type 컬럼이 아직 없으면(=v2.9 마이그레이션 미실행) → 그 필드만 빼고 재시도
-  const isTaxPayerTypeMissing =
-    error.message.includes('tax_payer_type') &&
-    (error.message.includes('column') || error.message.includes('schema cache'))
-
-  // workspace_name 또는 tax_payer_type 컬럼이 아직 없는 환경 → 누락 필드 제거 후 재시도
-  const missingCols: string[] = []
-  if (error.message.includes('workspace_name')) missingCols.push('workspace_name')
-  if (error.message.includes('role')) missingCols.push('role')
-  if (error.message.includes('business_phone')) missingCols.push('business_phone')
-  if (error.message.includes('tax_payer_type')) missingCols.push('tax_payer_type')
-
-  if (missingCols.length > 0 || isTaxPayerTypeMissing) {
-    const retryFields: Record<string, unknown> = { ...baseFields, tax_payer_type: profile.taxPayerType ?? 'general' }
-    for (const col of missingCols) delete retryFields[col]
-    if (isTaxPayerTypeMissing) delete retryFields.tax_payer_type
-    const { error: retryError } = await supabase
-      .from('profile')
-      .upsert(retryFields, { onConflict: 'owner_id' })
-    if (retryError) {
-      throw new Error(`프로필 저장 실패: ${retryError.message}`)
+  // 컬럼 누락 시 retry 헬퍼
+  const retryWithoutMissingCols = async (
+    error: { message: string },
+    op: (fields: Record<string, unknown>) => Promise<{ error: { message: string } | null }>,
+  ): Promise<void> => {
+    const msg = error.message
+    const missing: string[] = []
+    for (const col of ['workspace_name', 'role', 'business_phone', 'tax_payer_type']) {
+      if (msg.includes(col)) missing.push(col)
     }
-    console.warn(`[profile] 누락된 컬럼: ${missingCols.join(', ')}${isTaxPayerTypeMissing ? ', tax_payer_type' : ''}. 마이그레이션 필요.`)
-    return
+    if (missing.length === 0) throw new Error(`프로필 저장 실패: ${msg}`)
+    const retry = { ...fullFields }
+    for (const c of missing) delete retry[c]
+    const { error: retryErr } = await op(retry)
+    if (retryErr) throw new Error(`프로필 저장 실패: ${retryErr.message}`)
+    console.warn(`[profile] 누락 컬럼 ${missing.join(', ')} — 마이그레이션 필요`)
   }
 
-  throw new Error(`프로필 저장 실패: ${error.message}`)
+  if (existing) {
+    // 2a. UPDATE
+    const { error } = await supabase
+      .from('profile')
+      .update(fullFields)
+      .eq('owner_id', ownerId)
+    if (!error) return
+    await retryWithoutMissingCols(error, async (fields) => {
+      return supabase.from('profile').update(fields).eq('owner_id', ownerId)
+    })
+  } else {
+    // 2b. INSERT — id는 명시적으로 max+1 부여 (default 1 PK 충돌 회피)
+    const { data: maxRow } = await supabase
+      .from('profile')
+      .select('id')
+      .order('id', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    const newId = ((maxRow as { id: number } | null)?.id ?? 0) + 1
+    const insertFields = { ...fullFields, id: newId }
+    const { error } = await supabase.from('profile').insert(insertFields)
+    if (!error) return
+    await retryWithoutMissingCols(error, async (fields) => {
+      return supabase.from('profile').insert({ ...fields, id: newId })
+    })
+  }
 }

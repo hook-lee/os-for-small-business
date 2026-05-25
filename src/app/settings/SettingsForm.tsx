@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, type FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
 import type { UserProfile } from '@/lib/profile/settings'
 
 export function SettingsForm({ initial }: { initial: UserProfile }) {
+  const router = useRouter()
   const [profile, setProfile] = useState<UserProfile>(initial)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState<string>('')
@@ -26,6 +28,8 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
         throw new Error(msg)
       }
       setStatus('saved')
+      // 헤더(Onmove · 센터명)도 갱신되도록 server component 다시 fetch
+      router.refresh()
       setTimeout(() => setStatus('idle'), 2000)
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : '알 수 없는 오류')
