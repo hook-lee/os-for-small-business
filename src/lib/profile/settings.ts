@@ -148,19 +148,35 @@ export async function saveProfile(profile: UserProfile, ownerId: string): Promis
       return supabase.from('profile').update(fields).eq('owner_id', ownerId)
     })
   } else {
-    // 2b. INSERT — id는 명시적으로 max+1 부여 (default 1 PK 충돌 회피)
-    const { data: maxRow } = await supabase
-      .from('profile')
-      .select('id')
-      .order('id', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    const newId = ((maxRow as { id: number } | null)?.id ?? 0) + 1
-    const insertFields = { ...fullFields, id: newId }
-    const { error } = await supabase.from('profile').insert(insertFields)
-    if (!error) return
-    await retryWithoutMissingCols(error, async (fields) => {
-      return supabase.from('profile').insert({ ...fields, id: newId })
+    // 2b. INSERT
+    // 1차: id 생략 (DB default sequence 의존 — v3.2 마이그레이션 후 동작)
+    const { error: e1 } = await supabase.from('profile').insert(fullFields)
+    if (!e1) return
+
+    // 2차: profile_id_check 제약이 아직 남아 있으면(id=1 강제) → 회피
+    //      DB 마이그레이션(v3.2) 미실행 환경 대비 fallback
+    const isCheckConstraint = e1.message.includes('profile_id_check') || e1.message.includes('check constraint')
+    const isPkDup = e1.message.includes('profile_pkey') || e1.message.includes('duplicate key')
+    if (isCheckConstraint || isPkDup) {
+      const { data: maxRow } = await supabase
+        .from('profile')
+        .select('id')
+        .order('id', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      const newId = ((maxRow as { id: number } | null)?.id ?? 0) + 1
+      const { error: e2 } = await supabase.from('profile').insert({ ...fullFields, id: newId })
+      if (!e2) return
+      // 컬럼 누락 + 제약 회피 동시에
+      await retryWithoutMissingCols(e2, async (fields) => {
+        return supabase.from('profile').insert({ ...fields, id: newId })
+      })
+      return
+    }
+
+    // 3차: 컬럼 누락 case
+    await retryWithoutMissingCols(e1, async (fields) => {
+      return supabase.from('profile').insert(fields)
     })
   }
 }
