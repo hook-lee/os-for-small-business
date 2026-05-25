@@ -1,0 +1,4186 @@
+[
+  {
+    "date": "2026-01-01",
+    "category": "임대료",
+    "amount": -1430000,
+    "method": "계좌이체",
+    "memo": "12월 임대료",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-01",
+    "category": "마케팅비",
+    "amount": 20000,
+    "method": "계좌이체",
+    "memo": "1월의 도전",
+    "counterparty": "양나래"
+  },
+  {
+    "date": "2026-01-02",
+    "category": "세금",
+    "amount": -33300,
+    "method": "계좌이체",
+    "memo": "원천세",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-02",
+    "category": "세금",
+    "amount": -3300,
+    "method": "계좌이체",
+    "memo": "지방세",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-02",
+    "category": "매출",
+    "amount": 770000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "원희정"
+  },
+  {
+    "date": "2026-01-01",
+    "category": "정기결제",
+    "amount": -1100,
+    "method": "카드",
+    "memo": "애플 아이클라우드",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-01",
+    "category": "식비",
+    "amount": -1600,
+    "method": "카드",
+    "memo": "매머드 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-01",
+    "category": "식비",
+    "amount": -2500,
+    "method": "카드",
+    "memo": "롯데리아",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-02",
+    "category": "의류비",
+    "amount": -116700,
+    "method": "카드",
+    "memo": "핀르 니트 3개",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-02",
+    "category": "식비",
+    "amount": -11000,
+    "method": "계좌이체",
+    "memo": "맹자네떡볶이",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-03",
+    "category": "마케팅비",
+    "amount": 20000,
+    "method": "계좌이체",
+    "memo": "1월의 도전",
+    "counterparty": "정다정"
+  },
+  {
+    "date": "2026-01-03",
+    "category": "식비",
+    "amount": -1500,
+    "method": "카드",
+    "memo": "컴포즈 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-03",
+    "category": "소모품",
+    "amount": -3000,
+    "method": "카드",
+    "memo": "다이소",
+    "counterparty": "비닐장갑,세척솔"
+  },
+  {
+    "date": "2026-01-03",
+    "category": "식비",
+    "amount": -9400,
+    "method": "카드",
+    "memo": "두꺼비식자재",
+    "counterparty": "탄산수 과자 단무지"
+  },
+  {
+    "date": "2026-01-03",
+    "category": "식비",
+    "amount": -37480,
+    "method": "카드",
+    "memo": "쿠팡로켓프레쉬",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-03",
+    "category": "식비",
+    "amount": -26900,
+    "method": "카드",
+    "memo": "쿠팡",
+    "counterparty": "곡물도감 콩물"
+  },
+  {
+    "date": "2026-01-04",
+    "category": "의류비",
+    "amount": -3800,
+    "method": "카드",
+    "memo": "쿠팡",
+    "counterparty": "호피 머리끈"
+  },
+  {
+    "date": "2026-01-04",
+    "category": "식비",
+    "amount": -17000,
+    "method": "카드",
+    "memo": "디스위크커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-04",
+    "category": "식비",
+    "amount": -50000,
+    "method": "계좌이체",
+    "memo": "네이버페이",
+    "counterparty": "붓기차 리셋미"
+  },
+  {
+    "date": "2026-01-05",
+    "category": "식비",
+    "amount": -1800,
+    "method": "카드",
+    "memo": "컴포즈 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-05",
+    "category": "매출",
+    "amount": 770000,
+    "method": "카드",
+    "memo": "개인레슨",
+    "counterparty": "리다"
+  },
+  {
+    "date": "2026-01-05",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인레슨",
+    "counterparty": "김유림"
+  },
+  {
+    "date": "2026-01-06",
+    "category": "식비",
+    "amount": -1600,
+    "method": "카드",
+    "memo": "매머드 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-02",
+    "category": "매출",
+    "amount": 33000,
+    "method": "카드",
+    "memo": "체험레슨",
+    "counterparty": "김민지"
+  },
+  {
+    "date": "2026-01-06",
+    "category": "식비",
+    "amount": -14100,
+    "method": "카드",
+    "memo": "롯데잇츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-06",
+    "category": "소모품",
+    "amount": -3000,
+    "method": "카드",
+    "memo": "로레알",
+    "counterparty": "라로슈포제 샘플"
+  },
+  {
+    "date": "2026-01-07",
+    "category": "매출",
+    "amount": 33000,
+    "method": "카드",
+    "memo": "체험레슨",
+    "counterparty": "김아정"
+  },
+  {
+    "date": "2026-01-07",
+    "category": "의류비",
+    "amount": -20000,
+    "method": "계좌이체",
+    "memo": "네이버페이",
+    "counterparty": "사색"
+  },
+  {
+    "date": "2026-01-07",
+    "category": "의류비",
+    "amount": -90000,
+    "method": "계좌이체",
+    "memo": "네이버페이",
+    "counterparty": "사색"
+  },
+  {
+    "date": "2026-01-08",
+    "category": "식비",
+    "amount": -1500,
+    "method": "카드",
+    "memo": "컴포즈 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-08",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인레슨",
+    "counterparty": "이유정"
+  },
+  {
+    "date": "2026-01-08",
+    "category": "의료비",
+    "amount": -16000,
+    "method": "카드",
+    "memo": "약국",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-08",
+    "category": "식비",
+    "amount": -25400,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-09",
+    "category": "매출",
+    "amount": 650000,
+    "method": "현금",
+    "memo": "개인레슨",
+    "counterparty": "권유민"
+  },
+  {
+    "date": "2026-01-09",
+    "category": "식비",
+    "amount": -19900,
+    "method": "카드",
+    "memo": "애슐리",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-09",
+    "category": "품위유지비",
+    "amount": -15000,
+    "method": "계좌이체",
+    "memo": "속눈썹펌",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-09",
+    "category": "소모품",
+    "amount": -41100,
+    "method": "카드",
+    "memo": "올리브영",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-09",
+    "category": "소모품",
+    "amount": -2600,
+    "method": "카드",
+    "memo": "편의점",
+    "counterparty": "핫팩"
+  },
+  {
+    "date": "2026-01-10",
+    "category": "식비",
+    "amount": -1500,
+    "method": "카드",
+    "memo": "컴포즈 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-10",
+    "category": "식비",
+    "amount": -172000,
+    "method": "카드",
+    "memo": "줄리아",
+    "counterparty": "을지로"
+  },
+  {
+    "date": "2026-01-10",
+    "category": "식비",
+    "amount": 213000,
+    "method": "카드",
+    "memo": "일단",
+    "counterparty": "을지로"
+  },
+  {
+    "date": "2026-01-10",
+    "category": "식비",
+    "amount": -21000,
+    "method": "카드",
+    "memo": "하루필름",
+    "counterparty": "을지로"
+  },
+  {
+    "date": "2026-01-11",
+    "category": "식비",
+    "amount": -28100,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": "도회푸드"
+  },
+  {
+    "date": "2026-01-11",
+    "category": "식비",
+    "amount": -9000,
+    "method": "카드",
+    "memo": "디스위크커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-11",
+    "category": "소모품",
+    "amount": -70000,
+    "method": "계좌이체",
+    "memo": "네이버페이",
+    "counterparty": "속눈썹영양제"
+  },
+  {
+    "date": "2026-01-11",
+    "category": "소모품",
+    "amount": -30000,
+    "method": "계좌이체",
+    "memo": "네이버페이",
+    "counterparty": "샴푸"
+  },
+  {
+    "date": "2026-01-12",
+    "category": "보험료",
+    "amount": -99610,
+    "method": "계좌이체",
+    "memo": "건강보험",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-12",
+    "category": "보험료",
+    "amount": -179570,
+    "method": "계좌이체",
+    "memo": "국민연금",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-12",
+    "category": "소모품",
+    "amount": -30000,
+    "method": "계좌이체",
+    "memo": "네이버페이",
+    "counterparty": "노트북파우치"
+  },
+  {
+    "date": "2026-01-13",
+    "category": "식비",
+    "amount": -47900,
+    "method": "카드",
+    "memo": "콩물",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-12",
+    "category": "보험료",
+    "amount": -250000,
+    "method": "계좌이체",
+    "memo": "노란우산",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-13",
+    "category": "식비",
+    "amount": -18780,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": "메추리알멸치참치액"
+  },
+  {
+    "date": "2026-01-13",
+    "category": "식비",
+    "amount": -12600,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": "휘낭시에"
+  },
+  {
+    "date": "2026-01-14",
+    "category": "식비",
+    "amount": -1600,
+    "method": "카드",
+    "memo": "매머드 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-14",
+    "category": "매출",
+    "amount": 825000,
+    "method": "카드",
+    "memo": "재활레슨 체험레슨",
+    "counterparty": "김지민"
+  },
+  {
+    "date": "2026-01-14",
+    "category": "매출",
+    "amount": 33000,
+    "method": "현금",
+    "memo": "체험레슨",
+    "counterparty": "양다정"
+  },
+  {
+    "date": "2026-01-14",
+    "category": "매출",
+    "amount": 650000,
+    "method": "현금",
+    "memo": "개인레슨",
+    "counterparty": "김혜수"
+  },
+  {
+    "date": "2026-01-15",
+    "category": "공과금",
+    "amount": -45690,
+    "method": "카드",
+    "memo": "핸드폰요금",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-15",
+    "category": "매출",
+    "amount": 693000,
+    "method": "카드",
+    "memo": "재활레슨",
+    "counterparty": "김민지"
+  },
+  {
+    "date": "2026-01-15",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인레슨",
+    "counterparty": "김진서"
+  },
+  {
+    "date": "2026-01-15",
+    "category": "보험료",
+    "amount": -50000,
+    "method": "계좌이체",
+    "memo": "db손해보험",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-15",
+    "category": "식비",
+    "amount": -9820,
+    "method": "카드",
+    "memo": "엽떡",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-16",
+    "category": "식비",
+    "amount": -1600,
+    "method": "카드",
+    "memo": "매머드 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-16",
+    "category": "식비",
+    "amount": -13000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": "케밥"
+  },
+  {
+    "date": "2026-01-16",
+    "category": "식비",
+    "amount": -55740,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-17",
+    "category": "식비",
+    "amount": -11600,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": "곱도리탕"
+  },
+  {
+    "date": "2026-01-17",
+    "category": "식비",
+    "amount": -9600,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": "와플"
+  },
+  {
+    "date": "2026-01-18",
+    "category": "식비",
+    "amount": -14000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": "두쫀쿠"
+  },
+  {
+    "date": "2026-01-17",
+    "category": "식비",
+    "amount": -1600,
+    "method": "카드",
+    "memo": "매머드 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-16",
+    "category": "관리비",
+    "amount": -248800,
+    "method": "계좌이체",
+    "memo": "12월 관리비",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-16",
+    "category": "교육비",
+    "amount": -10000,
+    "method": "계좌이체",
+    "memo": "에센셜랩",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-18",
+    "category": "정기결제",
+    "amount": -346800,
+    "method": "카드",
+    "memo": "스튜디오메이트연결제",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-18",
+    "category": "마케팅비",
+    "amount": -4119,
+    "method": "카드",
+    "memo": "비즈하우스",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-18",
+    "category": "식비",
+    "amount": -39310,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-19",
+    "category": "식비",
+    "amount": -6250,
+    "method": "카드",
+    "memo": "초콜릿",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-19",
+    "category": "소모품",
+    "amount": -21900,
+    "method": "카드",
+    "memo": "두피마사지기",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-19",
+    "category": "매출",
+    "amount": 33000,
+    "method": "현금",
+    "memo": "체험레슨",
+    "counterparty": "이진희"
+  },
+  {
+    "date": "2026-01-20",
+    "category": "정기결제",
+    "amount": -2500,
+    "method": "카드",
+    "memo": "카카오서랍",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-20",
+    "category": "식비",
+    "amount": -1500,
+    "method": "카드",
+    "memo": "컴포즈 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-19",
+    "category": "식비",
+    "amount": -16200,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-21",
+    "category": "공과금",
+    "amount": -24503,
+    "method": "카드",
+    "memo": "와이파이",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-21",
+    "category": "식비",
+    "amount": -1500,
+    "method": "카드",
+    "memo": "컴포즈 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-21",
+    "category": "소모품",
+    "amount": -15880,
+    "method": "카드",
+    "memo": "치약",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-21",
+    "category": "소모품",
+    "amount": -9980,
+    "method": "카드",
+    "memo": "포도당 캔디",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-21",
+    "category": "식비",
+    "amount": 11400,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-21",
+    "category": "식비",
+    "amount": -4500,
+    "method": "카드",
+    "memo": "편의저",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-22",
+    "category": "매출",
+    "amount": 33000,
+    "method": "현금",
+    "memo": "체험레슨",
+    "counterparty": "송유빈"
+  },
+  {
+    "date": "2026-01-23",
+    "category": "식비",
+    "amount": -38685,
+    "method": "카드",
+    "memo": "컬리",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-23",
+    "category": "식비",
+    "amount": -5800,
+    "method": "카드",
+    "memo": "편의점",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-22",
+    "category": "마케팅비",
+    "amount": 20000,
+    "method": "현금",
+    "memo": "이달의도전",
+    "counterparty": "이로아"
+  },
+  {
+    "date": "2026-01-22",
+    "category": "식비",
+    "amount": -24000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-22",
+    "category": "식비",
+    "amount": -13800,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-24",
+    "category": "식비",
+    "amount": -49000,
+    "method": "카드",
+    "memo": "캐치테이블",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-24",
+    "category": "식비",
+    "amount": -21100,
+    "method": "카드",
+    "memo": "카페",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-24",
+    "category": "식비",
+    "amount": -1100,
+    "method": "카드",
+    "memo": "편의점",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-25",
+    "category": "식비",
+    "amount": -3200,
+    "method": "카드",
+    "memo": "컴포즈커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-25",
+    "category": "식비",
+    "amount": -33000,
+    "method": "카드",
+    "memo": "이조해장국",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-24",
+    "category": "식비",
+    "amount": -2000,
+    "method": "계좌이체",
+    "memo": "붕어빵",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-26",
+    "category": "소모품",
+    "amount": -1000,
+    "method": "카드",
+    "memo": "다이소",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-26",
+    "category": "식비",
+    "amount": -18000,
+    "method": "카드",
+    "memo": "다쿠아즈",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-27",
+    "category": "의료비",
+    "amount": -6800,
+    "method": "카드",
+    "memo": "약국",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-27",
+    "category": "경조사비",
+    "amount": -90000,
+    "method": "카드",
+    "memo": "아빠 생일선물",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-27",
+    "category": "식비",
+    "amount": -7900,
+    "method": "카드",
+    "memo": "치아바타 샌드위치",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-27",
+    "category": "식비",
+    "amount": -1600,
+    "method": "카드",
+    "memo": "매머드 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-25",
+    "category": "소모품",
+    "amount": -5180,
+    "method": "카드",
+    "memo": "쿠팡",
+    "counterparty": "고운발"
+  },
+  {
+    "date": "2026-01-27",
+    "category": "소모품",
+    "amount": -16400,
+    "method": "카드",
+    "memo": "쿠팡",
+    "counterparty": "생리대"
+  },
+  {
+    "date": "2026-01-27",
+    "category": "식비",
+    "amount": -11000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-28",
+    "category": "식비",
+    "amount": -1000,
+    "method": "카드",
+    "memo": "컴포즈 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-29",
+    "category": "식비",
+    "amount": -1000,
+    "method": "카드",
+    "memo": "컴포즈 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-29",
+    "category": "교육비",
+    "amount": -405000,
+    "method": "계좌이체",
+    "memo": "요가",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-29",
+    "category": "매출",
+    "amount": 1755000,
+    "method": "현금",
+    "memo": "개인레슨",
+    "counterparty": "황주원30"
+  },
+  {
+    "date": "2026-01-30",
+    "category": "식비",
+    "amount": -1500,
+    "method": "카드",
+    "memo": "컴포즈 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-31",
+    "category": "식비",
+    "amount": -56450,
+    "method": "카드",
+    "memo": "쿠팡",
+    "counterparty": "로켓프레시"
+  },
+  {
+    "date": "2026-01-31",
+    "category": "마케팅비",
+    "amount": 20000,
+    "method": "현금",
+    "memo": "이달의도전",
+    "counterparty": "정다정"
+  },
+  {
+    "date": "2026-01-31",
+    "category": "급여",
+    "amount": -580200,
+    "method": "계좌이체",
+    "memo": "김현정 1월 급여",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-31",
+    "category": "급여",
+    "amount": -551190,
+    "method": "계좌이체",
+    "memo": "김우영 1월 급여",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-31",
+    "category": "예비비",
+    "amount": -1800000,
+    "method": "계좌이체",
+    "memo": "예비비",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-31",
+    "category": "유진 급여",
+    "amount": -3500000,
+    "method": "계좌이체",
+    "memo": "유진 급여",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-31",
+    "category": "식비",
+    "amount": -1600,
+    "method": "카드",
+    "memo": "매머드 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-31",
+    "category": "식비",
+    "amount": -114600,
+    "method": "계좌이체",
+    "memo": "나봄두쫀쿠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-01-31",
+    "category": "마케팅비",
+    "amount": 20000,
+    "method": "현금",
+    "memo": "이달의도전",
+    "counterparty": "양나래"
+  },
+  {
+    "date": "2026-01-31",
+    "category": "도서인쇄비",
+    "amount": -4900,
+    "method": "카드",
+    "memo": "애플",
+    "counterparty": "쿠팡플레이보스"
+  },
+  {
+    "date": "2026-01-31",
+    "category": "교통비",
+    "amount": -26750,
+    "method": "카드",
+    "memo": "1월 교통비",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-01",
+    "category": "임대료",
+    "amount": -1430000,
+    "method": "계좌이체",
+    "memo": "1월 임대료",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-01",
+    "category": "식비",
+    "amount": -13500,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": "본노엘"
+  },
+  {
+    "date": "2026-02-01",
+    "category": "마케팅비",
+    "amount": -20000,
+    "method": "현금",
+    "memo": "이달의도전환급",
+    "counterparty": "이로아"
+  },
+  {
+    "date": "2026-02-01",
+    "category": "마케팅비",
+    "amount": -7900,
+    "method": "카드",
+    "memo": "이달의도전선물",
+    "counterparty": "이로아"
+  },
+  {
+    "date": "2026-02-01",
+    "category": "교육비",
+    "amount": -50000,
+    "method": "현금",
+    "memo": "연구실회비",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-01",
+    "category": "식비",
+    "amount": -22000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": "탕수육"
+  },
+  {
+    "date": "2026-02-02",
+    "category": "정기결제",
+    "amount": -66000,
+    "method": "계좌이체",
+    "memo": "오투스세무",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-02",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인레슨",
+    "counterparty": "김기수"
+  },
+  {
+    "date": "2026-02-02",
+    "category": "식비",
+    "amount": -1500,
+    "method": "카드",
+    "memo": "컴포즈커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-03",
+    "category": "식비",
+    "amount": -1600,
+    "method": "카드",
+    "memo": "매머드커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-03",
+    "category": "세금",
+    "amount": -3510,
+    "method": "계좌이체",
+    "memo": "지방세",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-03",
+    "category": "세금",
+    "amount": -35100,
+    "method": "계좌이체",
+    "memo": "원천세",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-03",
+    "category": "소모품",
+    "amount": -9400,
+    "method": "카드",
+    "memo": "쿠팡",
+    "counterparty": "거울티슈"
+  },
+  {
+    "date": "2026-02-03",
+    "category": "소모품",
+    "amount": -14540,
+    "method": "카드",
+    "memo": "쿠팡",
+    "counterparty": "물티슈"
+  },
+  {
+    "date": "2026-02-03",
+    "category": "매출",
+    "amount": 650000,
+    "method": "현금",
+    "memo": "개인레슨",
+    "counterparty": "조희선"
+  },
+  {
+    "date": "2026-02-03",
+    "category": "매출",
+    "amount": 290000,
+    "method": "카드",
+    "memo": "그룹레슨",
+    "counterparty": "이로아"
+  },
+  {
+    "date": "2026-02-03",
+    "category": "식비",
+    "amount": -28070,
+    "method": "카드",
+    "memo": "쿠팡",
+    "counterparty": "로켓프레시"
+  },
+  {
+    "date": "2026-02-03",
+    "category": "식비",
+    "amount": -74400,
+    "method": "카드",
+    "memo": "나봄",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-04",
+    "category": "매출",
+    "amount": 693000,
+    "method": "카드",
+    "memo": "재활레슨",
+    "counterparty": "이진희"
+  },
+  {
+    "date": "2026-02-04",
+    "category": "매출",
+    "amount": 580000,
+    "method": "카드",
+    "memo": "그룹레슨",
+    "counterparty": "양나래 20"
+  },
+  {
+    "date": "2026-02-05",
+    "category": "매출",
+    "amount": 55000,
+    "method": "현금",
+    "memo": "체험레슨",
+    "counterparty": "김선주"
+  },
+  {
+    "date": "2026-02-05",
+    "category": "정기결제",
+    "amount": -30900,
+    "method": "카드",
+    "memo": "청호나이스",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-05",
+    "category": "식비",
+    "amount": -1800,
+    "method": "카드",
+    "memo": "컴포즈 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-05",
+    "category": "식비",
+    "amount": -9800,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": "본노엘"
+  },
+  {
+    "date": "2026-02-05",
+    "category": "보험료",
+    "amount": -50000,
+    "method": "계좌이체",
+    "memo": "db손해보험",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-05",
+    "category": "매출",
+    "amount": 585000,
+    "method": "카드",
+    "memo": "개인레슨",
+    "counterparty": "신효원"
+  },
+  {
+    "date": "2026-02-05",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인레슨",
+    "counterparty": "황지현"
+  },
+  {
+    "date": "2026-02-06",
+    "category": "식비",
+    "amount": -1500,
+    "method": "카드",
+    "memo": "컴포즈 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-06",
+    "category": "소모품",
+    "amount": -12100,
+    "method": "카드",
+    "memo": "올리브영",
+    "counterparty": "핸드크림"
+  },
+  {
+    "date": "2026-02-08",
+    "category": "품위유지비",
+    "amount": -35000,
+    "method": "카드",
+    "memo": "네이버페이결제",
+    "counterparty": "바레체험"
+  },
+  {
+    "date": "2026-02-08",
+    "category": "식비",
+    "amount": -12700,
+    "method": "카드",
+    "memo": "메가커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-08",
+    "category": "소모품",
+    "amount": -80275,
+    "method": "카드",
+    "memo": "라로슈포제",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-08",
+    "category": "식비",
+    "amount": -4800,
+    "method": "카드",
+    "memo": "두꺼비식자재",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-08",
+    "category": "식비",
+    "amount": -27000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": "굴찜"
+  },
+  {
+    "date": "2026-02-08",
+    "category": "식비",
+    "amount": -25900,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": "족발"
+  },
+  {
+    "date": "2026-02-09",
+    "category": "매출",
+    "amount": 650000,
+    "method": "계좌이체",
+    "memo": "개인레슨",
+    "counterparty": "정주희 서울페이"
+  },
+  {
+    "date": "2026-02-08",
+    "category": "식비",
+    "amount": -20700,
+    "method": "카드",
+    "memo": "쿠팡",
+    "counterparty": "로켓프레시"
+  },
+  {
+    "date": "2026-02-09",
+    "category": "매출",
+    "amount": 33000,
+    "method": "현금",
+    "memo": "체험레슨",
+    "counterparty": "김소정"
+  },
+  {
+    "date": "2026-02-10",
+    "category": "보험료",
+    "amount": -101200,
+    "method": "계좌이체",
+    "memo": "건강보험",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-10",
+    "category": "보험료",
+    "amount": -189570,
+    "method": "계좌이체",
+    "memo": "국민연금",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-09",
+    "category": "식비",
+    "amount": -1600,
+    "method": "카드",
+    "memo": "매머드 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-10",
+    "category": "식비",
+    "amount": -1600,
+    "method": "카드",
+    "memo": "매머드 커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-08",
+    "category": "정기결제",
+    "amount": -10800,
+    "method": "카드",
+    "memo": "애플",
+    "counterparty": "주토피아2"
+  },
+  {
+    "date": "2026-02-10",
+    "category": "소모품",
+    "amount": -165000,
+    "method": "계좌이체",
+    "memo": "난방기기교체",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-10",
+    "category": "보험료",
+    "amount": -250000,
+    "method": "계좌이체",
+    "memo": "노란우산",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-10",
+    "category": "매출",
+    "amount": 330000,
+    "method": "현금",
+    "memo": "그룹레슨",
+    "counterparty": "김아정"
+  },
+  {
+    "date": "2026-02-12",
+    "category": "매출",
+    "amount": 400000,
+    "method": "카드",
+    "memo": "개인레슨",
+    "counterparty": "박건영 분할"
+  },
+  {
+    "date": "2026-02-12",
+    "category": "매출",
+    "amount": 150000,
+    "method": "카드",
+    "memo": "개인레슨",
+    "counterparty": "박건영 분할"
+  },
+  {
+    "date": "2026-02-12",
+    "category": "매출",
+    "amount": 100000,
+    "method": "카드",
+    "memo": "개인레슨",
+    "counterparty": "박건영 분할"
+  },
+  {
+    "date": "2026-02-12",
+    "category": "매출",
+    "amount": 385000,
+    "method": "현금",
+    "memo": "재활레슨",
+    "counterparty": "박세인5"
+  },
+  {
+    "date": "2026-02-12",
+    "category": "매출",
+    "amount": 33000,
+    "method": "현금",
+    "memo": "체험레슨",
+    "counterparty": "김찬희"
+  },
+  {
+    "date": "2026-02-12",
+    "category": "식비",
+    "amount": -16000,
+    "method": "카드",
+    "memo": "정가양꼬치",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-11",
+    "category": "식비",
+    "amount": -8900,
+    "method": "카드",
+    "memo": "편의점",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-11",
+    "category": "경조사비",
+    "amount": -51800,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": "명절선물"
+  },
+  {
+    "date": "2026-02-10",
+    "category": "식비",
+    "amount": -31000,
+    "method": "카드",
+    "memo": "은미통",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-11",
+    "category": "보험료",
+    "amount": -81839,
+    "method": "카드",
+    "memo": "동양생명보험",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-14",
+    "category": "수수료",
+    "amount": -4400,
+    "method": "카드",
+    "memo": "애플",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-14",
+    "category": "식비",
+    "amount": -1800,
+    "method": "카드",
+    "memo": "컴포즈커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-17",
+    "category": "소품",
+    "amount": -2000,
+    "method": "카드",
+    "memo": "카카오 이모티콘",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-17",
+    "category": "소모품",
+    "amount": -3000,
+    "method": "카드",
+    "memo": "은미 이벤트",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-16",
+    "category": "식비",
+    "amount": -6410,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": "신전떡볶이"
+  },
+  {
+    "date": "2026-02-15",
+    "category": "소품",
+    "amount": -57420,
+    "method": "카드",
+    "memo": "쿠팡",
+    "counterparty": "오빠 부산집 드라이기"
+  },
+  {
+    "date": "2026-02-15",
+    "category": "소품",
+    "amount": -42180,
+    "method": "카드",
+    "memo": "쿠팡",
+    "counterparty": "오빠 부산집 수건"
+  },
+  {
+    "date": "2026-02-14",
+    "category": "매출",
+    "amount": 33000,
+    "method": "현금",
+    "memo": "체험레슨",
+    "counterparty": "박지연"
+  },
+  {
+    "date": "2026-02-17",
+    "category": "수수료",
+    "amount": 7,
+    "method": "계좌이체",
+    "memo": "은행 재발급 수수료",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-19",
+    "category": "공과금",
+    "amount": -51790,
+    "method": "계좌이체",
+    "memo": "핸드폰요금",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-19",
+    "category": "매출",
+    "amount": 38500,
+    "method": "현금",
+    "memo": "듀엣레슨",
+    "counterparty": "임현경 1회"
+  },
+  {
+    "date": "2026-02-19",
+    "category": "관리비",
+    "amount": -315140,
+    "method": "계좌이체",
+    "memo": "1월관리비",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-19",
+    "category": "마케팅비",
+    "amount": -4159,
+    "method": "카드",
+    "memo": "비즈하우스",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-20",
+    "category": "수수료",
+    "amount": 1,
+    "method": "현금",
+    "memo": "서울페이인증",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-20",
+    "category": "매출",
+    "amount": 55000,
+    "method": "현금",
+    "memo": "체험레슨",
+    "counterparty": "구나영"
+  },
+  {
+    "date": "2026-02-23",
+    "category": "공과금",
+    "amount": -24503,
+    "method": "계좌이체",
+    "memo": "와이파이",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-23",
+    "category": "수수료",
+    "amount": 1,
+    "method": "계좌이체",
+    "memo": "nh투자증권개설",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-23",
+    "category": "수수료",
+    "amount": 1,
+    "method": "계좌이체",
+    "memo": "네이버페이 인증",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-23",
+    "category": "수수료",
+    "amount": -83000,
+    "method": "계좌이체",
+    "memo": "케이뱅크 청약금",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-23",
+    "category": "수수료",
+    "amount": 1,
+    "method": "계좌이체",
+    "memo": "nh투자증권인증",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-19",
+    "category": "식비",
+    "amount": -52401,
+    "method": "카드",
+    "memo": "곡물도감 두유",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-19",
+    "category": "소모푸",
+    "amount": -83660,
+    "method": "카드",
+    "memo": "네이버페이",
+    "counterparty": "헤드스파"
+  },
+  {
+    "date": "2026-02-20",
+    "category": "수수료",
+    "amount": -8500,
+    "method": "카드",
+    "memo": "애플 어플?",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-21",
+    "category": "식비",
+    "amount": -1600,
+    "method": "카드",
+    "memo": "매머드커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-21",
+    "category": "의류비",
+    "amount": -28380,
+    "method": "카드",
+    "memo": "지그재그",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-21",
+    "category": "식비",
+    "amount": -3600,
+    "method": "카드",
+    "memo": "두꺼비식자재마트",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-21",
+    "category": "의류비",
+    "amount": -347250,
+    "method": "카드",
+    "memo": "룰루레몬",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-23",
+    "category": "보험료",
+    "amount": -94811,
+    "method": "카드",
+    "memo": "동양생명 보험",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-23",
+    "category": "식비",
+    "amount": -16266,
+    "method": "카드",
+    "memo": "네이버페이",
+    "counterparty": "고춧가루"
+  },
+  {
+    "date": "2026-02-24",
+    "category": "교육비",
+    "amount": -1089000,
+    "method": "카드",
+    "memo": "바레자격증",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-24",
+    "category": "식비",
+    "amount": -1600,
+    "method": "카드",
+    "memo": "매머드커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-19",
+    "category": "식비",
+    "amount": -49390,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-19",
+    "category": "식비",
+    "amount": -18990,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-21",
+    "category": "소모품",
+    "amount": -12500,
+    "method": "카드",
+    "memo": "쿠팡",
+    "counterparty": "바디워시"
+  },
+  {
+    "date": "2026-02-21",
+    "category": "소모품",
+    "amount": -15000,
+    "method": "카드",
+    "memo": "쿠팡",
+    "counterparty": "바디로션"
+  },
+  {
+    "date": "2026-02-19",
+    "category": "식비",
+    "amount": -14900,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-19",
+    "category": "식비",
+    "amount": -14150,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-20",
+    "category": "식비",
+    "amount": -12920,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-21",
+    "category": "식비",
+    "amount": -12000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-21",
+    "category": "식비",
+    "amount": -20000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-19",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인레슨",
+    "counterparty": "김찬희"
+  },
+  {
+    "date": "2026-02-23",
+    "category": "매출",
+    "amount": 660000,
+    "method": "카드",
+    "memo": "그룹레슨",
+    "counterparty": "윤정민20"
+  },
+  {
+    "date": "2026-02-23",
+    "category": "매출",
+    "amount": 330000,
+    "method": "카드",
+    "memo": "그룹레슨",
+    "counterparty": "김민지"
+  },
+  {
+    "date": "2026-02-23",
+    "category": "매출",
+    "amount": 693000,
+    "method": "카드",
+    "memo": "재활레슨",
+    "counterparty": "박지연"
+  },
+  {
+    "date": "2026-02-24",
+    "category": "마케팅비",
+    "amount": 20000,
+    "method": "계좌이체",
+    "memo": "이달의도전",
+    "counterparty": "이로아"
+  },
+  {
+    "date": "2026-02-26",
+    "category": "매출",
+    "amount": 33000,
+    "method": "현금",
+    "memo": "체험레슨",
+    "counterparty": "권은희"
+  },
+  {
+    "date": "2026-02-26",
+    "category": "식비",
+    "amount": -2000,
+    "method": "계좌이체",
+    "memo": "김유진",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-28",
+    "category": "마케팅비",
+    "amount": 20000,
+    "method": "계좌이체",
+    "memo": "이달의도전",
+    "counterparty": "정다정"
+  },
+  {
+    "date": "2026-02-28",
+    "category": "마케팅비",
+    "amount": 20000,
+    "method": "계좌이체",
+    "memo": "이달의도전",
+    "counterparty": "양나래"
+  },
+  {
+    "date": "2026-02-23",
+    "category": "소모품",
+    "amount": -25430,
+    "method": "카드",
+    "memo": "쿠팡",
+    "counterparty": "락스"
+  },
+  {
+    "date": "2026-02-24",
+    "category": "식비",
+    "amount": -18780,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-26",
+    "category": "식비",
+    "amount": -17690,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-27",
+    "category": "소모품",
+    "amount": -13660,
+    "method": "카드",
+    "memo": "쿠팡",
+    "counterparty": "헤라쿠션"
+  },
+  {
+    "date": "2026-02-26",
+    "category": "식비",
+    "amount": -12920,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-28",
+    "category": "식비",
+    "amount": -31000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-25",
+    "category": "정기결제",
+    "amount": -99000,
+    "method": "카드",
+    "memo": "캔바 프로",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-25",
+    "category": "의류비",
+    "amount": -256500,
+    "method": "카드",
+    "memo": "룰루레몬",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-25",
+    "category": "식비",
+    "amount": -31400,
+    "method": "카드",
+    "memo": "배민",
+    "counterparty": "베라?아빠"
+  },
+  {
+    "date": "2026-02-28",
+    "category": "식비",
+    "amount": -1800,
+    "method": "카드",
+    "memo": "컴포즈커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-28",
+    "category": "교통비",
+    "amount": -16250,
+    "method": "카드",
+    "memo": "2월 교통비",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-28",
+    "category": "급여",
+    "amount": -261090,
+    "method": "계좌이체",
+    "memo": "김우영 2월 급여",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-28",
+    "category": "급여",
+    "amount": -551190,
+    "method": "계좌이체",
+    "memo": "김현정 2월 급여",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-28",
+    "category": "유진급여",
+    "amount": -2000000,
+    "method": "계좌이체",
+    "memo": "유진 2월 급여",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-28",
+    "category": "예비비",
+    "amount": -1800000,
+    "method": "계좌이체",
+    "memo": "예비비",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-26",
+    "category": "매출",
+    "amount": -330000,
+    "method": "카드",
+    "memo": "그룹레슨",
+    "counterparty": "김민지 취소"
+  },
+  {
+    "date": "2026-02-26",
+    "category": "매출",
+    "amount": 33000,
+    "method": "카드",
+    "memo": "김민지 위약금",
+    "counterparty": null
+  },
+  {
+    "date": "2026-02-09",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인레슨",
+    "counterparty": "김유림"
+  },
+  {
+    "date": "2026-02-11",
+    "category": "매출",
+    "amount": 290000,
+    "method": "카드",
+    "memo": "그룹레슨",
+    "counterparty": "김혜선"
+  },
+  {
+    "date": "2026-02-25",
+    "category": "매출",
+    "amount": 585000,
+    "method": "카드",
+    "memo": "개인레슨",
+    "counterparty": "구나영"
+  },
+  {
+    "date": "2026-02-26",
+    "category": "매출",
+    "amount": 770000,
+    "method": "카드",
+    "memo": "재활레슨",
+    "counterparty": "이태겸"
+  },
+  {
+    "date": "2026-02-27",
+    "category": "매출",
+    "amount": 770000,
+    "method": "카드",
+    "memo": "재활레슨",
+    "counterparty": "김지민"
+  },
+  {
+    "date": "2026-03-01",
+    "category": "임대료",
+    "amount": -1430000,
+    "method": "계좌이체",
+    "memo": "2월 임대료",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-01",
+    "category": "마케팅비",
+    "amount": -20000,
+    "method": "현금",
+    "memo": "이달의도전환급",
+    "counterparty": "이로아"
+  },
+  {
+    "date": "2026-03-01",
+    "category": "마케팅비",
+    "amount": -20000,
+    "method": "현금",
+    "memo": "이달의도전환급",
+    "counterparty": "양나래"
+  },
+  {
+    "date": "2026-03-03",
+    "category": "수수료",
+    "amount": -50000,
+    "method": "계좌이체",
+    "memo": "연구실회비",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-03",
+    "category": "세금",
+    "amount": -2520,
+    "method": "계좌이체",
+    "memo": "지방세",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-03",
+    "category": "세금",
+    "amount": -25200,
+    "method": "계좌이체",
+    "memo": "원천세",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-03",
+    "category": "정기결제",
+    "amount": -66000,
+    "method": "계좌이체",
+    "memo": "오투스세무",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-03",
+    "category": "의류비",
+    "amount": -250000,
+    "method": "계좌이체",
+    "memo": "토스페이",
+    "counterparty": "지그재그"
+  },
+  {
+    "date": "2026-03-03",
+    "category": "의류비",
+    "amount": -160000,
+    "method": "계좌이체",
+    "memo": "네이버페이",
+    "counterparty": "가죽자켓"
+  },
+  {
+    "date": "2026-03-04",
+    "category": "매출",
+    "amount": 650000,
+    "method": "현금",
+    "memo": "개인레슨",
+    "counterparty": "권유민"
+  },
+  {
+    "date": "2026-03-04",
+    "category": "경조사비",
+    "amount": 190000,
+    "method": "현금",
+    "memo": "오빠가준 생일선물",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-05",
+    "category": "매출",
+    "amount": 55000,
+    "method": "현금",
+    "memo": "체험레슨",
+    "counterparty": "강민주"
+  },
+  {
+    "date": "2026-03-05",
+    "category": "보험료",
+    "amount": -50000,
+    "method": "계좌이체",
+    "memo": "db손해보험",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-05",
+    "category": "품위유지비",
+    "amount": 366000,
+    "method": "계좌이체",
+    "memo": "오빠 헬스장",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-06",
+    "category": "소모품",
+    "amount": -80000,
+    "method": "계좌이체",
+    "memo": "네이버페이",
+    "counterparty": "올리브영"
+  },
+  {
+    "date": "2026-03-09",
+    "category": "의류비",
+    "amount": -44370,
+    "method": "계좌이체",
+    "memo": "토스퀵계좌이체",
+    "counterparty": "리플러츠"
+  },
+  {
+    "date": "2026-03-10",
+    "category": "보험료",
+    "amount": -101200,
+    "method": "계좌이체",
+    "memo": "건강보험",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-10",
+    "category": "보험료",
+    "amount": -189570,
+    "method": "계좌이체",
+    "memo": "국민연금",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-10",
+    "category": "교육비",
+    "amount": -70000,
+    "method": "계좌이체",
+    "memo": "종합시험",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-10",
+    "category": "보험료",
+    "amount": -250000,
+    "method": "계좌이체",
+    "memo": "노란우산",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-10",
+    "category": "경조사비",
+    "amount": 149684,
+    "method": "계좌이체",
+    "memo": "김유진",
+    "counterparty": "언니가 준 생일선물?"
+  },
+  {
+    "date": "2026-03-11",
+    "category": "매출",
+    "amount": 33000,
+    "method": "현금",
+    "memo": "체험레슨",
+    "counterparty": "손수민"
+  },
+  {
+    "date": "2026-03-12",
+    "category": "의류비",
+    "amount": 161218,
+    "method": "계좌이체",
+    "memo": "김유진",
+    "counterparty": "가죽자켓환불"
+  },
+  {
+    "date": "2026-03-02",
+    "category": "소모품",
+    "amount": -5710,
+    "method": "카드",
+    "memo": "쿠팡",
+    "counterparty": "가글"
+  },
+  {
+    "date": "2026-03-02",
+    "category": "식비",
+    "amount": -24400,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-03",
+    "category": "식비",
+    "amount": -22940,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-08",
+    "category": "식비",
+    "amount": -18610,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": "세종감"
+  },
+  {
+    "date": "2026-03-09",
+    "category": "식비",
+    "amount": -18610,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-04",
+    "category": "식비",
+    "amount": -24000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": "불고기"
+  },
+  {
+    "date": "2026-03-08",
+    "category": "식비",
+    "amount": -16040,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": "냉면"
+  },
+  {
+    "date": "2026-03-01",
+    "category": "소모품",
+    "amount": -76600,
+    "method": "카드",
+    "memo": "올리브영",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-01",
+    "category": "마케팅비",
+    "amount": -8900,
+    "method": "카드",
+    "memo": "이달의도전 선물",
+    "counterparty": "이로아"
+  },
+  {
+    "date": "2026-03-01",
+    "category": "마케팅비",
+    "amount": -8900,
+    "method": "카드",
+    "memo": "이달의도전 선물",
+    "counterparty": "양나래"
+  },
+  {
+    "date": "2026-03-02",
+    "category": "의류비",
+    "amount": -77600,
+    "method": "카드",
+    "memo": "미소페 로퍼",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-04",
+    "category": "의류비",
+    "amount": -31500,
+    "method": "카드",
+    "memo": null,
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-04",
+    "category": "의류비",
+    "amount": -60660,
+    "method": "카드",
+    "memo": "지그재그",
+    "counterparty": "슬로우앤드"
+  },
+  {
+    "date": "2026-03-04",
+    "category": "식비",
+    "amount": -1600,
+    "method": "카드",
+    "memo": "매머드커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-04",
+    "category": "의류비",
+    "amount": -54720,
+    "method": "카드",
+    "memo": "지그재그",
+    "counterparty": "리어스"
+  },
+  {
+    "date": "2026-03-04",
+    "category": "의류비",
+    "amount": -90000,
+    "method": "카드",
+    "memo": "플로뉴",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-04",
+    "category": "경조사비",
+    "amount": -25700,
+    "method": "카드",
+    "memo": "컬리",
+    "counterparty": "프리지아"
+  },
+  {
+    "date": "2026-03-05",
+    "category": "정기결제",
+    "amount": -30900,
+    "method": "카드",
+    "memo": "청호나이스",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-05",
+    "category": "식비",
+    "amount": -1600,
+    "method": "카드",
+    "memo": "매머드커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-05",
+    "category": "품위유지비",
+    "amount": -366000,
+    "method": "카드",
+    "memo": "오빠 헬스장",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-06",
+    "category": "의류비",
+    "amount": -91800,
+    "method": "카드",
+    "memo": "삼성물산",
+    "counterparty": "제너럴아이디어 샀다가 환불"
+  },
+  {
+    "date": "2026-03-07",
+    "category": "식비",
+    "amount": -1600,
+    "method": "카드",
+    "memo": "매머드커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-08",
+    "category": "식비",
+    "amount": -21400,
+    "method": "카드",
+    "memo": "이십세기분식포차",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-08",
+    "category": "식비",
+    "amount": -23100,
+    "method": "카드",
+    "memo": "역전할머니맥주",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-10",
+    "category": "의류비",
+    "amount": -6000,
+    "method": "카드",
+    "memo": "리어스치마교환비",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-10",
+    "category": "보험료",
+    "amount": -94811,
+    "method": "카드",
+    "memo": "동양생명보험",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-11",
+    "category": "식비",
+    "amount": -1600,
+    "method": "카드",
+    "memo": "매머드커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-11",
+    "category": "교육비",
+    "amount": -2000,
+    "method": "카드",
+    "memo": "퓨처스콜레",
+    "counterparty": "암재활라이브클래스"
+  },
+  {
+    "date": "2026-03-12",
+    "category": "소품",
+    "amount": -279000,
+    "method": "카드",
+    "memo": "더플로라",
+    "counterparty": "유라이크 제모기"
+  },
+  {
+    "date": "2026-03-13",
+    "category": "식비",
+    "amount": -3800,
+    "method": "카드",
+    "memo": "편의점",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-14",
+    "category": "의류비",
+    "amount": -126020,
+    "method": "카드",
+    "memo": "무신사",
+    "counterparty": "아디다스 신발?"
+  },
+  {
+    "date": "2026-03-14",
+    "category": "식비",
+    "amount": -1800,
+    "method": "카드",
+    "memo": "편의점",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-14",
+    "category": "정기결제",
+    "amount": -4400,
+    "method": "카드",
+    "memo": "애플",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-15",
+    "category": "식비",
+    "amount": -5300,
+    "method": "카드",
+    "memo": "투썸",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-16",
+    "category": "의류비",
+    "amount": -76313,
+    "method": "카드",
+    "memo": "비경통상",
+    "counterparty": "미소페 구두"
+  },
+  {
+    "date": "2026-03-17",
+    "category": "마케팅비",
+    "amount": -4159,
+    "method": "카드",
+    "memo": "비즈하우스",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-18",
+    "category": "식비",
+    "amount": -1800,
+    "method": "카드",
+    "memo": "컴포즈커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-19",
+    "category": "식비",
+    "amount": -4000,
+    "method": "카드",
+    "memo": "편의점",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-20",
+    "category": "식비",
+    "amount": -1800,
+    "method": "카드",
+    "memo": "편의점",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-20",
+    "category": "정기결제",
+    "amount": -2500,
+    "method": "카드",
+    "memo": "애플",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-21",
+    "category": "식비",
+    "amount": -3000,
+    "method": "카드",
+    "memo": "컴포즈커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-21",
+    "category": "식비",
+    "amount": -4000,
+    "method": "카드",
+    "memo": "편의점",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-22",
+    "category": "식비",
+    "amount": -3300,
+    "method": "카드",
+    "memo": "메가커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-23",
+    "category": "소모품",
+    "amount": -30340,
+    "method": "카드",
+    "memo": "올리브영",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-05",
+    "category": "매출",
+    "amount": 200000,
+    "method": "카드",
+    "memo": "그룹 레슨",
+    "counterparty": "김은총 분할"
+  },
+  {
+    "date": "2026-03-05",
+    "category": "매출",
+    "amount": 130000,
+    "method": "카드",
+    "memo": "그룹 레슨",
+    "counterparty": "김은총  분할"
+  },
+  {
+    "date": "2026-03-10",
+    "category": "매출",
+    "amount": 58500,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "권은희 위약금"
+  },
+  {
+    "date": "2026-03-13",
+    "category": "매출",
+    "amount": 55000,
+    "method": "카드",
+    "memo": "체험 레슨",
+    "counterparty": "신영자"
+  },
+  {
+    "date": "2026-03-13",
+    "category": "매출",
+    "amount": 770000,
+    "method": "카드",
+    "memo": "재활 레슨",
+    "counterparty": "양다정"
+  },
+  {
+    "date": "2026-03-17",
+    "category": "매출",
+    "amount": 150000,
+    "method": "카드",
+    "memo": "그룹 레슨",
+    "counterparty": "정재연 분할"
+  },
+  {
+    "date": "2026-03-17",
+    "category": "매출",
+    "amount": 180000,
+    "method": "카드",
+    "memo": "그룹 레슨",
+    "counterparty": "정재연 분할"
+  },
+  {
+    "date": "2026-03-19",
+    "category": "매출",
+    "amount": 611500,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "임현경"
+  },
+  {
+    "date": "2026-03-19",
+    "category": "매출",
+    "amount": 585000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "심영이"
+  },
+  {
+    "date": "2026-03-20",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "김민지"
+  },
+  {
+    "date": "2026-03-20",
+    "category": "매출",
+    "amount": 693000,
+    "method": "카드",
+    "memo": "재활 레슨",
+    "counterparty": "황재국"
+  },
+  {
+    "date": "2026-03-23",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "신효원"
+  },
+  {
+    "date": "2026-03-23",
+    "category": "매출",
+    "amount": 660000,
+    "method": "카드",
+    "memo": "그룹 레슨",
+    "counterparty": "김수진"
+  },
+  {
+    "date": "2026-03-23",
+    "category": "매출",
+    "amount": 355000,
+    "method": "카드",
+    "memo": "그룹 레슨",
+    "counterparty": "이로아 분할"
+  },
+  {
+    "date": "2026-03-23",
+    "category": "매출",
+    "amount": 272000,
+    "method": "계좌이체",
+    "memo": "그룹 레슨",
+    "counterparty": "이로아 분할 서울페이"
+  },
+  {
+    "date": "2026-03-24",
+    "category": "매출",
+    "amount": 1300000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "박진20"
+  },
+  {
+    "date": "2026-03-27",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "이유정"
+  },
+  {
+    "date": "2026-03-28",
+    "category": "매출",
+    "amount": 770000,
+    "method": "카드",
+    "memo": "재활 레슨",
+    "counterparty": "박지연"
+  },
+  {
+    "date": "2026-03-19",
+    "category": "매출",
+    "amount": 55000,
+    "method": "현금",
+    "memo": "체험 레슨",
+    "counterparty": "황재국"
+  },
+  {
+    "date": "2026-03-20",
+    "category": "매출",
+    "amount": 55000,
+    "method": "현금",
+    "memo": "체험 레슨",
+    "counterparty": "리 지칭"
+  },
+  {
+    "date": "2026-03-25",
+    "category": "식비",
+    "amount": -28000,
+    "method": "카드",
+    "memo": "스토리페이",
+    "counterparty": "모참지모찌"
+  },
+  {
+    "date": "2026-03-25",
+    "category": "의료비",
+    "amount": -8000,
+    "method": "카드",
+    "memo": "영림약국",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-25",
+    "category": "식비",
+    "amount": -2800,
+    "method": "카드",
+    "memo": "코레일유통주식회사(야탑역)",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-25",
+    "category": "소품",
+    "amount": -68953,
+    "method": "카드",
+    "memo": "오늘의집",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-25",
+    "category": "소모품",
+    "amount": -30000,
+    "method": "카드",
+    "memo": "숲속애(愛)",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-25",
+    "category": "소품",
+    "amount": -1148400,
+    "method": "카드",
+    "memo": "숲속애(愛)",
+    "counterparty": "편백공기순환기"
+  },
+  {
+    "date": "2026-03-25",
+    "category": "식비",
+    "amount": -1600,
+    "method": "카드",
+    "memo": "주식회사 발트페이먼츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-26",
+    "category": "경조사비",
+    "amount": -78730,
+    "method": "카드",
+    "memo": "주식회사 무신사페이먼츠",
+    "counterparty": "송민경 생일"
+  },
+  {
+    "date": "2026-03-26",
+    "category": "식비",
+    "amount": -90600,
+    "method": "카드",
+    "memo": "(주)포인트나인크루",
+    "counterparty": "곡물도감 두유"
+  },
+  {
+    "date": "2026-03-26",
+    "category": "식비",
+    "amount": -21000,
+    "method": "카드",
+    "memo": "스토리페이",
+    "counterparty": "모참지모찌"
+  },
+  {
+    "date": "2026-03-26",
+    "category": "식비",
+    "amount": -11180,
+    "method": "카드",
+    "memo": "서흥마트",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-26",
+    "category": "식비",
+    "amount": -14000,
+    "method": "카드",
+    "memo": "스토리페이",
+    "counterparty": "모참지모찌"
+  },
+  {
+    "date": "2026-03-28",
+    "category": "식비",
+    "amount": -2600,
+    "method": "카드",
+    "memo": "삼시세끼",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-28",
+    "category": "식비",
+    "amount": -500,
+    "method": "카드",
+    "memo": "컴포즈커피 삼육서울병원점",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-29",
+    "category": "식비",
+    "amount": -3300,
+    "method": "카드",
+    "memo": "메가MGC커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-31",
+    "category": "의료비",
+    "amount": -11000,
+    "method": "카드",
+    "memo": "오아로피부과의원 청량리",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-09",
+    "category": "식비",
+    "amount": -18610,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-12",
+    "category": "소모품",
+    "amount": -14290,
+    "method": "카드",
+    "memo": "치약",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-13",
+    "category": "식비",
+    "amount": -36150,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-13",
+    "category": "식비",
+    "amount": -25400,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-14",
+    "category": "식비",
+    "amount": -10000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-15",
+    "category": "소모품",
+    "amount": -19530,
+    "method": "카드",
+    "memo": "두루마리 휴지",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-15",
+    "category": "식비",
+    "amount": -24900,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-16",
+    "category": "식비",
+    "amount": -41780,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-17",
+    "category": "소모품",
+    "amount": -7890,
+    "method": "카드",
+    "memo": "수면양말",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-18",
+    "category": "정기결제",
+    "amount": -7890,
+    "method": "카드",
+    "memo": "쿠팡(와우 멤버십)",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-18",
+    "category": "식비",
+    "amount": -5434,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-19",
+    "category": "식비",
+    "amount": -13100,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-20",
+    "category": "식비",
+    "amount": -13200,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-20",
+    "category": "식비",
+    "amount": -18000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-21",
+    "category": "식비",
+    "amount": -27000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-21",
+    "category": "식비",
+    "amount": -42370,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-21",
+    "category": "식비",
+    "amount": -15200,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-22",
+    "category": "식비",
+    "amount": -12920,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-23",
+    "category": "식비",
+    "amount": -15100,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-24",
+    "category": "식비",
+    "amount": -66390,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-24",
+    "category": "소모품",
+    "amount": -3490,
+    "method": "카드",
+    "memo": "네코 무선 마이크",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-24",
+    "category": "식비",
+    "amount": -14000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-26",
+    "category": "소모품",
+    "amount": -20900,
+    "method": "카드",
+    "memo": "누브라",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-29",
+    "category": "식비",
+    "amount": -25310,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-30",
+    "category": "소모품",
+    "amount": -15260,
+    "method": "카드",
+    "memo": "마몽드스킨",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-30",
+    "category": "식비",
+    "amount": -22130,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-30",
+    "category": "식비",
+    "amount": -18000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-31",
+    "category": "식비",
+    "amount": -4180,
+    "method": "카드",
+    "memo": "쌈토장",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-13",
+    "category": "수수료",
+    "amount": 24439,
+    "method": "계좌이체",
+    "memo": "아웃백 쿠폰 환불",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-14",
+    "category": "수수료",
+    "amount": -47500,
+    "method": "계좌이체",
+    "memo": "서울페이 구매",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-14",
+    "category": "품위유지비",
+    "amount": -270000,
+    "method": "계좌이체",
+    "memo": "피부합 윤곽관리",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-16",
+    "category": "공과금",
+    "amount": -53340,
+    "method": "계좌이체",
+    "memo": "휴대폰 요금",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-16",
+    "category": "수수료",
+    "amount": -524394,
+    "method": "계좌이체",
+    "memo": "롯데카드 정산",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-16",
+    "category": "수수료",
+    "amount": -295812,
+    "method": "계좌이체",
+    "memo": "현대카드 정산",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-17",
+    "category": "관리비",
+    "amount": -366010,
+    "method": "계좌이체",
+    "memo": "2월 관리비",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-17",
+    "category": "수수료",
+    "amount": -475000,
+    "method": "계좌이체",
+    "memo": "서울페이 구매",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-17",
+    "category": "수수료",
+    "amount": -323959,
+    "method": "계좌이체",
+    "memo": "카카오페이(언니) 서울페이구매",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-20",
+    "category": "교육비",
+    "amount": 100000,
+    "method": "현금",
+    "memo": "바레 워크샵 환불",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-22",
+    "category": "세금",
+    "amount": -2120710,
+    "method": "계좌이체",
+    "memo": "부가세 납부",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-26",
+    "category": "식비",
+    "amount": -7000,
+    "method": "현금",
+    "memo": "홀리샷커피",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-29",
+    "category": "마케팅비",
+    "amount": 20000,
+    "method": "현금",
+    "memo": "이달의도전",
+    "counterparty": "이로아"
+  },
+  {
+    "date": "2026-03-31",
+    "category": "마케팅비",
+    "amount": 20000,
+    "method": "현금",
+    "memo": "이달의도전",
+    "counterparty": "양나래"
+  },
+  {
+    "date": "2026-03-31",
+    "category": "급여",
+    "amount": -783270,
+    "method": "계좌이체",
+    "memo": "김우영 3월 급여",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-31",
+    "category": "급여",
+    "amount": -609210,
+    "method": "계좌이체",
+    "memo": "김현정 3월 급여",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-31",
+    "category": "유진 급여",
+    "amount": -2500000,
+    "method": "계좌이체",
+    "memo": "유진 급여",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-31",
+    "category": "교통비",
+    "amount": -48100,
+    "method": "카드",
+    "memo": "3월 교통비",
+    "counterparty": null
+  },
+  {
+    "date": "2026-03-31",
+    "category": "예비비",
+    "amount": -1800000,
+    "method": "계좌이체",
+    "memo": "예비비",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-01",
+    "category": "임대료",
+    "amount": -1430000,
+    "method": "계좌이체",
+    "memo": "3월 임대료",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-01",
+    "category": "세금",
+    "amount": -43200,
+    "method": null,
+    "memo": "원천세",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-01",
+    "category": "세금",
+    "amount": -4320,
+    "method": null,
+    "memo": "지방세",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-01",
+    "category": "마케팅비",
+    "amount": 20000,
+    "method": null,
+    "memo": "이달의도전",
+    "counterparty": "정다정"
+  },
+  {
+    "date": "2026-04-01",
+    "category": "정기결제",
+    "amount": -66000,
+    "method": null,
+    "memo": "오투스세무",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-01",
+    "category": "마케팅비",
+    "amount": -20000,
+    "method": null,
+    "memo": "이달의도전 환급",
+    "counterparty": "이로아"
+  },
+  {
+    "date": "2026-04-01",
+    "category": "마케팅비",
+    "amount": -20000,
+    "method": null,
+    "memo": "이달의도전 환급",
+    "counterparty": "양나래"
+  },
+  {
+    "date": "2026-04-03",
+    "category": "매출",
+    "amount": 65000,
+    "method": null,
+    "memo": "개인 레슨",
+    "counterparty": "권은희"
+  },
+  {
+    "date": "2026-04-06",
+    "category": "보험료",
+    "amount": -50000,
+    "method": null,
+    "memo": "db손해보험",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-08",
+    "category": "매출",
+    "amount": 33000,
+    "method": null,
+    "memo": "체험 레슨",
+    "counterparty": "김미선"
+  },
+  {
+    "date": "2026-04-10",
+    "category": "보험료",
+    "amount": -101200,
+    "method": null,
+    "memo": "건강보험",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-10",
+    "category": "보험료",
+    "amount": -189570,
+    "method": null,
+    "memo": "국민연금",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-10",
+    "category": "보험료",
+    "amount": -250000,
+    "method": null,
+    "memo": "노란우산",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-14",
+    "category": "소모품",
+    "amount": -30000,
+    "method": "네이버페이",
+    "memo": "검정 스틸레토 힐",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-14",
+    "category": "소모품",
+    "amount": -50000,
+    "method": "네이버페이",
+    "memo": "부케",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-14",
+    "category": "소모품",
+    "amount": -30000,
+    "method": "네이버페이",
+    "memo": "부케",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-15",
+    "category": "공과금",
+    "amount": -53340,
+    "method": "계좌이체",
+    "memo": "휴대폰요금",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-16",
+    "category": "매출",
+    "amount": 770000,
+    "method": "현금",
+    "memo": "재활 레슨",
+    "counterparty": "김아정"
+  },
+  {
+    "date": "2026-04-17",
+    "category": "관리비",
+    "amount": 292400,
+    "method": "계좌이체",
+    "memo": "3월 관리비",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-17",
+    "category": "매출",
+    "amount": 650000,
+    "method": "현금",
+    "memo": "개인 레슨",
+    "counterparty": "권유민"
+  },
+  {
+    "date": "2026-04-18",
+    "category": "경조사비",
+    "amount": -30000,
+    "method": "네이버페이",
+    "memo": "근수쌤 결혼선물",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-18",
+    "category": "품위유지비",
+    "amount": -50000,
+    "method": "네이버페이",
+    "memo": "민트컨디션",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-20",
+    "category": "경조사비",
+    "amount": -40000,
+    "method": "네이버페이",
+    "memo": "근수쌤 결혼선물",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-22",
+    "category": "세금",
+    "amount": -1060000,
+    "method": "계좌이체",
+    "memo": "부가세 예정고지",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-22",
+    "category": "매출",
+    "amount": 55000,
+    "method": "현금",
+    "memo": "체험 레슨",
+    "counterparty": "최수정"
+  },
+  {
+    "date": "2026-04-22",
+    "category": "매출",
+    "amount": 55000,
+    "method": "현금",
+    "memo": "체험 레슨",
+    "counterparty": "이재효"
+  },
+  {
+    "date": "2026-04-23",
+    "category": "매출",
+    "amount": 650000,
+    "method": "계좌이체",
+    "memo": "개인 레슨",
+    "counterparty": "정주희 서울페이"
+  },
+  {
+    "date": "2026-04-24",
+    "category": "품위유지비",
+    "amount": 280000,
+    "method": "계좌이체",
+    "memo": "데이데이",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-25",
+    "category": "매출",
+    "amount": 650000,
+    "method": "계좌이체",
+    "memo": "개인 레슨",
+    "counterparty": "양미래"
+  },
+  {
+    "date": "2026-04-30",
+    "category": "마케팅비",
+    "amount": 20000,
+    "method": "현금",
+    "memo": "이달의도전",
+    "counterparty": "이로아"
+  },
+  {
+    "date": "2026-04-30",
+    "category": "마케팅비",
+    "amount": 20000,
+    "method": "현금",
+    "memo": "이달의도전",
+    "counterparty": "정다정"
+  },
+  {
+    "date": "2026-04-30",
+    "category": "마케팅비",
+    "amount": 20000,
+    "method": "현금",
+    "memo": "이달의도전",
+    "counterparty": "양나래"
+  },
+  {
+    "date": "2026-04-30",
+    "category": "매출",
+    "amount": 38500,
+    "method": "현금",
+    "memo": "듀엣 레슨",
+    "counterparty": "임현경"
+  },
+  {
+    "date": "2026-04-01",
+    "category": "식비",
+    "amount": -18390,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-03",
+    "category": "식비",
+    "amount": -13100,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-05",
+    "category": "식비",
+    "amount": -23500,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-06",
+    "category": "소모품",
+    "amount": -17960,
+    "method": "카드",
+    "memo": "포도당캔디",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-06",
+    "category": "식비",
+    "amount": -15100,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-07",
+    "category": "식비",
+    "amount": -13200,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-08",
+    "category": "소모품",
+    "amount": -14850,
+    "method": "카드",
+    "memo": "바디로션",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-08",
+    "category": "식비",
+    "amount": -28100,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-09",
+    "category": "식비",
+    "amount": -5600,
+    "method": "카드",
+    "memo": "크런키초콜릿",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-09",
+    "category": "식비",
+    "amount": -22000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-10",
+    "category": "소모품",
+    "amount": -14900,
+    "method": "카드",
+    "memo": "주방세제",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-11",
+    "category": "소모품",
+    "amount": -14990,
+    "method": "카드",
+    "memo": "오빠양말",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-12",
+    "category": "식비",
+    "amount": -28940,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-12",
+    "category": "소모품",
+    "amount": -6030,
+    "method": "카드",
+    "memo": "바디워시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-12",
+    "category": "소모품",
+    "amount": -25360,
+    "method": "카드",
+    "memo": "바디로션",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-14",
+    "category": "식비",
+    "amount": -16420,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-16",
+    "category": "식비",
+    "amount": -9390,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-16",
+    "category": "소모품",
+    "amount": -3990,
+    "method": "카드",
+    "memo": "뒷꿈치 보호패드",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-16",
+    "category": "소모품",
+    "amount": -9900,
+    "method": "카드",
+    "memo": "신발 깔창",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-17",
+    "category": "식비",
+    "amount": -17900,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-17",
+    "category": "소모품",
+    "amount": -6400,
+    "method": "카드",
+    "memo": "건전지",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-17",
+    "category": "식비",
+    "amount": -15000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-17",
+    "category": "식비",
+    "amount": -15020,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-18",
+    "category": "정기결제",
+    "amount": -7890,
+    "method": "카드",
+    "memo": "쿠팡(와우 멤버십)",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-19",
+    "category": "소모품",
+    "amount": -18700,
+    "method": "카드",
+    "memo": "sd카드",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-19",
+    "category": "소모품",
+    "amount": -9500,
+    "method": "카드",
+    "memo": "숫자풍선",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-19",
+    "category": "식비",
+    "amount": -12100,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-20",
+    "category": "식비",
+    "amount": -39570,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-20",
+    "category": "소품",
+    "amount": -8300,
+    "method": "카드",
+    "memo": "비눗방울",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-20",
+    "category": "식비",
+    "amount": -14000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-21",
+    "category": "소모품",
+    "amount": -22900,
+    "method": "카드",
+    "memo": "보정속옷",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-22",
+    "category": "소모품",
+    "amount": -4900,
+    "method": "카드",
+    "memo": "큐티클오일",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-26",
+    "category": "소모품",
+    "amount": -12260,
+    "method": "카드",
+    "memo": "핸드워시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-26",
+    "category": "식비",
+    "amount": -37230,
+    "method": "카드",
+    "memo": "로켓프레시",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-27",
+    "category": "소모품",
+    "amount": -32890,
+    "method": "카드",
+    "memo": "양산",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-29",
+    "category": "식비",
+    "amount": -24000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-30",
+    "category": "식비",
+    "amount": -12300,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-30",
+    "category": "식비",
+    "amount": -14000,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-30",
+    "category": "교통비",
+    "amount": -53000,
+    "method": "카드",
+    "memo": "4월 교통비",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-02",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "김기수"
+  },
+  {
+    "date": "2026-04-02",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "황지현"
+  },
+  {
+    "date": "2026-04-03",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "김진서"
+  },
+  {
+    "date": "2026-04-08",
+    "category": "매출",
+    "amount": 585000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "권은희"
+  },
+  {
+    "date": "2026-04-08",
+    "category": "매출",
+    "amount": 585000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "김미선"
+  },
+  {
+    "date": "2026-04-08",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "김유림"
+  },
+  {
+    "date": "2026-04-16",
+    "category": "매출",
+    "amount": 330000,
+    "method": "카드",
+    "memo": "그룹 레슨",
+    "counterparty": "김혜선"
+  },
+  {
+    "date": "2026-04-18",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "장예지"
+  },
+  {
+    "date": "2026-04-18",
+    "category": "매출",
+    "amount": 770000,
+    "method": "카드",
+    "memo": "재활 레슨",
+    "counterparty": "김지민"
+  },
+  {
+    "date": "2026-04-22",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "심영이"
+  },
+  {
+    "date": "2026-04-23",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "김민지"
+  },
+  {
+    "date": "2026-04-28",
+    "category": "매출",
+    "amount": 33000,
+    "method": "카드",
+    "memo": "체험 레슨",
+    "counterparty": "류진형"
+  },
+  {
+    "date": "2026-04-30",
+    "category": "매출",
+    "amount": 330000,
+    "method": "카드",
+    "memo": "그룹 레슨",
+    "counterparty": "정재연"
+  },
+  {
+    "date": "2026-04-30",
+    "category": "급여",
+    "amount": -899310,
+    "method": "계좌이체",
+    "memo": "김우영 4월 급여",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-30",
+    "category": "급여",
+    "amount": -783270,
+    "method": "계좌이체",
+    "memo": "김현정 4월 급여",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-30",
+    "category": "유진 급여",
+    "amount": -500000,
+    "method": "계좌이체",
+    "memo": "유진 급여",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-30",
+    "category": "예비비",
+    "amount": -1800000,
+    "method": "계좌이체",
+    "memo": "예비비",
+    "counterparty": null
+  },
+  {
+    "date": "2026-04-30",
+    "category": "교육비",
+    "amount": 850000,
+    "method": "계좌이체",
+    "memo": "오빠 교육비",
+    "counterparty": null
+  },
+  {
+    "date": "2026-05-01",
+    "category": "임대료",
+    "amount": -143000,
+    "method": "계좌이체",
+    "memo": "4월 임대료",
+    "counterparty": null
+  },
+  {
+    "date": "2026-05-01",
+    "category": "마케팅비",
+    "amount": -20000,
+    "method": "계좌이체",
+    "memo": "이달의도전환급",
+    "counterparty": "이로아"
+  },
+  {
+    "date": "2026-05-03",
+    "category": "소품",
+    "amount": -49900,
+    "method": "계좌이체",
+    "memo": "냉감이불",
+    "counterparty": null
+  },
+  {
+    "date": "2026-05-03",
+    "category": "매출",
+    "amount": 55000,
+    "method": "현금",
+    "memo": "체험 레슨",
+    "counterparty": "류진형"
+  },
+  {
+    "date": "2026-05-03",
+    "category": "세금",
+    "amount": -52200,
+    "method": "계좌이체",
+    "memo": "원천세",
+    "counterparty": null
+  },
+  {
+    "date": "2026-05-03",
+    "category": "세금",
+    "amount": -5220,
+    "method": "계좌이체",
+    "memo": "지방세",
+    "counterparty": null
+  },
+  {
+    "date": "2026-05-03",
+    "category": "마케팅비",
+    "amount": -20000,
+    "method": "계좌이체",
+    "memo": "이달의도전환급",
+    "counterparty": "양나래"
+  },
+  {
+    "date": "2026-05-03",
+    "category": "마케팅비",
+    "amount": -20000,
+    "method": "계좌이체",
+    "memo": "이달의도전환급",
+    "counterparty": "정다정"
+  },
+  {
+    "date": "2026-05-06",
+    "category": "정기결제",
+    "amount": -66000,
+    "method": "계좌이체",
+    "memo": "오투스세무",
+    "counterparty": null
+  },
+  {
+    "date": "2026-05-06",
+    "category": "보험료",
+    "amount": -50000,
+    "method": "계좌이체",
+    "memo": "db손해보험",
+    "counterparty": null
+  },
+  {
+    "date": "2026-05-11",
+    "category": "보험료",
+    "amount": -101200,
+    "method": "계좌이체",
+    "memo": "건강보험",
+    "counterparty": null
+  },
+  {
+    "date": "2026-05-11",
+    "category": "보험료",
+    "amount": -189570,
+    "method": "계좌이체",
+    "memo": "국민연금",
+    "counterparty": null
+  },
+  {
+    "date": "2026-05-11",
+    "category": "보험료",
+    "amount": -250000,
+    "method": "계좌이체",
+    "memo": "노란우산",
+    "counterparty": null
+  },
+  {
+    "date": "2026-05-13",
+    "category": "매출",
+    "amount": 650000,
+    "method": "현금",
+    "memo": "개인 레슨",
+    "counterparty": "조희선"
+  },
+  {
+    "date": "2026-05-15",
+    "category": "공과금",
+    "amount": -57690,
+    "method": "계좌이체",
+    "memo": "휴대폰 요금",
+    "counterparty": null
+  },
+  {
+    "date": "2026-05-18",
+    "category": "관리비",
+    "amount": -252130,
+    "method": "계좌이체",
+    "memo": "4월 관리비",
+    "counterparty": null
+  },
+  {
+    "date": "2026-05-19",
+    "category": "매출",
+    "amount": 55000,
+    "method": "계좌이체",
+    "memo": "체험 레슨",
+    "counterparty": "쿠보 켄이치"
+  },
+  {
+    "date": "2026-05-21",
+    "category": "공과금",
+    "amount": -24503,
+    "method": "계좌이체",
+    "memo": "와이파이",
+    "counterparty": null
+  },
+  {
+    "date": "2026-05-02",
+    "category": "매출",
+    "amount": 330000,
+    "method": "카드",
+    "memo": "그룹 레슨",
+    "counterparty": "사목희"
+  },
+  {
+    "date": "2026-05-07",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "신효원"
+  },
+  {
+    "date": "2026-05-07",
+    "category": "매출",
+    "amount": 660000,
+    "method": "카드",
+    "memo": "그룹 레슨",
+    "counterparty": "양나래 20"
+  },
+  {
+    "date": "2026-05-09",
+    "category": "매출",
+    "amount": 770000,
+    "method": "카드",
+    "memo": "재활 레슨",
+    "counterparty": "김희진"
+  },
+  {
+    "date": "2026-05-09",
+    "category": "매출",
+    "amount": 693000,
+    "method": "카드",
+    "memo": "재활 레슨",
+    "counterparty": "최수정"
+  },
+  {
+    "date": "2026-05-14",
+    "category": "매출",
+    "amount": 693000,
+    "method": "카드",
+    "memo": "재활 레슨",
+    "counterparty": "류진형"
+  },
+  {
+    "date": "2026-05-14",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "김기수"
+  },
+  {
+    "date": "2026-05-14",
+    "category": "매출",
+    "amount": 770000,
+    "method": "카드",
+    "memo": "재활 레슨",
+    "counterparty": "박지연"
+  },
+  {
+    "date": "2026-05-16",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "황지현"
+  },
+  {
+    "date": "2026-05-20",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "김유림"
+  },
+  {
+    "date": "2026-05-21",
+    "category": "매출",
+    "amount": 330000,
+    "method": "카드",
+    "memo": "그룹 레슨",
+    "counterparty": "김혜선"
+  },
+  {
+    "date": "2026-05-22",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "권은희"
+  },
+  {
+    "date": "2026-05-23",
+    "category": "매출",
+    "amount": 650000,
+    "method": "카드",
+    "memo": "개인 레슨",
+    "counterparty": "박건영"
+  },
+  {
+    "date": "2026-05-01",
+    "category": "교육비",
+    "amount": -150628,
+    "method": "카드",
+    "memo": "클로드",
+    "counterparty": null
+  },
+  {
+    "date": "2026-05-24",
+    "category": "식비",
+    "amount": -40900,
+    "method": "카드",
+    "memo": "쿠팡이츠",
+    "counterparty": null
+  }
+]

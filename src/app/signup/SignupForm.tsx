@@ -40,6 +40,14 @@ export function SignupForm() {
     }
     setSubmitting(true)
     try {
+      // Rate limit pre-check (IP 기반 abuse 방지)
+      const rlRes = await fetch('/api/auth/signup-check', { method: 'POST' })
+      if (rlRes.status === 429) {
+        const rlJson = await rlRes.json() as { error?: string }
+        setError(rlJson.error ?? '잠시 후 다시 시도해주세요')
+        setSubmitting(false)
+        return
+      }
       const supabase = getSupabaseAuthBrowser()
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),

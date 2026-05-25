@@ -10,6 +10,7 @@ import {
 } from '@/lib/supabase/chat-sessions'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
 import { loadProfile } from '@/lib/profile/settings'
+import { checkRateLimit } from '@/lib/security/rate-limit'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -29,6 +30,14 @@ export async function POST(req: Request) {
   }
   let ownerId: string
   try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+
+  // Rate limit: 분당 10회 / 시간당 60회 (사용자별)
+  if (!checkRateLimit(`chat:${ownerId}:m`, 10, 60_000)) {
+    return NextResponse.json({ error: '잠시 후 다시 시도해주세요 (분당 10회 제한)' }, { status: 429 })
+  }
+  if (!checkRateLimit(`chat:${ownerId}:h`, 60, 60 * 60_000)) {
+    return NextResponse.json({ error: '시간당 60회 한도 초과. 1시간 후 재시도하세요.' }, { status: 429 })
+  }
   let body: ChatRequestBody
   try {
     body = await req.json() as ChatRequestBody
