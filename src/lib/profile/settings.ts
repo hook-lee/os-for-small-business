@@ -1,6 +1,7 @@
 import { getSupabaseClient, hasSupabaseConfig } from '@/lib/supabase/client'
 
 export interface UserProfile {
+  workspaceName: string | null   // 사용자가 정한 워크스페이스 이름 (예: '라파 필라테스')
   birthDate: string | null
   businessAddress: string | null
   isYoungStartupEligible: boolean
@@ -11,6 +12,7 @@ export interface UserProfile {
 }
 
 export const DEFAULT_PROFILE: UserProfile = {
+  workspaceName: null,
   birthDate: null,
   businessAddress: null,
   isYoungStartupEligible: false,
@@ -22,10 +24,11 @@ export const DEFAULT_PROFILE: UserProfile = {
 
 interface ProfileRow {
   id: number
+  workspace_name?: string | null
   birth_date: string | null
   business_address: string | null
   is_young_startup_eligible: boolean
-  young_startup_reduction_rate: string | number  // PostgREST는 numeric을 문자열로 줌
+  young_startup_reduction_rate: string | number
   noranusan_annual_contribution: string | number
   pension_annual_contribution: string | number
   tax_payer_type?: string | null
@@ -36,6 +39,7 @@ function rowToProfile(row: ProfileRow): UserProfile {
   const youngStartupReductionRate: 0 | 0.5 | 1.0 =
     rate === 0.5 ? 0.5 : rate === 1 ? 1.0 : 0
   return {
+    workspaceName: row.workspace_name ?? null,
     birthDate: row.birth_date,
     businessAddress: row.business_address,
     isYoungStartupEligible: row.is_young_startup_eligible,
@@ -83,6 +87,7 @@ export async function saveProfile(profile: UserProfile, ownerId: string): Promis
   const supabase = getSupabaseClient()
   const baseFields: Record<string, unknown> = {
     owner_id: ownerId,
+    workspace_name: profile.workspaceName,
     birth_date: profile.birthDate,
     business_address: profile.businessAddress,
     is_young_startup_eligible: profile.isYoungStartupEligible,
@@ -107,15 +112,22 @@ export async function saveProfile(profile: UserProfile, ownerId: string): Promis
     error.message.includes('tax_payer_type') &&
     (error.message.includes('column') || error.message.includes('schema cache'))
 
-  if (isTaxPayerTypeMissing) {
+  // workspace_name 또는 tax_payer_type 컬럼이 아직 없는 환경 → 누락 필드 제거 후 재시도
+  const missingCols: string[] = []
+  if (error.message.includes('workspace_name')) missingCols.push('workspace_name')
+  if (error.message.includes('tax_payer_type')) missingCols.push('tax_payer_type')
+
+  if (missingCols.length > 0 || isTaxPayerTypeMissing) {
+    const retryFields: Record<string, unknown> = { ...baseFields, tax_payer_type: profile.taxPayerType ?? 'general' }
+    for (const col of missingCols) delete retryFields[col]
+    if (isTaxPayerTypeMissing) delete retryFields.tax_payer_type
     const { error: retryError } = await supabase
       .from('profile')
-      .upsert(baseFields, { onConflict: 'owner_id' })
+      .upsert(retryFields, { onConflict: 'owner_id' })
     if (retryError) {
       throw new Error(`프로필 저장 실패: ${retryError.message}`)
     }
-    // 다른 필드는 저장 성공. tax_payer_type만 누락 → 콘솔 경고
-    console.warn('[profile] tax_payer_type 저장 누락: v2.9 마이그레이션 필요 (PENDING-MIGRATIONS.sql)')
+    console.warn(`[profile] 누락된 컬럼: ${missingCols.join(', ')}${isTaxPayerTypeMissing ? ', tax_payer_type' : ''}. 마이그레이션 필요.`)
     return
   }
 

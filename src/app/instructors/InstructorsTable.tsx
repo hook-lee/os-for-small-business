@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
+import { ColorPicker } from '@/components/ColorPicker'
 import type { Instructor } from '@/lib/supabase/instructors'
 
 // 역할 우선순위: owner(0) → admin(1) → instructor(2). 같은 역할 내에서는 이름 가나다순.
@@ -184,14 +185,8 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
               />
             </div>
             <div>
-              <label className="block text-xs text-neutral-500 mb-1">색상 (hex)</label>
-              <input
-                type="text"
-                value={addForm.color}
-                onChange={e => setAddForm(f => ({ ...f, color: e.target.value }))}
-                className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="#3B82F6"
-              />
+              <label className="block text-xs text-neutral-500 mb-1">색상</label>
+              <ColorPicker value={addForm.color} onChange={v => setAddForm(f => ({ ...f, color: v }))} />
             </div>
           </div>
           <div className="flex gap-2">

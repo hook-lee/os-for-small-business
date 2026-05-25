@@ -9,6 +9,7 @@ import {
   fetchChatSession,
 } from '@/lib/supabase/chat-sessions'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
+import { loadProfile } from '@/lib/profile/settings'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -66,10 +67,17 @@ export async function POST(req: Request) {
     }
   }
 
-  // 2. Gemini 호출
+  // 2. workspace_name 가져와서 system prompt에 주입
+  let workspaceName: string | null = null
+  try {
+    const profile = await loadProfile(ownerId)
+    workspaceName = profile.workspaceName
+  } catch { /* graceful */ }
+
+  // 3. Gemini 호출
   try {
     const result = await chatWithTools({
-      systemInstruction: buildSystemPrompt(body.context ?? {}),
+      systemInstruction: buildSystemPrompt({ ...(body.context ?? {}), workspaceName }),
       history,
       userMessage: message,
       tools: buildTools(ownerId),

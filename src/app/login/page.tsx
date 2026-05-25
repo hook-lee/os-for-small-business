@@ -18,8 +18,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 flex flex-col">
       {/* 상단 브랜드 */}
       <header className="px-6 py-5">
-        <h1 className="text-lg font-semibold">
-          워크스페이스 <span className="text-neutral-400 text-sm font-normal">· 라파 필라테스</span>
+        <h1 className="text-2xl font-bold">
+          <span className="bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">Onmove</span>
         </h1>
       </header>
 
@@ -29,7 +29,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <div className="space-y-6">
             <div>
               <div className="inline-block text-[11px] font-bold uppercase tracking-wider bg-violet-100 text-violet-700 px-2.5 py-1 rounded-full mb-3">
-                필라테스 / PT 사장님용
+                운동 센터 사장님용
               </div>
               <h2 className="text-3xl font-bold text-neutral-900 leading-tight">
                 회원·강사·매출·세금<br />
@@ -38,7 +38,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                 </span>
               </h2>
               <p className="mt-3 text-sm text-neutral-600 leading-relaxed">
-                스튜디오메이트가 못 하는 <strong>세금 시뮬레이션</strong>까지.
+                일반 회원 관리 SaaS가 못 하는 <strong>세금 시뮬레이션</strong>까지.
                 결제 한 줄 입력하면 부가세·종소세·예비비가 자동으로 굴러갑니다.
               </p>
             </div>
@@ -62,8 +62,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             </div>
 
             <div className="text-[11px] text-neutral-400 leading-relaxed">
-              ⓘ 라파 필라테스 운영진 전용. 외부에 데이터가 노출되지 않도록<br />
-              계정이 없는 분은 운영자(원장 또는 개발자)에게 발급을 요청하세요.
+              ⓘ 각 계정은 독립된 워크스페이스를 가집니다.<br />
+              본인 데이터는 본인 계정에서만 보이며, 다른 사용자에게 노출되지 않습니다.
             </div>
           </div>
 
@@ -80,7 +80,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       </main>
 
       <footer className="px-6 py-4 text-center text-[11px] text-neutral-400">
-        워크스페이스 · 라파 필라테스 · {new Date().getFullYear()}
+        Onmove · {new Date().getFullYear()}
       </footer>
     </div>
   )

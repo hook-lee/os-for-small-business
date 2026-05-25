@@ -105,7 +105,7 @@ export function MessagesComposer({
               value={body}
               onChange={e => setBody(e.target.value)}
               rows={6}
-              placeholder="안녕하세요 라파 필라테스입니다. ..."
+              placeholder="안녕하세요. 이번 주 수업 안내 드립니다 ..."
               className="w-full border border-neutral-300 rounded px-2 py-1 text-sm font-mono"
             />
             <div className="text-xs text-neutral-400 mt-1">{body.length}자</div>

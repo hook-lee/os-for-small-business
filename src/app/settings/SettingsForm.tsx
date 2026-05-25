@@ -36,6 +36,18 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4 max-w-lg">
       <div>
+        <label className="block text-sm font-medium mb-1">워크스페이스 이름</label>
+        <input
+          type="text"
+          value={profile.workspaceName ?? ''}
+          onChange={e => setProfile({ ...profile, workspaceName: e.target.value || null })}
+          placeholder="예: 라파 필라테스, 강남 PT 스튜디오"
+          className="border rounded px-2 py-1 w-full"
+        />
+        <p className="text-xs text-neutral-500 mt-1">상단 헤더에 표시됩니다 (Onmove · 워크스페이스 이름)</p>
+      </div>
+
+      <div>
         <label className="block text-sm font-medium mb-1">생년월일</label>
         <input
           type="date"

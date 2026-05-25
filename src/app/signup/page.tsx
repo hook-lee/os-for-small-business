@@ -13,8 +13,9 @@ export default async function SignupPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 flex flex-col">
       <header className="px-6 py-5">
-        <h1 className="text-lg font-semibold">
-          워크스페이스 <span className="text-neutral-400 text-sm font-normal">· 운동 센터 사장님용</span>
+        <h1 className="text-2xl font-bold">
+          <span className="bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent">Onmove</span>
+          <span className="text-neutral-400 text-sm font-normal ml-2">· 운동 센터 사장님용</span>
         </h1>
       </header>
 
@@ -34,7 +35,7 @@ export default async function SignupPage() {
       </main>
 
       <footer className="px-6 py-4 text-center text-[11px] text-neutral-400">
-        워크스페이스 · {new Date().getFullYear()}
+        Onmove · {new Date().getFullYear()}
       </footer>
     </div>
   )

@@ -3,6 +3,7 @@
 import { useState, useMemo, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
+import { ColorPicker } from '@/components/ColorPicker'
 import type { PassProduct } from '@/lib/supabase/pass-products'
 
 const GROUP_COLORS: Record<string, string> = {
@@ -324,8 +325,8 @@ function FormFields({ form, setForm }: { form: FormState; setForm: (f: FormState
           <input type="number" min="0" value={form.perUnitPrice} onChange={e => setForm({ ...form, perUnitPrice: e.target.value })} placeholder="비우면 자동 계산" className="w-full border border-neutral-300 rounded px-2 py-1 text-sm" />
         </Field>
       </div>
-      <Field label="컬러 (hex, 선택)">
-        <input type="text" value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} placeholder="#6366f1" className="w-full border border-neutral-300 rounded px-2 py-1 text-sm" />
+      <Field label="컬러 (선택)">
+        <ColorPicker value={form.color} onChange={v => setForm({ ...form, color: v })} />
       </Field>
     </div>
   )

@@ -2,6 +2,7 @@ import { fetchMemberByToken } from '@/lib/supabase/members'
 import { fetchActivePassesByMember } from '@/lib/supabase/passes'
 import { fetchLessonsByMember } from '@/lib/supabase/lessons'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
+import { loadProfile } from '@/lib/profile/settings'
 import { notFound } from 'next/navigation'
 
 export const dynamic = 'force-dynamic'
@@ -13,10 +14,12 @@ export default async function MemberHome({ params }: { params: Promise<{ token: 
   if (!member) notFound()
 
   const memberOwnerId = member.ownerId ?? 'no-auth'
-  const [activePasses, allLessons] = await Promise.all([
+  const [activePasses, allLessons, ownerProfile] = await Promise.all([
     fetchActivePassesByMember(member.id, memberOwnerId),
     fetchLessonsByMember(member.id, memberOwnerId),
+    loadProfile(memberOwnerId),
   ])
+  const studioName = ownerProfile.workspaceName ?? 'Onmove'
 
   const today = new Date().toISOString().slice(0, 10)
   const upcomingLessons = allLessons
@@ -56,7 +59,7 @@ export default async function MemberHome({ params }: { params: Promise<{ token: 
         </div>
       ) : (
         <div className="bg-white rounded-xl p-5 shadow-sm text-center text-neutral-400 text-sm">
-          현재 이용중인 수강권이 없습니다.<br />문의: 라파 필라테스
+          현재 이용중인 수강권이 없습니다.<br />문의: {studioName}
         </div>
       )}
 
@@ -100,7 +103,7 @@ export default async function MemberHome({ params }: { params: Promise<{ token: 
       </div>
 
       <div className="text-xs text-center text-neutral-400 pt-2 pb-4">
-        라파 필라테스 · 정보 수정은 운영자에게 문의
+        {studioName} · 정보 수정은 운영자에게 문의
       </div>
     </div>
   )

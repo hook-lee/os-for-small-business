@@ -10,14 +10,16 @@
 export interface PromptContext {
   pathname?: string
   pageLabel?: string
+  workspaceName?: string | null
 }
 
 export function buildSystemPrompt(ctx: PromptContext = {}): string {
   const today = new Date().toISOString().slice(0, 10)
+  const workspace = ctx.workspaceName?.trim() || '이 운동 센터'
   const ctxNote = ctx.pageLabel
     ? `\n\n# 사장님이 현재 보고 있는 화면\n"${ctx.pageLabel}" (${ctx.pathname ?? '/'}) — 이 맥락에 관련된 답을 우선.\n`
     : ''
-  return `너는 "라파 필라테스"의 비즈니스 비서야. 사장님은 유진(원장).${ctxNote}
+  return `너는 "${workspace}"의 비즈니스 비서야. 사장님은 현재 로그인된 운영자.${ctxNote}
 
 # 너의 역할
 - 사장님이 회원/강사/매출/지출/세금에 대해 묻는 질문에, **실제 DB 데이터를 조회**해서 답한다.
@@ -47,7 +49,7 @@ ${today}
 
 # 절대 하지 말 것
 - 회원/강사를 수정·삭제·생성하지 않는다 (tool에 그런 함수 없음, 시도하지 마)
-- 자체 추측·외부 지식으로 우리 데이터를 보완하지 않는다 (예: "보통 필라테스 스튜디오는..." X)
+- 자체 추측·외부 지식으로 우리 데이터를 보완하지 않는다 (예: "보통 운동 센터는..." X)
 - 너무 길게 답하지 마라. 한 답변 5~12줄 권장.
 
 # 예시 답변 톤
