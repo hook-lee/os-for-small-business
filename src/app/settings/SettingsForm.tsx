@@ -36,7 +36,7 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4 max-w-lg">
       <div>
-        <label className="block text-sm font-medium mb-1">워크스페이스 이름</label>
+        <label className="block text-sm font-medium mb-1">센터명 (워크스페이스) *</label>
         <input
           type="text"
           value={profile.workspaceName ?? ''}
@@ -44,7 +44,53 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
           placeholder="예: 라파 필라테스, 강남 PT 스튜디오"
           className="border rounded px-2 py-1 w-full"
         />
-        <p className="text-xs text-neutral-500 mt-1">상단 헤더에 표시됩니다 (Onmove · 워크스페이스 이름)</p>
+        <p className="text-xs text-neutral-500 mt-1">상단 헤더에 표시됩니다 (Onmove · 센터명)</p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">직급</label>
+        <div className="grid grid-cols-4 gap-1.5">
+          {['원장', '매니저', '강사', '기타'].map(r => (
+            <button
+              key={r}
+              type="button"
+              onClick={() => setProfile({ ...profile, role: r })}
+              className={`py-2 text-sm rounded font-medium transition-colors border ${
+                profile.role === r
+                  ? 'bg-violet-600 text-white border-violet-600'
+                  : 'bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-50'
+              }`}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">센터 전화번호 (선택)</label>
+        <input
+          type="tel"
+          value={profile.businessPhone ?? ''}
+          onChange={e => setProfile({ ...profile, businessPhone: e.target.value || null })}
+          placeholder="02-1234-5678"
+          className="border rounded px-2 py-1 w-full"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">센터 주소 (선택)</label>
+        <input
+          type="text"
+          value={profile.businessAddress ?? ''}
+          onChange={e => setProfile({ ...profile, businessAddress: e.target.value || null })}
+          placeholder="예: 서울 강남구"
+          className="border rounded px-2 py-1 w-full"
+        />
+      </div>
+
+      <div className="pt-3 border-t border-neutral-200">
+        <h3 className="text-sm font-semibold text-neutral-700 mb-2">개인 정보 (세금 시뮬레이터용)</h3>
       </div>
 
       <div>
@@ -53,17 +99,6 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
           type="date"
           value={profile.birthDate ?? ''}
           onChange={e => setProfile({ ...profile, birthDate: e.target.value || null })}
-          className="border rounded px-2 py-1 w-full"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">사업장 주소 (시·구)</label>
-        <input
-          type="text"
-          value={profile.businessAddress ?? ''}
-          onChange={e => setProfile({ ...profile, businessAddress: e.target.value || null })}
-          placeholder="예: 서울 강남구"
           className="border rounded px-2 py-1 w-full"
         />
       </div>

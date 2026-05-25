@@ -1,9 +1,11 @@
 import { getSupabaseClient, hasSupabaseConfig } from '@/lib/supabase/client'
 
 export interface UserProfile {
-  workspaceName: string | null   // 사용자가 정한 워크스페이스 이름 (예: '라파 필라테스')
+  workspaceName: string | null   // 센터명 (가입 시 필수, 예: '라파 필라테스')
+  role: string | null            // 직급 (가입 시 필수: '원장' / '매니저' / '강사' / 기타)
+  businessPhone: string | null   // 센터 전화번호 (선택)
+  businessAddress: string | null // 센터 주소 (선택)
   birthDate: string | null
-  businessAddress: string | null
   isYoungStartupEligible: boolean
   youngStartupReductionRate: 0 | 0.5 | 1.0
   noranusanAnnualContribution: number
@@ -13,8 +15,10 @@ export interface UserProfile {
 
 export const DEFAULT_PROFILE: UserProfile = {
   workspaceName: null,
-  birthDate: null,
+  role: null,
+  businessPhone: null,
   businessAddress: null,
+  birthDate: null,
   isYoungStartupEligible: false,
   youngStartupReductionRate: 0,
   noranusanAnnualContribution: 0,
@@ -25,6 +29,8 @@ export const DEFAULT_PROFILE: UserProfile = {
 interface ProfileRow {
   id: number
   workspace_name?: string | null
+  role?: string | null
+  business_phone?: string | null
   birth_date: string | null
   business_address: string | null
   is_young_startup_eligible: boolean
@@ -40,6 +46,8 @@ function rowToProfile(row: ProfileRow): UserProfile {
     rate === 0.5 ? 0.5 : rate === 1 ? 1.0 : 0
   return {
     workspaceName: row.workspace_name ?? null,
+    role: row.role ?? null,
+    businessPhone: row.business_phone ?? null,
     birthDate: row.birth_date,
     businessAddress: row.business_address,
     isYoungStartupEligible: row.is_young_startup_eligible,
@@ -88,6 +96,8 @@ export async function saveProfile(profile: UserProfile, ownerId: string): Promis
   const baseFields: Record<string, unknown> = {
     owner_id: ownerId,
     workspace_name: profile.workspaceName,
+    role: profile.role,
+    business_phone: profile.businessPhone,
     birth_date: profile.birthDate,
     business_address: profile.businessAddress,
     is_young_startup_eligible: profile.isYoungStartupEligible,
@@ -115,6 +125,8 @@ export async function saveProfile(profile: UserProfile, ownerId: string): Promis
   // workspace_name 또는 tax_payer_type 컬럼이 아직 없는 환경 → 누락 필드 제거 후 재시도
   const missingCols: string[] = []
   if (error.message.includes('workspace_name')) missingCols.push('workspace_name')
+  if (error.message.includes('role')) missingCols.push('role')
+  if (error.message.includes('business_phone')) missingCols.push('business_phone')
   if (error.message.includes('tax_payer_type')) missingCols.push('tax_payer_type')
 
   if (missingCols.length > 0 || isTaxPayerTypeMissing) {
