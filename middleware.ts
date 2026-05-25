@@ -13,7 +13,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
-const PUBLIC_PATHS = ['/login']
+const PUBLIC_PATHS = ['/login', '/signup']
 const PUBLIC_PREFIXES = [
   '/_next',
   '/favicon',

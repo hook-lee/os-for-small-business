@@ -70,8 +70,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           {/* 우측: 로그인 폼 */}
           <div className="bg-white rounded-2xl shadow-xl border border-neutral-200 p-8">
             <h3 className="text-xl font-bold text-neutral-900 mb-1">로그인</h3>
-            <p className="text-xs text-neutral-500 mb-6">라파 필라테스 운영진 계정으로 입장</p>
+            <p className="text-xs text-neutral-500 mb-6">계정으로 입장</p>
             <LoginForm next={nextPath} />
+            <div className="mt-4 text-center text-xs text-neutral-500">
+              계정이 없으세요? <a href="/signup" className="text-violet-600 hover:underline font-medium">회원가입</a>
+            </div>
           </div>
         </div>
       </main>
