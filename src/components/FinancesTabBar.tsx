@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 
 const TABS = [
   { href: '/add', label: '입력' },
+  { href: '/finances', label: '월별 요약' },
   { href: '/sales', label: '매출' },
   { href: '/tax', label: '세금' },
   { href: '/analytics', label: '분석' },
@@ -15,7 +16,10 @@ export function FinancesTabBar() {
   return (
     <div className="flex gap-1 border-b border-neutral-200 mb-4">
       {TABS.map(t => {
-        const active = pathname === t.href || pathname.startsWith(t.href + '/')
+        // /finances는 exact match만 (categories와 충돌 방지)
+        const active = t.href === '/finances'
+          ? pathname === '/finances'
+          : (pathname === t.href || pathname.startsWith(t.href + '/'))
         return (
           <a
             key={t.href}
