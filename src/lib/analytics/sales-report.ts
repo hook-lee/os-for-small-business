@@ -34,17 +34,26 @@ export function computePassesKPI(passes: Pass[]): SalesKPI {
   return { total, newPayment, rePayment, trialPayment, refund, transactionCount: passes.length }
 }
 
-export function computeTransactionsKPI(txs: Transaction[]): { total: number; count: number } {
+export function computeTransactionsKPI(txs: Transaction[]): {
+  total: number
+  count: number
+  expense: number
+  expenseCount: number
+} {
   let total = 0
   let count = 0
+  let expense = 0
+  let expenseCount = 0
   for (const t of txs) {
-    if (t.category !== '매출') continue
-    if (t.amount > 0) {
+    if (t.category === '매출' && t.amount > 0) {
       total += t.amount
       count++
+    } else if (t.amount < 0) {
+      expense += Math.abs(t.amount)
+      expenseCount++
     }
   }
-  return { total, count }
+  return { total, count, expense, expenseCount }
 }
 
 /**

@@ -57,7 +57,9 @@ export function SalesReport({ initialMonth, passes, instructors, transactions }:
   const byMethod = useMemo(() => revenueByMethod(filteredPasses), [filteredPasses])
   const byMonth = useMemo(() => revenueByMonth(passes), [passes])  // 전체 기간 차트
 
-  const grandTotal = passKPI.total + txKPI.total
+  // 매출 source of truth = transactions (사용자가 직접 입력한 가계부)
+  // passes는 회원 결제 이력 (참고용) — 두 source가 중복될 수 있어 합산하지 않음
+  const grandTotal = txKPI.total
 
   function changeMonth(newYm: string) {
     setYearMonth(newYm)
@@ -89,31 +91,34 @@ export function SalesReport({ initialMonth, passes, instructors, transactions }:
         </div>
       </div>
 
-      {/* 합계 카드 */}
+      {/* 합계 카드 — 가계부(transactions) 기준 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="총 매출" value={`${grandTotal.toLocaleString()}원`} highlight />
-        <Stat label="수강권 매출" value={`${passKPI.total.toLocaleString()}원`} sub={`${passKPI.transactionCount}건`} />
-        <Stat label="가계부 매출" value={`${txKPI.total.toLocaleString()}원`} sub={`${txKPI.count}건`} />
-        <Stat label="환불" value={`-${passKPI.refund.toLocaleString()}원`} sub="수강권 기준" />
+        <Stat label="총 매출" value={`${grandTotal.toLocaleString()}원`} sub={`${txKPI.count}건 · 가계부`} highlight />
+        <Stat label="순이익" value={`${(grandTotal - txKPI.expense).toLocaleString()}원`} sub="매출 - 지출" />
+        <Stat label="총 지출" value={`-${txKPI.expense.toLocaleString()}원`} sub={`${txKPI.expenseCount}건`} />
+        <Stat label="매출률" value={`${grandTotal > 0 ? Math.round((grandTotal - txKPI.expense) / grandTotal * 100) : 0}%`} sub="(매출 - 지출) / 매출" />
       </div>
 
-      {/* 수강권 매출 분해 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="신규결제" value={`${passKPI.newPayment.toLocaleString()}원`} />
-        <Stat label="재결제" value={`${passKPI.rePayment.toLocaleString()}원`} />
-        <Stat label="체험 매출" value={`${passKPI.trialPayment.toLocaleString()}원`} />
-        <Stat
-          label="재결제 비율"
-          value={`${passKPI.total > 0 ? Math.round(passKPI.rePayment / passKPI.total * 100) : 0}%`}
-        />
+      {/* 회원 결제 이력 (참고용 — passes 기반, 매출 합산 X) */}
+      <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-4 space-y-3">
+        <div className="flex items-baseline justify-between">
+          <h3 className="text-sm font-semibold text-neutral-700">📒 회원 결제 이력 (참고)</h3>
+          <span className="text-[10px] text-neutral-400">총 매출에 합산 X · passes 테이블 기준</span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <Stat label="결제 건수" value={`${passKPI.transactionCount}건`} sub={`${passKPI.total.toLocaleString()}원`} />
+          <Stat label="신규결제" value={`${passKPI.newPayment.toLocaleString()}원`} />
+          <Stat label="재결제" value={`${passKPI.rePayment.toLocaleString()}원`} />
+          <Stat label="체험" value={`${passKPI.trialPayment.toLocaleString()}원`} />
+        </div>
       </div>
 
       {/* 차트 */}
       {byMonth.length > 0 && (
         <MonthlyBarChart
           data={byMonth.map(m => ({ month: m.month, amount: m.total }))}
-          title="월별 수강권 매출 (전체 기간)"
-          color="#2563eb"
+          title="월별 회원 결제 이력 (전체 기간 · 참고용)"
+          color="#94a3b8"
         />
       )}
 
@@ -134,7 +139,7 @@ export function SalesReport({ initialMonth, passes, instructors, transactions }:
       </div>
 
       <p className="text-xs text-neutral-400">
-        수강권 매출 = passes.payment_amount (수강권 결제) / 가계부 매출 = transactions where category=매출 (그 외 잡매출). 두 소스가 겹칠 수 있음 (수강권 매출을 가계부에도 입력한 경우).
+        💡 <strong>총 매출 = 가계부(transactions)</strong>만 합산. 회원 결제 이력(passes)은 회원/수강권 관리용 데이터로 참고만 — 두 source가 중복될 수 있어 매출에 합산하지 않습니다.
       </p>
     </div>
   )
