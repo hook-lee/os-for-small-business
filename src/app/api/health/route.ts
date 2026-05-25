@@ -17,12 +17,20 @@ function envStatus(name: string): string {
 }
 
 export async function GET() {
+  const hasAuthVars = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
   return NextResponse.json({
+    auth: {
+      enabled: hasAuthVars,
+      hint: hasAuthVars
+        ? '✓ Supabase Auth 활성화 — 미인증 사용자는 /login으로 redirect'
+        : '❌ NEXT_PUBLIC_SUPABASE_URL 또는 NEXT_PUBLIC_SUPABASE_ANON_KEY 누락 → 인증 우회 중 (모두 접근 가능)',
+    },
     env: {
       GEMINI_API_KEY: envStatus('GEMINI_API_KEY'),
       SUPABASE_URL: envStatus('SUPABASE_URL'),
       SUPABASE_SERVICE_ROLE_KEY: envStatus('SUPABASE_SERVICE_ROLE_KEY'),
       NEXT_PUBLIC_SUPABASE_URL: envStatus('NEXT_PUBLIC_SUPABASE_URL'),
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: envStatus('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
     },
     deploy: {
       vercel_env: process.env.VERCEL_ENV ?? 'local',
