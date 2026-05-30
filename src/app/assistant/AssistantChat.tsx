@@ -20,16 +20,7 @@ const EXAMPLES = [
   '회원 박지영 활성 수강권 보여줘',
 ]
 
-// 매우 가벼운 markdown → HTML (bold, 줄바꿈, glyph만)
-function renderText(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`([^`]+)`/g, '<code class="bg-neutral-100 px-1 rounded text-[12px]">$1</code>')
-    .replace(/\n/g, '<br/>')
-}
+import { renderSafeMarkdown as renderText } from '@/lib/security/sanitize'
 
 export function AssistantChat() {
   const [messages, setMessages] = useState<Message[]>([])

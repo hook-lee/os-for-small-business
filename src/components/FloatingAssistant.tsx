@@ -59,15 +59,7 @@ function getPageLabel(pathname: string): string {
   return '워크스페이스'
 }
 
-function renderText(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`([^`]+)`/g, '<code class="bg-neutral-100 px-1 rounded text-[11px]">$1</code>')
-    .replace(/\n/g, '<br/>')
-}
+import { renderSafeMarkdown as renderText } from '@/lib/security/sanitize'
 
 function fmtRelative(iso: string): string {
   const diffMs = Date.now() - new Date(iso).getTime()

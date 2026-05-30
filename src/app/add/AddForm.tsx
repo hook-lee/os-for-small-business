@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, type FormEvent } from 'react'
 import { Card } from '@/components/ui/Card'
 import type { ExpenseCategory } from '@/lib/supabase/categories'
 import { DEFAULT_CATEGORIES } from '@/lib/categories/defaults'
+import { renderSafeBold } from '@/lib/security/sanitize'
 
 type TxType = '지출' | '매출'
 type Method = '카드' | '계좌이체' | '현금'
@@ -300,7 +301,7 @@ export function AddForm() {
                 <div
                   className="text-xs text-neutral-600 bg-neutral-50 border border-neutral-200 rounded p-2 mt-2 lg:hidden"
                   dangerouslySetInnerHTML={{
-                    __html: '💡 ' + selectedCategoryObj.description.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'),
+                    __html: '💡 ' + renderSafeBold(selectedCategoryObj.description),
                   }}
                 />
               )}
@@ -542,8 +543,7 @@ export function AddForm() {
                 <p
                   className="text-xs text-blue-900 leading-relaxed"
                   dangerouslySetInnerHTML={{
-                    __html: selectedCategoryObj.description
-                      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'),
+                    __html: renderSafeBold(selectedCategoryObj.description),
                   }}
                 />
               )}
@@ -573,8 +573,7 @@ export function AddForm() {
                   <p
                     className="text-[11px] text-neutral-500 mt-0.5 leading-snug"
                     dangerouslySetInnerHTML={{
-                      __html: cat.description
-                        .replace(/\*\*(.+?)\*\*/g, '<strong class="text-neutral-700">$1</strong>'),
+                      __html: renderSafeBold(cat.description ?? '', 'text-neutral-700'),
                     }}
                   />
                 )}
