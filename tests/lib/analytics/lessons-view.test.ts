@@ -7,6 +7,7 @@ import {
   buildMonthGrid,
   sortByTime,
   lessonTypeLabel,
+  groupByTimeSlot,
 } from '@/lib/analytics/lessons-view'
 import type { UnifiedLesson } from '@/lib/supabase/lessons-combined'
 
@@ -111,6 +112,34 @@ describe('buildMonthGrid', () => {
     expect(nonNull.length).toBe(31)
     // 5월 1일은 금요일 → index 5
     expect(all.findIndex(c => c.date === '2026-05-01')).toBe(5)
+  })
+})
+
+describe('groupByTimeSlot — 룸 처리 (같은 시간 묶기)', () => {
+  it('같은 시간 lessons는 같은 그룹에 묶임', () => {
+    const txs = [
+      ind('2026-05-15', '20:00'),    // 룸 1
+      grp('2026-05-15', '20:00'),    // 룸 2
+      ind('2026-05-15', '21:00'),    // 다른 시간
+    ]
+    const groups = groupByTimeSlot(txs)
+    expect(groups).toHaveLength(2)
+    expect(groups[0]).toHaveLength(2)   // 20:00에 2개 (룸 2개 동시)
+    expect(groups[1]).toHaveLength(1)   // 21:00에 1개
+  })
+
+  it('시간순 정렬', () => {
+    const txs = [
+      ind('2026-05-15', '20:00'),
+      ind('2026-05-15', '09:00'),
+      ind('2026-05-15', '14:30'),
+    ]
+    const groups = groupByTimeSlot(txs)
+    expect(groups.map(g => g[0].time)).toEqual(['09:00', '14:30', '20:00'])
+  })
+
+  it('빈 입력 → 빈 배열', () => {
+    expect(groupByTimeSlot([])).toEqual([])
   })
 })
 

@@ -111,6 +111,24 @@ export function sortByTime(lessons: UnifiedLesson[]): UnifiedLesson[] {
 }
 
 /**
+ * 같은 시간끼리 묶어 시간순 정렬.
+ * 룸 개념 없이 동시 수업을 옆에 나란히 표시하기 위한 그루핑.
+ *
+ * 반환: 시간별 lesson 배열들. 각 배열의 원소가 N개면 같은 시간에 N개 룸/세션 동시 진행.
+ */
+export function groupByTimeSlot(lessons: UnifiedLesson[]): UnifiedLesson[][] {
+  const map = new Map<string, UnifiedLesson[]>()
+  for (const l of lessons) {
+    const k = l.time ?? '__none__'
+    if (!map.has(k)) map.set(k, [])
+    map.get(k)!.push(l)
+  }
+  return [...map.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([, arr]) => arr)
+}
+
+/**
  * 수업 종류 라벨 — passName 또는 sessionName 기반
  */
 export function lessonTypeLabel(l: UnifiedLesson): string {

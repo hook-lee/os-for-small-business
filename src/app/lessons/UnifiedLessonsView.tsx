@@ -12,7 +12,9 @@ import {
   buildMonthGrid,
   sortByTime,
   lessonTypeLabel,
+  groupByTimeSlot,
 } from '@/lib/analytics/lessons-view'
+import { QuickAddLesson } from './QuickAddLesson'
 
 const MODES: ViewMode[] = ['일별', '주별', '월별']
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -42,6 +44,8 @@ export function UnifiedLessonsView({
   const router = useRouter()
   const [mode, setMode] = useState<ViewMode>(initialMode)
   const [anchor, setAnchor] = useState(initialAnchor)
+  const [addOpen, setAddOpen] = useState(false)
+  const [addPrefillDate, setAddPrefillDate] = useState(initialAnchor)
 
   function changeMode(m: ViewMode) {
     setMode(m)
@@ -72,11 +76,24 @@ export function UnifiedLessonsView({
 
         <div className="flex items-center gap-2">
           <NavButtons mode={mode} anchor={anchor} onChange={changeAnchor} />
+          <button
+            onClick={() => { setAddPrefillDate(anchor); setAddOpen(true) }}
+            className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium px-3 py-1.5 rounded shadow-sm"
+          >
+            + 수업 추가
+          </button>
         </div>
       </div>
 
       {/* 통계 (상단) */}
       <Stats lessons={lessons} mode={mode} />
+
+      {/* 빠른 추가 모달 */}
+      <QuickAddLesson
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        prefillDate={addPrefillDate}
+      />
 
       {/* 뷰 본체 */}
       {mode === '일별' && <DailyView lessons={lessons} date={anchor} />}
@@ -140,9 +157,13 @@ function Stats({ lessons, mode }: { lessons: UnifiedLesson[]; mode: ViewMode }) 
 // 일별 — 시간순 리스트 (가장 상세)
 // ─────────────────────────────────────────────
 function DailyView({ lessons, date }: { lessons: UnifiedLesson[]; date: string }) {
-  const sorted = useMemo(() => sortByTime(lessons.filter(l => l.date === date)), [lessons, date])
+  // 같은 시간 묶음 — 룸 indicator용
+  const timeSlots = useMemo(
+    () => groupByTimeSlot(lessons.filter(l => l.date === date)),
+    [lessons, date],
+  )
 
-  if (sorted.length === 0) {
+  if (timeSlots.length === 0) {
     return <Card><div className="text-sm text-neutral-400 text-center py-6">이날 등록된 수업이 없습니다.</div></Card>
   }
   return (
@@ -151,6 +172,7 @@ function DailyView({ lessons, date }: { lessons: UnifiedLesson[]; date: string }
         <thead className="bg-neutral-50 text-xs text-neutral-500 uppercase">
           <tr>
             <th className="text-left px-3 py-2 w-20">시간</th>
+            <th className="text-left px-3 py-2 w-14">룸</th>
             <th className="text-left px-3 py-2 w-24">수업 종류</th>
             <th className="text-left px-3 py-2">회원</th>
             <th className="text-left px-3 py-2">강사</th>
@@ -158,27 +180,30 @@ function DailyView({ lessons, date }: { lessons: UnifiedLesson[]; date: string }
           </tr>
         </thead>
         <tbody>
-          {sorted.map(l => (
-            <tr key={`${l.type}-${l.id}`} className="border-t border-neutral-100">
-              <td className="px-3 py-2 tabular-nums font-medium">{l.time ?? '—'}</td>
-              <td className="px-3 py-2">
-                <TypeBadge lesson={l} />
-              </td>
-              <td className="px-3 py-2 text-neutral-700">
-                {l.type === 'individual'
-                  ? (l.memberName ?? '—')
-                  : `${l.reservedCount ?? 0}/${l.capacity ?? '—'}명 예약`}
-              </td>
-              <td className="px-3 py-2 text-neutral-600">{l.instructorName ?? '강사 미정'}</td>
-              <td className="px-3 py-2 text-right">
-                {l.type === 'individual' ? (
-                  <StatusBadge status={l.status} />
-                ) : (
-                  <a href={`/lessons/groups/${l.id}`} className="text-xs text-blue-600 hover:underline">명단</a>
-                )}
-              </td>
-            </tr>
-          ))}
+          {timeSlots.map(slot =>
+            slot.map((l, roomIdx) => (
+              <tr key={`${l.type}-${l.id}`} className="border-t border-neutral-100">
+                <td className="px-3 py-2 tabular-nums font-medium">{roomIdx === 0 ? (l.time ?? '—') : ''}</td>
+                <td className="px-3 py-2 text-xs text-neutral-500 tabular-nums">
+                  {slot.length > 1 ? `${roomIdx + 1}/${slot.length}` : '—'}
+                </td>
+                <td className="px-3 py-2"><TypeBadge lesson={l} /></td>
+                <td className="px-3 py-2 text-neutral-700">
+                  {l.type === 'individual'
+                    ? (l.memberName ?? '—')
+                    : `${l.reservedCount ?? 0}/${l.capacity ?? '—'}명 예약`}
+                </td>
+                <td className="px-3 py-2 text-neutral-600">{l.instructorName ?? '강사 미정'}</td>
+                <td className="px-3 py-2 text-right">
+                  {l.type === 'individual' ? (
+                    <StatusBadge status={l.status} />
+                  ) : (
+                    <a href={`/lessons/groups/${l.id}`} className="text-xs text-blue-600 hover:underline">명단</a>
+                  )}
+                </td>
+              </tr>
+            )),
+          )}
         </tbody>
       </table>
     </Card>
@@ -214,7 +239,8 @@ function WeeklyView({ lessons, weekStart }: { lessons: UnifiedLesson[]; weekStar
   return (
     <div className="grid grid-cols-7 gap-2">
       {days.map((d, i) => {
-        const dayLessons = sortByTime(grouped.get(d) ?? [])
+        const dayLessons = grouped.get(d) ?? []
+        const timeSlots = groupByTimeSlot(dayLessons)   // 같은 시간끼리 묶음 (룸 처리)
         const date = new Date(d + 'T00:00:00')
         const dayNum = date.getDate()
         const wd = WEEKDAYS[i]
@@ -233,11 +259,22 @@ function WeeklyView({ lessons, weekStart }: { lessons: UnifiedLesson[]; weekStar
                 <span className="text-[10px] text-neutral-400 tabular-nums">{dayLessons.length}</span>
               )}
             </div>
-            <div className="flex-1 p-1 space-y-1 overflow-y-auto" style={{ maxHeight: '320px' }}>
-              {dayLessons.length === 0 ? (
+            <div className="flex-1 p-1 space-y-1 overflow-y-auto" style={{ maxHeight: '380px' }}>
+              {timeSlots.length === 0 ? (
                 <div className="text-[10px] text-neutral-300 text-center pt-4">—</div>
               ) : (
-                dayLessons.map(l => <WeekCard key={`${l.type}-${l.id}`} lesson={l} />)
+                timeSlots.map((slot, idx) => (
+                  <div key={idx} className="flex gap-0.5">
+                    {slot.map((l, roomIdx) => (
+                      <WeekCard
+                        key={`${l.type}-${l.id}`}
+                        lesson={l}
+                        roomIndex={slot.length > 1 ? roomIdx + 1 : null}
+                        roomTotal={slot.length > 1 ? slot.length : null}
+                      />
+                    ))}
+                  </div>
+                ))
               )}
             </div>
           </div>
@@ -247,11 +284,23 @@ function WeeklyView({ lessons, weekStart }: { lessons: UnifiedLesson[]; weekStar
   )
 }
 
-function WeekCard({ lesson }: { lesson: UnifiedLesson }) {
+function WeekCard({ lesson, roomIndex, roomTotal }: {
+  lesson: UnifiedLesson
+  roomIndex: number | null   // 1, 2, ... (룸 표시용. null이면 단독)
+  roomTotal: number | null
+}) {
   const isGroup = lesson.type === 'group'
   const bg = isGroup ? 'bg-purple-50 border-purple-200' : 'bg-blue-50 border-blue-200'
   return (
-    <div className={`text-[10px] rounded border px-1.5 py-1 leading-tight ${bg}`}>
+    <div className={`flex-1 min-w-0 text-[10px] rounded border px-1.5 py-1 leading-tight ${bg} relative`}>
+      {roomIndex !== null && roomTotal !== null && (
+        <span
+          className="absolute top-0.5 right-0.5 text-[8px] font-bold text-neutral-400 tabular-nums bg-white/80 rounded px-0.5 leading-tight"
+          title={`${roomTotal}개 동시 진행 중 ${roomIndex}번째`}
+        >
+          {roomIndex}/{roomTotal}
+        </span>
+      )}
       <div className="font-bold tabular-nums">{lesson.time ?? '—'}</div>
       <div className="text-neutral-700 truncate">
         {isGroup
