@@ -1,8 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
 import type { GroupSession } from '@/lib/supabase/group-sessions'
 import type { Reservation, ReservationStatus } from '@/lib/supabase/group-reservations'
+
+interface Member { id: number; name: string; phone: string | null }
 
 const STATUS_LABEL: Record<ReservationStatus, string> = {
   reserved: '예약',
@@ -24,8 +27,28 @@ interface Props {
 }
 
 export function SessionRoster({ session, initialReservations }: Props) {
+  const router = useRouter()
   const [reservations, setReservations] = useState<Reservation[]>(initialReservations)
   const [updating, setUpdating] = useState<number | null>(null)
+
+  // 회원 추가 폼 상태
+  const [showAdd, setShowAdd] = useState(false)
+  const [members, setMembers] = useState<Member[]>([])
+  const [memberQuery, setMemberQuery] = useState('')
+  const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null)
+  const [addSubmitting, setAddSubmitting] = useState(false)
+  const [addError, setAddError] = useState('')
+
+  useEffect(() => {
+    if (showAdd && members.length === 0) {
+      fetch('/api/members').then(r => r.json()).then((j: { members?: Member[] }) => setMembers(j.members ?? []))
+    }
+  }, [showAdd, members.length])
+
+  useEffect(() => {
+    const match = members.find(m => m.name === memberQuery)
+    setSelectedMemberId(match?.id ?? null)
+  }, [memberQuery, members])
 
   async function handleStatusChange(id: number, newStatus: ReservationStatus) {
     setUpdating(id)
@@ -40,12 +63,50 @@ export function SessionRoster({ session, initialReservations }: Props) {
       setReservations(prev =>
         prev.map(r => r.id === id ? { ...r, status: newStatus } : r)
       )
+      router.refresh()
     } catch (err) {
       alert((err as Error).message)
     } finally {
       setUpdating(null)
     }
   }
+
+  async function handleAddMember(e: FormEvent) {
+    e.preventDefault()
+    if (!selectedMemberId) { setAddError('회원을 선택하세요'); return }
+    // 이미 활성 예약(취소 아님)인지 체크
+    const existing = reservations.find(r => r.memberId === selectedMemberId && r.status !== 'cancelled')
+    if (existing) {
+      setAddError('이미 예약된 회원입니다')
+      return
+    }
+    setAddSubmitting(true)
+    setAddError('')
+    try {
+      const res = await fetch('/api/group-reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: session.id,
+          memberId: selectedMemberId,
+          passId: null,
+        }),
+      })
+      const json = await res.json() as { ok?: boolean; id?: number; error?: string }
+      if (!res.ok) { setAddError(json.error ?? '추가 실패'); return }
+      router.refresh()
+      setMemberQuery('')
+      setSelectedMemberId(null)
+      setShowAdd(false)
+    } catch (err) {
+      setAddError((err as Error).message)
+    } finally {
+      setAddSubmitting(false)
+    }
+  }
+
+  const activeCount = reservations.filter(r => r.status !== 'cancelled').length
+  const isFull = activeCount >= session.capacity
 
   return (
     <div className="space-y-4">
@@ -61,10 +122,61 @@ export function SessionRoster({ session, initialReservations }: Props) {
           {session.instructorName && ` · ${session.instructorName}`}
         </div>
         <div className="text-sm text-blue-600 mt-1 font-medium">
-          예약 {session.reservedCount}/{session.capacity}명 · 출석 {session.attendedCount}명
+          예약 {activeCount}/{session.capacity}명 · 출석 {session.attendedCount}명
         </div>
         {session.notes && <div className="text-xs text-neutral-400 mt-1">{session.notes}</div>}
       </div>
+
+      {/* 회원 추가 toggle */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-neutral-700">예약 명단</h3>
+        <button
+          onClick={() => { setShowAdd(v => !v); setAddError('') }}
+          className={`text-sm font-medium px-3 py-1.5 rounded ${
+            showAdd
+              ? 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+        >
+          {showAdd ? '취소' : '+ 회원 추가'}
+        </button>
+      </div>
+
+      {/* 회원 추가 인라인 폼 */}
+      {showAdd && (
+        <form onSubmit={handleAddMember} className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
+          <div>
+            <label className="block text-xs text-neutral-600 mb-1">회원 검색</label>
+            <input
+              type="text"
+              list="roster-member-options"
+              value={memberQuery}
+              onChange={e => setMemberQuery(e.target.value)}
+              placeholder="회원 이름"
+              className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
+              autoFocus
+            />
+            <datalist id="roster-member-options">
+              {members.map(m => <option key={m.id} value={m.name}>{m.phone ?? ''}</option>)}
+            </datalist>
+            {selectedMemberId && <div className="text-xs text-blue-700 mt-1">✓ 매칭됨 (id={selectedMemberId})</div>}
+            {memberQuery && !selectedMemberId && <div className="text-xs text-amber-700 mt-1">⚠ 등록된 회원 중에 매칭 없음</div>}
+          </div>
+          {isFull && (
+            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+              ⚠ 정원 초과 상태입니다 ({activeCount}/{session.capacity}). 강제 추가 가능.
+            </div>
+          )}
+          {addError && <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">⚠ {addError}</div>}
+          <button
+            type="submit"
+            disabled={addSubmitting || !selectedMemberId}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-medium py-2 rounded text-sm"
+          >
+            {addSubmitting ? '추가 중...' : '회원 예약 추가'}
+          </button>
+        </form>
+      )}
 
       {/* Reservations table */}
       {reservations.length === 0 ? (
@@ -105,7 +217,7 @@ export function SessionRoster({ session, initialReservations }: Props) {
                       >
                         <option value="reserved">예약</option>
                         <option value="attended">출석</option>
-                        <option value="cancelled">취소</option>
+                        <option value="cancelled">취소 (제외)</option>
                         <option value="noshow">노쇼</option>
                       </select>
                     </div>
@@ -116,6 +228,10 @@ export function SessionRoster({ session, initialReservations }: Props) {
           </table>
         </div>
       )}
+
+      <p className="text-xs text-neutral-400">
+        💡 <strong>제외</strong> = 상태를 &lsquo;취소&rsquo;로 변경. 회차 차감 안 됨, 정원에서 빠짐. 완전 삭제는 없음 (이력 보존).
+      </p>
     </div>
   )
 }
