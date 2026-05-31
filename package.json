@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "import:rapha": "tsx scripts/import-rapha-data.ts",
-    "import:rapha:dry": "tsx scripts/import-rapha-data.ts --dry-run"
+    "import:rapha:dry": "tsx scripts/import-rapha-data.ts --dry-run",
+    "audit:revenue-diff": "tsx scripts/audit-revenue-diff.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
