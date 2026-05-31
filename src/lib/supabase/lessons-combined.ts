@@ -21,6 +21,8 @@ export interface UnifiedLesson {
   // 강사 공통
   instructorId: number | null
   instructorName: string | null
+  instructorColor: string | null   // hex (#3b82f6 등). NULL이면 회색 fallback
+  instructorRole: 'owner' | 'instructor' | 'admin' | null
 
   // 룸 공통
   roomId: number | null
@@ -30,6 +32,7 @@ export interface UnifiedLesson {
   memberId: number | null
   memberName: string | null
   passName: string | null          // '개인', '재활' 등 — 수업 종류 분류용
+  passRemaining: number | null     // 수강권 잔여 회차 (호버 툴팁용)
   status: string | null            // 'scheduled' / 'completed' / ...
 
   // 그룹 전용
@@ -47,9 +50,9 @@ interface IndividualRow {
   member_id: number
   room_id: number | null
   status: string
-  instructors: { id: number; name: string } | null
+  instructors: { id: number; name: string; color: string | null; role: string | null } | null
   members: { id: number; name: string } | null
-  passes: { id: number; pass_name: string } | null
+  passes: { id: number; pass_name: string; remaining_count: number | null } | null
   rooms: { id: number; name: string } | null
 }
 
@@ -62,7 +65,7 @@ interface GroupRow {
   capacity: number
   instructor_id: number | null
   room_id: number | null
-  instructors: { id: number; name: string } | null
+  instructors: { id: number; name: string; color: string | null; role: string | null } | null
   rooms: { id: number; name: string } | null
 }
 
@@ -86,7 +89,7 @@ export async function fetchUnifiedLessonsByRange(
     // 개별 수업
     let indQ = supabase
       .from('lessons')
-      .select('id, lesson_date, lesson_time, duration_minutes, instructor_id, member_id, room_id, status, instructors(id, name), members(id, name), passes(id, pass_name), rooms(id, name)')
+      .select('id, lesson_date, lesson_time, duration_minutes, instructor_id, member_id, room_id, status, instructors(id, name, color, role), members(id, name), passes(id, pass_name, remaining_count), rooms(id, name)')
       .gte('lesson_date', start)
       .lte('lesson_date', end)
       .order('lesson_date', { ascending: true })
@@ -98,7 +101,7 @@ export async function fetchUnifiedLessonsByRange(
     // 그룹 세션
     let grpQ = supabase
       .from('group_sessions')
-      .select('id, session_name, lesson_date, lesson_time, duration_minutes, capacity, instructor_id, room_id, instructors(id, name), rooms(id, name)')
+      .select('id, session_name, lesson_date, lesson_time, duration_minutes, capacity, instructor_id, room_id, instructors(id, name, color, role), rooms(id, name)')
       .gte('lesson_date', start)
       .lte('lesson_date', end)
       .order('lesson_date', { ascending: true })
@@ -131,11 +134,14 @@ export async function fetchUnifiedLessonsByRange(
       durationMinutes: r.duration_minutes,
       instructorId: r.instructor_id,
       instructorName: r.instructors?.name ?? null,
+      instructorColor: r.instructors?.color ?? null,
+      instructorRole: (r.instructors?.role ?? null) as UnifiedLesson['instructorRole'],
       roomId: r.room_id,
       roomName: r.rooms?.name ?? null,
       memberId: r.member_id,
       memberName: r.members?.name ?? null,
       passName: r.passes?.pass_name ?? null,
+      passRemaining: r.passes?.remaining_count ?? null,
       status: r.status,
       sessionName: null,
       capacity: null,
@@ -150,11 +156,14 @@ export async function fetchUnifiedLessonsByRange(
       durationMinutes: r.duration_minutes,
       instructorId: r.instructor_id,
       instructorName: r.instructors?.name ?? null,
+      instructorColor: r.instructors?.color ?? null,
+      instructorRole: (r.instructors?.role ?? null) as UnifiedLesson['instructorRole'],
       roomId: r.room_id,
       roomName: r.rooms?.name ?? null,
       memberId: null,
       memberName: null,
       passName: null,
+      passRemaining: null,
       status: null,
       sessionName: r.session_name,
       capacity: r.capacity,

@@ -5,6 +5,45 @@ import type { UnifiedLesson } from '@/lib/supabase/lessons-combined'
 
 export type ViewMode = '일별' | '주별' | '월별'
 
+export type LessonCategory = 'all' | 'individual' | 'group'
+export type TimeBand = 'all' | 'am' | 'pm'
+
+/**
+ * 12:00 정각까지는 오전, 12:01 이후는 오후.
+ * 사용자 정책 — '오전 / 오후' 토글 (월별 뷰).
+ */
+export function isMorning(time: string | null): boolean {
+  if (!time) return false
+  return time.localeCompare('12:00') <= 0
+}
+
+/**
+ * 카테고리 + 시간대 + 강사 필터 통합. 순수 함수.
+ *
+ * @param category 'all' | 'individual' | 'group'
+ * @param timeBand 'all' | 'am' (≤12:00) | 'pm' (>12:00)
+ * @param instructorId  특정 강사 1명 필터링 (null이면 무필터)
+ */
+export function applyLessonFilters<L extends {
+  type: 'individual' | 'group'
+  time: string | null
+  instructorId: number | null
+}>(
+  lessons: L[],
+  opts: { category?: LessonCategory; timeBand?: TimeBand; instructorId?: number | null },
+): L[] {
+  const cat = opts.category ?? 'all'
+  const band = opts.timeBand ?? 'all'
+  const insId = opts.instructorId ?? null
+  return lessons.filter(l => {
+    if (cat !== 'all' && l.type !== cat) return false
+    if (band === 'am' && !isMorning(l.time)) return false
+    if (band === 'pm' && isMorning(l.time)) return false
+    if (insId !== null && l.instructorId !== insId) return false
+    return true
+  })
+}
+
 export function getRangeForView(mode: ViewMode, anchor: string): { start: string; end: string } {
   const [y, m, d] = anchor.split('-').map(Number)
   if (mode === '일별') {

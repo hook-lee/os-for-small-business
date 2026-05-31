@@ -1,21 +1,27 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, type MouseEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import type { UnifiedLesson } from '@/lib/supabase/lessons-combined'
 import {
   type ViewMode,
+  type LessonCategory,
+  type TimeBand,
   groupByDate,
-  countByDate,
   getWeekDates,
-  buildMonthGrid,
-  sortByTime,
-  lessonTypeLabel,
   groupByTimeSlot,
+  applyLessonFilters,
 } from '@/lib/analytics/lessons-view'
+import { instructorColor, type InstructorRef } from '@/lib/analytics/instructor-sort'
 import { QuickAddLesson } from './QuickAddLesson'
 import { LessonDetailModal } from './LessonDetailModal'
+import { LessonsFilterBar } from './LessonsFilterBar'
+import { DailyByInstructor } from './DailyByInstructor'
+import { MonthlyCardList } from './MonthlyCardList'
+import { LessonHoverCard } from './LessonHoverCard'
+
+type DailyLayout = '강사별' | '시간순'
 
 const MODES: ViewMode[] = ['일별', '주별', '월별']
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -37,10 +43,12 @@ export function UnifiedLessonsView({
   initialAnchor,
   initialMode,
   lessons,
+  instructors,
 }: {
   initialAnchor: string
   initialMode: ViewMode
   lessons: UnifiedLesson[]
+  instructors: InstructorRef[]
 }) {
   const router = useRouter()
   const [mode, setMode] = useState<ViewMode>(initialMode)
@@ -48,6 +56,12 @@ export function UnifiedLessonsView({
   const [addOpen, setAddOpen] = useState(false)
   const [addPrefillDate, setAddPrefillDate] = useState(initialAnchor)
   const [detailLesson, setDetailLesson] = useState<UnifiedLesson | null>(null)
+
+  // 필터 상태
+  const [category, setCategory] = useState<LessonCategory>('all')
+  const [instructorFilter, setInstructorFilter] = useState<number | null>(null)
+  const [timeBand, setTimeBand] = useState<TimeBand>('all')
+  const [dailyLayout, setDailyLayout] = useState<DailyLayout>('강사별')
 
   function changeMode(m: ViewMode) {
     setMode(m)
@@ -58,9 +72,31 @@ export function UnifiedLessonsView({
     router.push(`/lessons?mode=${encodeURIComponent(mode)}&date=${newAnchor}`)
   }
 
+  // 필터 적용된 lessons
+  const filtered = useMemo(
+    () => applyLessonFilters(lessons, {
+      category,
+      timeBand: mode === '월별' ? timeBand : 'all',
+      instructorId: instructorFilter,
+    }),
+    [lessons, category, timeBand, mode, instructorFilter],
+  )
+
   return (
-    <div className="space-y-4">
-      {/* 헤더: 모드 토글 + 날짜 네비게이션 */}
+    <div className="space-y-3">
+      {/* 상단 필터 바 */}
+      <LessonsFilterBar
+        category={category}
+        onCategoryChange={setCategory}
+        instructors={instructors}
+        instructorFilter={instructorFilter}
+        onInstructorChange={setInstructorFilter}
+        mode={mode}
+        timeBand={timeBand}
+        onTimeBandChange={setTimeBand}
+      />
+
+      {/* 모드 토글 + 네비게이션 + 추가 */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex gap-1 bg-neutral-100 p-0.5 rounded-lg">
           {MODES.map(m => (
@@ -87,8 +123,28 @@ export function UnifiedLessonsView({
         </div>
       </div>
 
-      {/* 통계 (상단) */}
-      <Stats lessons={lessons} mode={mode} />
+      {/* 일별일 때 강사별/시간순 토글 */}
+      {mode === '일별' && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-neutral-500">레이아웃</span>
+          <div className="flex gap-0.5 bg-neutral-100 p-0.5 rounded">
+            {(['강사별', '시간순'] as DailyLayout[]).map(l => (
+              <button
+                key={l}
+                onClick={() => setDailyLayout(l)}
+                className={`px-2 py-0.5 text-[11px] font-medium rounded ${
+                  dailyLayout === l ? 'bg-white shadow-sm text-blue-600' : 'text-neutral-500'
+                }`}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 통계 */}
+      <Stats lessons={filtered} mode={mode} />
 
       {/* 빠른 추가 모달 */}
       <QuickAddLesson
@@ -97,7 +153,7 @@ export function UnifiedLessonsView({
         prefillDate={addPrefillDate}
       />
 
-      {/* 상세 모달 (룸/시간 변경 + 삭제) */}
+      {/* 상세 모달 */}
       <LessonDetailModal
         lesson={detailLesson}
         open={!!detailLesson}
@@ -105,9 +161,31 @@ export function UnifiedLessonsView({
       />
 
       {/* 뷰 본체 */}
-      {mode === '일별' && <DailyView lessons={lessons} date={anchor} onSelectLesson={setDetailLesson} />}
-      {mode === '주별' && <WeeklyView lessons={lessons} weekStart={getWeekStart(anchor)} onSelectLesson={setDetailLesson} />}
-      {mode === '월별' && <MonthlyView lessons={lessons} yearMonth={anchor.slice(0, 7)} onSelectDate={d => { changeMode('일별'); changeAnchor(d) }} />}
+      {mode === '일별' && (
+        dailyLayout === '강사별'
+          ? <DailyByInstructor
+              lessons={filtered.filter(l => l.date === anchor)}
+              date={anchor}
+              instructors={instructors}
+              onSelectLesson={setDetailLesson}
+            />
+          : <DailyTimeline lessons={filtered} date={anchor} onSelectLesson={setDetailLesson} />
+      )}
+      {mode === '주별' && (
+        <WeeklyView
+          lessons={filtered}
+          weekStart={getWeekStart(anchor)}
+          onSelectLesson={setDetailLesson}
+        />
+      )}
+      {mode === '월별' && (
+        <MonthlyCardList
+          lessons={filtered}
+          yearMonth={anchor.slice(0, 7)}
+          onSelectDate={d => { changeMode('일별'); changeAnchor(d) }}
+          onSelectLesson={setDetailLesson}
+        />
+      )}
     </div>
   )
 }
@@ -163,14 +241,13 @@ function Stats({ lessons, mode }: { lessons: UnifiedLesson[]; mode: ViewMode }) 
 }
 
 // ─────────────────────────────────────────────
-// 일별 — 시간순 리스트 (가장 상세)
+// 일별 — 시간순 리스트 (기존 패턴 유지, 색 + 호버 추가)
 // ─────────────────────────────────────────────
-function DailyView({ lessons, date, onSelectLesson }: {
+function DailyTimeline({ lessons, date, onSelectLesson }: {
   lessons: UnifiedLesson[]
   date: string
   onSelectLesson: (l: UnifiedLesson) => void
 }) {
-  // 같은 시간 묶음 — 룸 indicator용
   const timeSlots = useMemo(
     () => groupByTimeSlot(lessons.filter(l => l.date === date)),
     [lessons, date],
@@ -194,36 +271,15 @@ function DailyView({ lessons, date, onSelectLesson }: {
         </thead>
         <tbody>
           {timeSlots.map(slot =>
-            slot.map((l, roomIdx) => (
-              <tr
+            slot.map((l, slotIdx) => (
+              <TimelineRow
                 key={`${l.type}-${l.id}`}
-                className="border-t border-neutral-100 hover:bg-blue-50/40 cursor-pointer"
-                onClick={() => onSelectLesson(l)}
-                title="클릭해서 수정/삭제"
-              >
-                <td className="px-3 py-2 tabular-nums font-medium">{roomIdx === 0 ? (l.time ?? '—') : ''}</td>
-                <td className="px-3 py-2 text-xs text-neutral-600 truncate max-w-[120px]">
-                  {l.roomName ?? (slot.length > 1 ? <span className="text-neutral-400">미지정 {roomIdx + 1}/{slot.length}</span> : <span className="text-neutral-400">—</span>)}
-                </td>
-                <td className="px-3 py-2"><TypeBadge lesson={l} /></td>
-                <td className="px-3 py-2 text-neutral-700">
-                  {l.type === 'individual'
-                    ? (l.memberName ?? '—')
-                    : `${l.reservedCount ?? 0}/${l.capacity ?? '—'}명 예약`}
-                </td>
-                <td className="px-3 py-2 text-neutral-600">{l.instructorName ?? '강사 미정'}</td>
-                <td className="px-3 py-2 text-right">
-                  {l.type === 'individual' ? (
-                    <StatusBadge status={l.status} />
-                  ) : (
-                    <a
-                      href={`/lessons/groups/${l.id}`}
-                      onClick={e => e.stopPropagation()}
-                      className="text-xs text-blue-600 hover:underline"
-                    >명단</a>
-                  )}
-                </td>
-              </tr>
+                lesson={l}
+                showTime={slotIdx === 0}
+                slotIndex={slot.length > 1 ? slotIdx + 1 : null}
+                slotTotal={slot.length > 1 ? slot.length : null}
+                onSelect={() => onSelectLesson(l)}
+              />
             )),
           )}
         </tbody>
@@ -232,10 +288,61 @@ function DailyView({ lessons, date, onSelectLesson }: {
   )
 }
 
-function TypeBadge({ lesson }: { lesson: UnifiedLesson }) {
-  const label = lessonTypeLabel(lesson)
-  const color = lesson.type === 'group' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
-  return <span className={`text-xs px-2 py-0.5 rounded ${color}`}>{label}</span>
+function TimelineRow({
+  lesson, showTime, slotIndex, slotTotal, onSelect,
+}: {
+  lesson: UnifiedLesson
+  showTime: boolean
+  slotIndex: number | null
+  slotTotal: number | null
+  onSelect: () => void
+}) {
+  const color = instructorColor(lesson.instructorColor)
+  return (
+    <tr
+      onClick={onSelect}
+      className="border-t border-neutral-100 hover:bg-blue-50/40 cursor-pointer"
+      title="클릭해서 수정/삭제"
+    >
+      <td className="px-3 py-2 tabular-nums font-medium">{showTime ? (lesson.time ?? '—') : ''}</td>
+      <td className="px-3 py-2 text-xs text-neutral-600 truncate max-w-[120px]">
+        {lesson.roomName ?? (slotIndex && slotTotal ? <span className="text-neutral-400">미지정 {slotIndex}/{slotTotal}</span> : <span className="text-neutral-400">—</span>)}
+      </td>
+      <td className="px-3 py-2">
+        <span className={`text-xs px-2 py-0.5 rounded ${
+          lesson.type === 'group' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+        }`}>
+          {lesson.type === 'group' ? `그룹 · ${lesson.sessionName ?? '세션'}` : (lesson.passName ?? '개인')}
+        </span>
+      </td>
+      <td className="px-3 py-2 text-neutral-700">
+        {lesson.type === 'individual'
+          ? (lesson.memberName ?? '—')
+          : `${lesson.reservedCount ?? 0}/${lesson.capacity ?? '—'}명 예약`}
+      </td>
+      <td className="px-3 py-2">
+        <span className="inline-flex items-center gap-1.5 text-neutral-700">
+          <span
+            className="inline-block w-2 h-2 rounded-sm"
+            style={{ backgroundColor: color }}
+            aria-hidden
+          />
+          {lesson.instructorName ?? '미정'}
+        </span>
+      </td>
+      <td className="px-3 py-2 text-right">
+        {lesson.type === 'individual' ? (
+          <StatusBadge status={lesson.status} />
+        ) : (
+          <a
+            href={`/lessons/groups/${lesson.id}`}
+            onClick={e => e.stopPropagation()}
+            className="text-xs text-blue-600 hover:underline"
+          >명단</a>
+        )}
+      </td>
+    </tr>
+  )
 }
 
 function StatusBadge({ status }: { status: string | null }) {
@@ -252,7 +359,7 @@ function StatusBadge({ status }: { status: string | null }) {
 }
 
 // ─────────────────────────────────────────────
-// 주별 — 7일 column, 각 day에 lesson 카드 list
+// 주별 — 7일 컬럼, 카드에 강사 색 보더 + 호버 툴팁
 // ─────────────────────────────────────────────
 function WeeklyView({ lessons, weekStart, onSelectLesson }: {
   lessons: UnifiedLesson[]
@@ -266,7 +373,7 @@ function WeeklyView({ lessons, weekStart, onSelectLesson }: {
     <div className="grid grid-cols-7 gap-2">
       {days.map((d, i) => {
         const dayLessons = grouped.get(d) ?? []
-        const timeSlots = groupByTimeSlot(dayLessons)   // 같은 시간끼리 묶음 (룸 처리)
+        const timeSlots = groupByTimeSlot(dayLessons)
         const date = new Date(d + 'T00:00:00')
         const dayNum = date.getDate()
         const wd = WEEKDAYS[i]
@@ -285,7 +392,7 @@ function WeeklyView({ lessons, weekStart, onSelectLesson }: {
                 <span className="text-[10px] text-neutral-400 tabular-nums">{dayLessons.length}</span>
               )}
             </div>
-            <div className="flex-1 p-1 space-y-1 overflow-y-auto" style={{ maxHeight: '380px' }}>
+            <div className="flex-1 p-1 space-y-1 overflow-y-auto" style={{ maxHeight: '420px' }}>
               {timeSlots.length === 0 ? (
                 <div className="text-[10px] text-neutral-300 text-center pt-4">—</div>
               ) : (
@@ -313,93 +420,57 @@ function WeeklyView({ lessons, weekStart, onSelectLesson }: {
 
 function WeekCard({ lesson, slotIndex, slotTotal, onClick }: {
   lesson: UnifiedLesson
-  slotIndex: number | null   // 1, 2, ... (slot 표시용. null이면 단독)
+  slotIndex: number | null
   slotTotal: number | null
   onClick: () => void
 }) {
+  const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null)
   const isGroup = lesson.type === 'group'
-  const bg = isGroup ? 'bg-purple-50 border-purple-200 hover:bg-purple-100' : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
-  // 룸 라벨: 실제 룸 이름 우선, 없으면 slot index (옛 동작)
+  const bg = isGroup ? 'bg-purple-50 hover:bg-purple-100' : 'bg-blue-50 hover:bg-blue-100'
+  const color = instructorColor(lesson.instructorColor)
   const roomLabel = lesson.roomName ?? (slotIndex && slotTotal ? `${slotIndex}/${slotTotal}` : null)
+
+  function handleEnter(e: MouseEvent<HTMLButtonElement>) {
+    const r = e.currentTarget.getBoundingClientRect()
+    setHoverPos({ x: r.right + 4, y: r.top })
+  }
+  function handleLeave() { setHoverPos(null) }
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex-1 min-w-0 text-left text-[10px] rounded border px-1.5 py-1 leading-tight ${bg} relative cursor-pointer transition-colors`}
-      title="클릭해서 수정/삭제"
-    >
-      {roomLabel && (
-        <span
-          className="absolute top-0.5 right-0.5 text-[8px] font-bold text-neutral-500 tabular-nums bg-white/80 rounded px-0.5 leading-tight max-w-[60%] truncate"
-          title={lesson.roomName ?? `${slotTotal}개 동시 진행 중 ${slotIndex}번째`}
-        >
-          {roomLabel}
-        </span>
+    <>
+      <button
+        type="button"
+        onClick={onClick}
+        onMouseEnter={handleEnter}
+        onMouseLeave={handleLeave}
+        className={`flex-1 min-w-0 text-left text-[10px] rounded border border-neutral-200 border-l-4 px-1.5 py-1 leading-tight ${bg} relative cursor-pointer transition-colors`}
+        style={{ borderLeftColor: color }}
+        title="호버하면 미리보기. 클릭하면 수정/삭제."
+      >
+        {roomLabel && (
+          <span
+            className="absolute top-0.5 right-0.5 text-[8px] font-bold text-neutral-500 tabular-nums bg-white/80 rounded px-0.5 leading-tight max-w-[60%] truncate"
+            title={lesson.roomName ?? `${slotTotal}개 동시 진행 중 ${slotIndex}번째`}
+          >
+            {roomLabel}
+          </span>
+        )}
+        <div className="font-bold tabular-nums">{lesson.time ?? '—'}</div>
+        <div className="text-neutral-700 truncate">
+          {isGroup
+            ? `${lesson.sessionName ?? '그룹'} (${lesson.reservedCount ?? 0}/${lesson.capacity ?? '—'})`
+            : (lesson.memberName ?? '—')}
+        </div>
+        <div className="text-neutral-500 truncate">
+          {(lesson.instructorName ?? '강사미정')} · {isGroup ? '그룹' : (lesson.passName ?? '개인')}
+        </div>
+      </button>
+
+      {hoverPos && (
+        <div className="fixed z-50" style={{ left: hoverPos.x, top: hoverPos.y }}>
+          <LessonHoverCard lesson={lesson} />
+        </div>
       )}
-      <div className="font-bold tabular-nums">{lesson.time ?? '—'}</div>
-      <div className="text-neutral-700 truncate">
-        {isGroup
-          ? `${lesson.sessionName ?? '그룹'} (${lesson.reservedCount ?? 0}/${lesson.capacity ?? '—'})`
-          : (lesson.memberName ?? '—')}
-      </div>
-      <div className="text-neutral-500 truncate">
-        {(lesson.instructorName ?? '강사미정')} · {isGroup ? '그룹' : (lesson.passName ?? '개인')}
-      </div>
-    </button>
-  )
-}
-
-// ─────────────────────────────────────────────
-// 월별 — 캘린더 그리드, 셀에 건수만 (기존 패턴)
-// ─────────────────────────────────────────────
-function MonthlyView({ lessons, yearMonth, onSelectDate }: {
-  lessons: UnifiedLesson[]
-  yearMonth: string
-  onSelectDate: (date: string) => void
-}) {
-  const grid = useMemo(() => buildMonthGrid(yearMonth), [yearMonth])
-  const counts = useMemo(() => countByDate(lessons), [lessons])
-  const today = new Date().toISOString().slice(0, 10)
-
-  return (
-    <Card>
-      <div className="grid grid-cols-7 gap-1 text-xs">
-        {WEEKDAYS.map((wd, i) => (
-          <div key={wd} className={`text-center py-1 font-medium ${i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-neutral-500'}`}>{wd}</div>
-        ))}
-        {grid.flat().map((cell, i) => {
-          if (!cell.date) return <div key={i} className="aspect-square" />
-          const c = counts.get(cell.date)
-          const isToday = cell.date === today
-          const weekday = new Date(cell.date + 'T00:00:00').getDay()
-          return (
-            <button
-              key={cell.date}
-              onClick={() => onSelectDate(cell.date!)}
-              className={`aspect-square rounded p-1 text-xs hover:bg-blue-50 transition-colors flex flex-col items-center justify-start ${
-                isToday ? 'border border-blue-400 bg-blue-50/50' : ''
-              }`}
-            >
-              <span className={`text-xs ${weekday === 0 ? 'text-red-500' : weekday === 6 ? 'text-blue-500' : 'text-neutral-700'}`}>
-                {parseInt(cell.date.slice(8), 10)}
-              </span>
-              {c && c.total > 0 && (
-                <div className="mt-0.5 flex flex-col items-center text-[9px] leading-tight">
-                  <span className="text-blue-600 font-semibold">{c.total}건</span>
-                  {c.individual > 0 && c.group > 0 && (
-                    <span className="text-neutral-400">{c.individual}+{c.group}</span>
-                  )}
-                </div>
-              )}
-            </button>
-          )
-        })}
-      </div>
-      <div className="mt-3 flex items-center gap-3 text-[10px] text-neutral-400">
-        <span><span className="text-blue-600 font-semibold">●</span> 개별</span>
-        <span><span className="text-purple-600 font-semibold">●</span> 그룹</span>
-        <span>날짜 클릭 → 일별 상세</span>
-      </div>
-    </Card>
+    </>
   )
 }
