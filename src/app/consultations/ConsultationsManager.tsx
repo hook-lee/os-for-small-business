@@ -328,28 +328,28 @@ export function ConsultationsManager({
           <table className="w-full text-sm">
             <thead className="bg-neutral-50 text-xs text-neutral-500 uppercase">
               <tr>
-                <th className="text-left px-3 py-2">이름</th>
-                <th className="text-left px-3 py-2 hidden md:table-cell">전화</th>
-                <th className="text-left px-3 py-2 w-24">상담일</th>
-                <th className="text-left px-3 py-2 hidden md:table-cell w-24">인입경로</th>
+                <th className="text-left px-3 py-2 w-28">이름</th>
+                <th className="text-left px-3 py-2 hidden md:table-cell whitespace-nowrap w-36">전화</th>
+                <th className="text-left px-3 py-2 whitespace-nowrap w-28">상담일</th>
+                <th className="text-left px-3 py-2 hidden md:table-cell whitespace-nowrap w-24">인입경로</th>
                 <th className="text-left px-3 py-2 hidden lg:table-cell">내용</th>
-                <th className="text-left px-3 py-2 hidden md:table-cell w-20">담당</th>
-                <th className="text-right px-3 py-2 w-40">상태</th>
+                <th className="text-left px-3 py-2 hidden md:table-cell whitespace-nowrap w-24">담당</th>
+                <th className="text-right px-3 py-2 whitespace-nowrap w-36">상태</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map(c => (
                 <tr key={c.id} className="border-t border-neutral-100">
-                  <td className="px-3 py-2 font-medium">
+                  <td className="px-3 py-2 font-medium whitespace-nowrap">
                     {c.memberId ? (
                       <a href={`/members/${c.memberId}`} className="text-blue-600 hover:underline">{c.name}</a>
                     ) : c.name}
                   </td>
-                  <td className="px-3 py-2 text-neutral-600 hidden md:table-cell">{c.phone ?? '—'}</td>
-                  <td className="px-3 py-2 text-neutral-700 tabular-nums">{c.consultationDate}</td>
-                  <td className="px-3 py-2 text-neutral-600 hidden md:table-cell">{c.inflowChannel ?? '—'}</td>
+                  <td className="px-3 py-2 text-neutral-600 hidden md:table-cell whitespace-nowrap tabular-nums">{c.phone ?? '—'}</td>
+                  <td className="px-3 py-2 text-neutral-700 tabular-nums whitespace-nowrap">{c.consultationDate}</td>
+                  <td className="px-3 py-2 text-neutral-600 hidden md:table-cell whitespace-nowrap">{c.inflowChannel ?? '—'}</td>
                   <td className="px-3 py-2 text-neutral-600 hidden lg:table-cell max-w-[200px] truncate">{c.content ?? '—'}</td>
-                  <td className="px-3 py-2 text-neutral-600 hidden md:table-cell">{c.staffName ?? '—'}</td>
+                  <td className="px-3 py-2 text-neutral-600 hidden md:table-cell whitespace-nowrap">{c.staffName ?? '—'}</td>
                   <td className="px-3 py-2 text-right">
                     <div className="inline-flex items-center gap-1">
                       {c.convertedToMember ? (

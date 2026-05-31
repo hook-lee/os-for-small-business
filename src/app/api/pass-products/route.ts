@@ -22,6 +22,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json() as {
       name?: string
+      category?: string | null
       passType?: string
       durationDays?: number
       totalCount?: number
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
     }
     const id = await insertPassProduct({
       name: body.name,
+      category: body.category ?? null,
       passType: body.passType as '프라이빗' | '그룹',
       durationDays: body.durationDays,
       totalCount: body.totalCount,

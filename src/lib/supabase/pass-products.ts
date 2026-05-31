@@ -3,6 +3,7 @@ import { getSupabaseClient } from './client'
 export interface PassProduct {
   id: number
   name: string
+  category: string | null   // 상위 카테고리 — 'NULL'이면 name이 카테고리 역할
   passType: '프라이빗' | '그룹'
   durationDays: number
   totalCount: number
@@ -16,6 +17,7 @@ export interface PassProduct {
 interface PassProductRow {
   id: number
   name: string
+  category: string | null
   pass_type: string
   duration_days: number
   total_count: number
@@ -30,6 +32,7 @@ function rowToProduct(row: PassProductRow): PassProduct {
   return {
     id: row.id,
     name: row.name,
+    category: row.category,
     passType: row.pass_type as '프라이빗' | '그룹',
     durationDays: row.duration_days,
     totalCount: row.total_count,
@@ -69,6 +72,7 @@ export async function fetchPassProductById(id: number, ownerId: string): Promise
 
 export interface NewPassProductInput {
   name: string
+  category?: string | null
   passType: '프라이빗' | '그룹'
   durationDays: number
   totalCount: number
@@ -80,6 +84,7 @@ export interface NewPassProductInput {
 
 export interface UpdatePassProductInput {
   name?: string
+  category?: string | null
   passType?: '프라이빗' | '그룹'
   durationDays?: number
   totalCount?: number
@@ -94,6 +99,7 @@ export async function insertPassProduct(input: NewPassProductInput, ownerId: str
   const supabase = getSupabaseClient()
   const row: Record<string, unknown> = {
     name: input.name,
+    category: input.category ?? null,
     pass_type: input.passType,
     duration_days: input.durationDays,
     total_count: input.totalCount,
@@ -117,6 +123,7 @@ export async function updatePassProduct(id: number, patch: UpdatePassProductInpu
   const supabase = getSupabaseClient()
   const dbPatch: Record<string, unknown> = {}
   if (patch.name !== undefined) dbPatch.name = patch.name
+  if (patch.category !== undefined) dbPatch.category = patch.category
   if (patch.passType !== undefined) dbPatch.pass_type = patch.passType
   if (patch.durationDays !== undefined) dbPatch.duration_days = patch.durationDays
   if (patch.totalCount !== undefined) dbPatch.total_count = patch.totalCount

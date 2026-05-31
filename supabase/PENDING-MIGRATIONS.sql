@@ -243,3 +243,14 @@ create policy owner_all_select on pass_events for select using (auth.uid() = own
 create policy owner_all_insert on pass_events for insert with check (auth.uid() = owner_id);
 create policy owner_all_update on pass_events for update using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
 create policy owner_all_delete on pass_events for delete using (auth.uid() = owner_id);
+
+-- ============================================================
+-- v3.6: 수강권 상위 카테고리
+--
+-- pass_products.category 추가. 사용자 자유 입력 (예: '체험'/'프라이빗'/'그룹'/'재활').
+-- UI에서 카테고리 기준으로 그룹화 표시. 같은 카테고리 내 색·이름 자유.
+-- NULL 허용 — 기존 데이터 영향 없음. UI는 NULL이면 name 기준 그룹화 fallback.
+-- ============================================================
+
+alter table pass_products add column if not exists category text;
+create index if not exists pass_products_category_idx on pass_products (category) where category is not null;
