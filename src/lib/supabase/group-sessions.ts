@@ -4,6 +4,8 @@ export interface GroupSession {
   id: number
   instructorId: number | null
   instructorName: string | null
+  roomId: number | null
+  roomName: string | null
   sessionName: string
   lessonDate: string
   lessonTime: string
@@ -18,6 +20,7 @@ export interface GroupSession {
 interface GroupSessionRow {
   id: number
   instructor_id: number | null
+  room_id: number | null
   session_name: string
   lesson_date: string
   lesson_time: string
@@ -27,6 +30,7 @@ interface GroupSessionRow {
   active: boolean
   created_at: string
   instructors: { id: number; name: string } | null
+  rooms: { id: number; name: string } | null
 }
 
 function rowToSession(row: GroupSessionRow, reservedCount = 0, attendedCount = 0): GroupSession {
@@ -34,6 +38,8 @@ function rowToSession(row: GroupSessionRow, reservedCount = 0, attendedCount = 0
     id: row.id,
     instructorId: row.instructor_id,
     instructorName: row.instructors?.name ?? null,
+    roomId: row.room_id,
+    roomName: row.rooms?.name ?? null,
     sessionName: row.session_name,
     lessonDate: row.lesson_date,
     lessonTime: row.lesson_time,
@@ -52,7 +58,7 @@ export async function fetchUpcomingGroupSessions(ownerId: string): Promise<Group
     const today = new Date().toISOString().slice(0, 10)
     let q = supabase
       .from('group_sessions')
-      .select('*, instructors(id, name)')
+      .select('*, instructors(id, name), rooms(id, name)')
       .gte('lesson_date', today)
       .eq('active', true)
       .order('lesson_date', { ascending: true })
@@ -95,7 +101,7 @@ export async function fetchSessionById(id: number, ownerId: string): Promise<Gro
     const supabase = getSupabaseClient()
     let q = supabase
       .from('group_sessions')
-      .select('*, instructors(id, name)')
+      .select('*, instructors(id, name), rooms(id, name)')
       .eq('id', id)
     if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
     const { data, error } = await q.maybeSingle()
@@ -122,6 +128,7 @@ export async function fetchSessionById(id: number, ownerId: string): Promise<Gro
 
 export interface CreateGroupSessionInput {
   instructorId?: number | null
+  roomId?: number | null
   sessionName: string
   lessonDate: string
   lessonTime: string
@@ -134,6 +141,7 @@ export async function createGroupSession(input: CreateGroupSessionInput, ownerId
   const supabase = getSupabaseClient()
   const row: Record<string, unknown> = {
     instructor_id: input.instructorId ?? null,
+    room_id: input.roomId ?? null,
     session_name: input.sessionName,
     lesson_date: input.lessonDate,
     lesson_time: input.lessonTime,
@@ -150,6 +158,30 @@ export async function createGroupSession(input: CreateGroupSessionInput, ownerId
     .single()
   if (error) throw new Error(`Create group session failed: ${error.message}`)
   return (data as { id: number }).id
+}
+
+export interface UpdateGroupSessionInput {
+  roomId?: number | null
+  lessonTime?: string | null
+  instructorId?: number | null
+  capacity?: number
+  notes?: string | null
+}
+
+export async function updateGroupSession(id: number, patch: UpdateGroupSessionInput, ownerId: string): Promise<void> {
+  const supabase = getSupabaseClient()
+  const dbPatch: Record<string, unknown> = {}
+  if (patch.roomId !== undefined) dbPatch.room_id = patch.roomId
+  if (patch.lessonTime !== undefined) dbPatch.lesson_time = patch.lessonTime
+  if (patch.instructorId !== undefined) dbPatch.instructor_id = patch.instructorId
+  if (patch.capacity !== undefined) dbPatch.capacity = patch.capacity
+  if (patch.notes !== undefined) dbPatch.notes = patch.notes
+  if (Object.keys(dbPatch).length === 0) return
+
+  let q = supabase.from('group_sessions').update(dbPatch).eq('id', id)
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { error } = await q
+  if (error) throw new Error(`Update group session failed: ${error.message}`)
 }
 
 export async function deleteGroupSession(id: number, ownerId: string): Promise<void> {

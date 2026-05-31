@@ -20,6 +20,7 @@ export interface Lesson {
   passId: number | null
   memberId: number
   instructorId: number | null
+  roomId: number | null
   lessonDate: string
   lessonTime: string | null
   durationMinutes: number
@@ -33,6 +34,7 @@ interface LessonRow {
   pass_id: number | null
   member_id: number
   instructor_id: number | null
+  room_id: number | null
   lesson_date: string
   lesson_time: string | null
   duration_minutes: number
@@ -47,6 +49,7 @@ export function rowToLesson(row: LessonRow): Lesson {
     passId: row.pass_id,
     memberId: row.member_id,
     instructorId: row.instructor_id,
+    roomId: row.room_id,
     lessonDate: row.lesson_date,
     lessonTime: row.lesson_time,
     durationMinutes: row.duration_minutes,
@@ -62,6 +65,7 @@ export interface LessonWithNames extends Lesson {
   instructorName: string | null
   passName: string | null
   passRemaining: number | null
+  roomName: string | null
 }
 
 export async function fetchLessonsByDate(date: string, ownerId: string): Promise<LessonWithNames[]> {
@@ -69,7 +73,7 @@ export async function fetchLessonsByDate(date: string, ownerId: string): Promise
     const supabase = getSupabaseClient()
     let q = supabase
       .from('lessons')
-      .select('*, members(id, name, phone), instructors(id, name), passes(id, pass_name, remaining_count)')
+      .select('*, members(id, name, phone), instructors(id, name), passes(id, pass_name, remaining_count), rooms(id, name)')
       .eq('lesson_date', date)
       .order('lesson_time', { ascending: true, nullsFirst: false })
     if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
@@ -79,6 +83,7 @@ export async function fetchLessonsByDate(date: string, ownerId: string): Promise
       members: { id: number; name: string; phone: string | null } | null
       instructors: { id: number; name: string } | null
       passes: { id: number; pass_name: string; remaining_count: number | null } | null
+      rooms: { id: number; name: string } | null
     }
     return ((data ?? []) as Joined[]).map(row => ({
       ...rowToLesson(row),
@@ -87,6 +92,7 @@ export async function fetchLessonsByDate(date: string, ownerId: string): Promise
       instructorName: row.instructors?.name ?? null,
       passName: row.passes?.pass_name ?? null,
       passRemaining: row.passes?.remaining_count ?? null,
+      roomName: row.rooms?.name ?? null,
     }))
   } catch {
     return []
@@ -102,7 +108,7 @@ export async function fetchLessonsByMonth(yearMonth: string, ownerId: string): P
     const end = `${yearMonth}-${String(lastDay).padStart(2, '0')}`
     let q = supabase
       .from('lessons')
-      .select('*, members(id, name, phone), instructors(id, name), passes(id, pass_name, remaining_count)')
+      .select('*, members(id, name, phone), instructors(id, name), passes(id, pass_name, remaining_count), rooms(id, name)')
       .gte('lesson_date', start)
       .lte('lesson_date', end)
       .order('lesson_date', { ascending: true })
@@ -114,6 +120,7 @@ export async function fetchLessonsByMonth(yearMonth: string, ownerId: string): P
       members: { id: number; name: string; phone: string | null } | null
       instructors: { id: number; name: string } | null
       passes: { id: number; pass_name: string; remaining_count: number | null } | null
+      rooms: { id: number; name: string } | null
     }
     return ((data ?? []) as Joined[]).map(row => ({
       ...rowToLesson(row),
@@ -122,6 +129,7 @@ export async function fetchLessonsByMonth(yearMonth: string, ownerId: string): P
       instructorName: row.instructors?.name ?? null,
       passName: row.passes?.pass_name ?? null,
       passRemaining: row.passes?.remaining_count ?? null,
+      roomName: row.rooms?.name ?? null,
     }))
   } catch {
     return []
@@ -132,6 +140,7 @@ export interface CreateLessonInput {
   passId?: number | null
   memberId: number
   instructorId?: number | null
+  roomId?: number | null
   lessonDate: string
   lessonTime?: string
   durationMinutes?: number
@@ -144,6 +153,7 @@ export async function createLesson(input: CreateLessonInput, ownerId: string): P
     pass_id: input.passId ?? null,
     member_id: input.memberId,
     instructor_id: input.instructorId ?? null,
+    room_id: input.roomId ?? null,
     lesson_date: input.lessonDate,
     lesson_time: input.lessonTime ?? null,
     duration_minutes: input.durationMinutes ?? 50,
@@ -159,6 +169,28 @@ export async function createLesson(input: CreateLessonInput, ownerId: string): P
     .single()
   if (error) throw new Error(`Create lesson failed: ${error.message}`)
   return (data as { id: number }).id
+}
+
+export interface UpdateLessonInput {
+  roomId?: number | null
+  lessonTime?: string | null
+  instructorId?: number | null
+  memo?: string | null
+}
+
+export async function updateLesson(id: number, patch: UpdateLessonInput, ownerId: string): Promise<void> {
+  const supabase = getSupabaseClient()
+  const dbPatch: Record<string, unknown> = {}
+  if (patch.roomId !== undefined) dbPatch.room_id = patch.roomId
+  if (patch.lessonTime !== undefined) dbPatch.lesson_time = patch.lessonTime
+  if (patch.instructorId !== undefined) dbPatch.instructor_id = patch.instructorId
+  if (patch.memo !== undefined) dbPatch.memo = patch.memo
+  if (Object.keys(dbPatch).length === 0) return
+
+  let q = supabase.from('lessons').update(dbPatch).eq('id', id)
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { error } = await q
+  if (error) throw new Error(`Update lesson failed: ${error.message}`)
 }
 
 /**

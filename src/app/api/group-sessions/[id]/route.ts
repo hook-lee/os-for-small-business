@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
-import { fetchSessionById, deleteGroupSession } from '@/lib/supabase/group-sessions'
+import { fetchSessionById, deleteGroupSession, updateGroupSession } from '@/lib/supabase/group-sessions'
 import { fetchReservationsBySession } from '@/lib/supabase/group-reservations'
+import { findRoomTimeConflict } from '@/lib/supabase/rooms'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -16,6 +17,51 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     if (!session) return NextResponse.json({ error: '세션을 찾을 수 없습니다.' }, { status: 404 })
     const reservations = await fetchReservationsBySession(id)
     return NextResponse.json({ session, reservations })
+  } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 })
+  }
+}
+
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!hasSupabaseConfig()) return NextResponse.json({ error: 'Supabase 미설정' }, { status: 503 })
+  let ownerId: string
+  try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+  const { id: idRaw } = await params
+  const id = parseInt(idRaw, 10)
+  if (!Number.isFinite(id) || id <= 0) return NextResponse.json({ error: '유효하지 않은 id' }, { status: 400 })
+  try {
+    const body = await req.json() as {
+      roomId?: number | null
+      lessonTime?: string | null
+      instructorId?: number | null
+      capacity?: number
+      notes?: string | null
+      lessonDate?: string
+    }
+    // 룸·시간 cross-table 충돌 검증
+    if (body.roomId && body.lessonTime && body.lessonDate) {
+      const conflict = await findRoomTimeConflict(
+        ownerId,
+        body.roomId,
+        body.lessonDate,
+        body.lessonTime,
+        { groupSessionId: id },
+      )
+      if (conflict) {
+        return NextResponse.json({
+          error: `해당 룸·시간에 이미 ${conflict.description}이 있습니다`,
+          conflict,
+        }, { status: 409 })
+      }
+    }
+    await updateGroupSession(id, {
+      roomId: body.roomId,
+      lessonTime: body.lessonTime,
+      instructorId: body.instructorId,
+      capacity: body.capacity,
+      notes: body.notes,
+    }, ownerId)
+    return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })
   }

@@ -2,6 +2,7 @@ import { requireOwnerId } from '@/lib/supabase/auth-server'
 import { loadStudioSettings } from '@/lib/supabase/studio-settings'
 import { SettingsTabs } from '../SettingsTabs'
 import { OperationsForm } from './OperationsForm'
+import { RoomsManager } from './RoomsManager'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +21,7 @@ export default async function OperationsSettingsPage() {
         </p>
       </div>
       <OperationsForm initial={initial} />
+      <RoomsManager />
     </div>
   )
 }

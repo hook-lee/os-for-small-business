@@ -5,6 +5,7 @@ import {
   createGroupSession,
   type CreateGroupSessionInput,
 } from '@/lib/supabase/group-sessions'
+import { findRoomTimeConflict } from '@/lib/supabase/rooms'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export async function GET() {
@@ -28,11 +29,27 @@ export async function POST(req: Request) {
     if (!body.sessionName || !body.lessonDate || !body.lessonTime) {
       return NextResponse.json({ error: 'sessionName, lessonDate, lessonTime 필수' }, { status: 400 })
     }
+    // 룸·시간 cross-table 충돌 검증
+    if (body.roomId) {
+      const conflict = await findRoomTimeConflict(
+        ownerId,
+        body.roomId,
+        body.lessonDate,
+        body.lessonTime,
+      )
+      if (conflict) {
+        return NextResponse.json({
+          error: `해당 룸·시간에 이미 ${conflict.description}이 있습니다`,
+          conflict,
+        }, { status: 409 })
+      }
+    }
     const id = await createGroupSession({
       sessionName: body.sessionName,
       lessonDate: body.lessonDate,
       lessonTime: body.lessonTime,
       instructorId: body.instructorId ?? null,
+      roomId: body.roomId ?? null,
       durationMinutes: body.durationMinutes,
       capacity: body.capacity,
       notes: body.notes,

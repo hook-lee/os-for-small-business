@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 
 interface Member { id: number; name: string; phone: string | null }
 interface Instructor { id: number; name: string }
+interface Room { id: number; name: string; isActive: boolean }
 
 /**
  * 전체 뷰 어디서든 수업을 빠르게 추가하는 모달.
@@ -25,9 +26,11 @@ export function QuickAddLesson({
   const [time, setTime] = useState('10:00')
   const [members, setMembers] = useState<Member[]>([])
   const [instructors, setInstructors] = useState<Instructor[]>([])
+  const [rooms, setRooms] = useState<Room[]>([])
   const [memberQuery, setMemberQuery] = useState('')
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null)
   const [selectedInstructorId, setSelectedInstructorId] = useState<number | null>(null)
+  const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null)
 
   // 그룹 전용
   const [sessionName, setSessionName] = useState('')
@@ -36,6 +39,9 @@ export function QuickAddLesson({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
+  // 활성 룸만 표시
+  const activeRooms = rooms.filter(r => r.isActive)
+
   // 모달 열릴 때 데이터 로드 + 날짜 prefill 갱신
   useEffect(() => {
     if (!open) return
@@ -43,6 +49,14 @@ export function QuickAddLesson({
     setError('')
     fetch('/api/members').then(r => r.json()).then((j: { members?: Member[] }) => setMembers(j.members ?? []))
     fetch('/api/instructors').then(r => r.json()).then((j: { instructors?: Instructor[] }) => setInstructors(j.instructors ?? []))
+    fetch('/api/rooms').then(r => r.json()).then((j: { rooms?: Room[] }) => {
+      const list = j.rooms ?? []
+      setRooms(list)
+      // 활성 룸 1개면 자동 선택
+      const active = list.filter(r => r.isActive)
+      if (active.length === 1) setSelectedRoomId(active[0].id)
+      else if (active.length === 0) setSelectedRoomId(null)
+    })
   }, [open, prefillDate])
 
   useEffect(() => {
@@ -55,6 +69,12 @@ export function QuickAddLesson({
     setError('')
     setSubmitting(true)
     try {
+      // 룸이 있는데 미선택이면 차단 (정책상 2개 이상은 필수)
+      if (activeRooms.length >= 2 && !selectedRoomId) {
+        setError('룸을 선택하세요')
+        setSubmitting(false)
+        return
+      }
       if (type === 'individual') {
         if (!selectedMemberId) { setError('회원을 선택하세요'); setSubmitting(false); return }
         const res = await fetch('/api/lessons', {
@@ -63,6 +83,7 @@ export function QuickAddLesson({
           body: JSON.stringify({
             memberId: selectedMemberId,
             instructorId: selectedInstructorId,
+            roomId: selectedRoomId,
             lessonDate: date,
             lessonTime: time,
           }),
@@ -77,6 +98,7 @@ export function QuickAddLesson({
           body: JSON.stringify({
             sessionName: sessionName.trim(),
             instructorId: selectedInstructorId,
+            roomId: selectedRoomId,
             lessonDate: date,
             lessonTime: time,
             capacity,
@@ -205,6 +227,32 @@ export function QuickAddLesson({
                 />
               </div>
             </>
+          )}
+
+          {/* 룸 — 활성 룸 2개 이상이면 필수, 1개면 자동 (UI 숨김), 0개면 안내 */}
+          {activeRooms.length >= 2 && (
+            <div>
+              <label className="block text-xs text-neutral-500 mb-1">룸 *</label>
+              <select
+                value={selectedRoomId ?? ''}
+                onChange={e => setSelectedRoomId(e.target.value ? parseInt(e.target.value, 10) : null)}
+                required
+                className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
+              >
+                <option value="">선택하세요</option>
+                {activeRooms.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+              </select>
+            </div>
+          )}
+          {activeRooms.length === 1 && (
+            <div className="text-xs text-neutral-500 bg-neutral-50 border border-neutral-200 rounded p-2">
+              룸: <strong className="text-neutral-700">{activeRooms[0].name}</strong> (자동 선택)
+            </div>
+          )}
+          {activeRooms.length === 0 && (
+            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+              ⚠ 등록된 룸이 없습니다. <a href="/settings/operations" className="underline">운영정보 설정</a>에서 추가하세요. (룸 없이도 저장 가능)
+            </div>
           )}
 
           {/* 강사 — 공통 */}

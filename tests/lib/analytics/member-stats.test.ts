@@ -16,7 +16,7 @@ function pass(amount: number, paidAt: string): Pass {
 
 function lesson(date: string, status: Lesson['status'] = 'completed'): Lesson {
   return {
-    id: 0, passId: null, memberId: 1, instructorId: null,
+    id: 0, passId: null, memberId: 1, instructorId: null, roomId: null,
     lessonDate: date, lessonTime: null, durationMinutes: 50,
     status, deducted: status === 'completed', memo: null,
   }

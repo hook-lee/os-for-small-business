@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { loadProfile, saveProfile, type UserProfile } from '@/lib/profile/settings'
+import { ensureDefaultRoom } from '@/lib/supabase/rooms'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 async function authGuard(): Promise<{ ownerId: string } | NextResponse> {
@@ -36,6 +37,8 @@ export async function POST(req: Request) {
       merged.taxPayerType = 'general'
     }
     await saveProfile(merged, auth.ownerId)
+    // 신규 가입 직후 첫 profile 저장이면 기본 룸 1개 시드 (멱등 — 이미 있으면 noop)
+    try { await ensureDefaultRoom(auth.ownerId) } catch { /* 실패해도 profile은 저장됨 */ }
     return NextResponse.json(merged)
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 400 })

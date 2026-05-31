@@ -15,6 +15,7 @@ import {
   groupByTimeSlot,
 } from '@/lib/analytics/lessons-view'
 import { QuickAddLesson } from './QuickAddLesson'
+import { LessonDetailModal } from './LessonDetailModal'
 
 const MODES: ViewMode[] = ['일별', '주별', '월별']
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -46,6 +47,7 @@ export function UnifiedLessonsView({
   const [anchor, setAnchor] = useState(initialAnchor)
   const [addOpen, setAddOpen] = useState(false)
   const [addPrefillDate, setAddPrefillDate] = useState(initialAnchor)
+  const [detailLesson, setDetailLesson] = useState<UnifiedLesson | null>(null)
 
   function changeMode(m: ViewMode) {
     setMode(m)
@@ -95,9 +97,16 @@ export function UnifiedLessonsView({
         prefillDate={addPrefillDate}
       />
 
+      {/* 상세 모달 (룸/시간 변경 + 삭제) */}
+      <LessonDetailModal
+        lesson={detailLesson}
+        open={!!detailLesson}
+        onClose={() => setDetailLesson(null)}
+      />
+
       {/* 뷰 본체 */}
-      {mode === '일별' && <DailyView lessons={lessons} date={anchor} />}
-      {mode === '주별' && <WeeklyView lessons={lessons} weekStart={getWeekStart(anchor)} />}
+      {mode === '일별' && <DailyView lessons={lessons} date={anchor} onSelectLesson={setDetailLesson} />}
+      {mode === '주별' && <WeeklyView lessons={lessons} weekStart={getWeekStart(anchor)} onSelectLesson={setDetailLesson} />}
       {mode === '월별' && <MonthlyView lessons={lessons} yearMonth={anchor.slice(0, 7)} onSelectDate={d => { changeMode('일별'); changeAnchor(d) }} />}
     </div>
   )
@@ -156,7 +165,11 @@ function Stats({ lessons, mode }: { lessons: UnifiedLesson[]; mode: ViewMode }) 
 // ─────────────────────────────────────────────
 // 일별 — 시간순 리스트 (가장 상세)
 // ─────────────────────────────────────────────
-function DailyView({ lessons, date }: { lessons: UnifiedLesson[]; date: string }) {
+function DailyView({ lessons, date, onSelectLesson }: {
+  lessons: UnifiedLesson[]
+  date: string
+  onSelectLesson: (l: UnifiedLesson) => void
+}) {
   // 같은 시간 묶음 — 룸 indicator용
   const timeSlots = useMemo(
     () => groupByTimeSlot(lessons.filter(l => l.date === date)),
@@ -172,7 +185,7 @@ function DailyView({ lessons, date }: { lessons: UnifiedLesson[]; date: string }
         <thead className="bg-neutral-50 text-xs text-neutral-500 uppercase">
           <tr>
             <th className="text-left px-3 py-2 w-20">시간</th>
-            <th className="text-left px-3 py-2 w-14">룸</th>
+            <th className="text-left px-3 py-2 w-24">룸</th>
             <th className="text-left px-3 py-2 w-24">수업 종류</th>
             <th className="text-left px-3 py-2">회원</th>
             <th className="text-left px-3 py-2">강사</th>
@@ -182,10 +195,15 @@ function DailyView({ lessons, date }: { lessons: UnifiedLesson[]; date: string }
         <tbody>
           {timeSlots.map(slot =>
             slot.map((l, roomIdx) => (
-              <tr key={`${l.type}-${l.id}`} className="border-t border-neutral-100">
+              <tr
+                key={`${l.type}-${l.id}`}
+                className="border-t border-neutral-100 hover:bg-blue-50/40 cursor-pointer"
+                onClick={() => onSelectLesson(l)}
+                title="클릭해서 수정/삭제"
+              >
                 <td className="px-3 py-2 tabular-nums font-medium">{roomIdx === 0 ? (l.time ?? '—') : ''}</td>
-                <td className="px-3 py-2 text-xs text-neutral-500 tabular-nums">
-                  {slot.length > 1 ? `${roomIdx + 1}/${slot.length}` : '—'}
+                <td className="px-3 py-2 text-xs text-neutral-600 truncate max-w-[120px]">
+                  {l.roomName ?? (slot.length > 1 ? <span className="text-neutral-400">미지정 {roomIdx + 1}/{slot.length}</span> : <span className="text-neutral-400">—</span>)}
                 </td>
                 <td className="px-3 py-2"><TypeBadge lesson={l} /></td>
                 <td className="px-3 py-2 text-neutral-700">
@@ -198,7 +216,11 @@ function DailyView({ lessons, date }: { lessons: UnifiedLesson[]; date: string }
                   {l.type === 'individual' ? (
                     <StatusBadge status={l.status} />
                   ) : (
-                    <a href={`/lessons/groups/${l.id}`} className="text-xs text-blue-600 hover:underline">명단</a>
+                    <a
+                      href={`/lessons/groups/${l.id}`}
+                      onClick={e => e.stopPropagation()}
+                      className="text-xs text-blue-600 hover:underline"
+                    >명단</a>
                   )}
                 </td>
               </tr>
@@ -232,7 +254,11 @@ function StatusBadge({ status }: { status: string | null }) {
 // ─────────────────────────────────────────────
 // 주별 — 7일 column, 각 day에 lesson 카드 list
 // ─────────────────────────────────────────────
-function WeeklyView({ lessons, weekStart }: { lessons: UnifiedLesson[]; weekStart: string }) {
+function WeeklyView({ lessons, weekStart, onSelectLesson }: {
+  lessons: UnifiedLesson[]
+  weekStart: string
+  onSelectLesson: (l: UnifiedLesson) => void
+}) {
   const days = useMemo(() => getWeekDates(weekStart), [weekStart])
   const grouped = useMemo(() => groupByDate(lessons), [lessons])
 
@@ -269,8 +295,9 @@ function WeeklyView({ lessons, weekStart }: { lessons: UnifiedLesson[]; weekStar
                       <WeekCard
                         key={`${l.type}-${l.id}`}
                         lesson={l}
-                        roomIndex={slot.length > 1 ? roomIdx + 1 : null}
-                        roomTotal={slot.length > 1 ? slot.length : null}
+                        slotIndex={slot.length > 1 ? roomIdx + 1 : null}
+                        slotTotal={slot.length > 1 ? slot.length : null}
+                        onClick={() => onSelectLesson(l)}
                       />
                     ))}
                   </div>
@@ -284,21 +311,29 @@ function WeeklyView({ lessons, weekStart }: { lessons: UnifiedLesson[]; weekStar
   )
 }
 
-function WeekCard({ lesson, roomIndex, roomTotal }: {
+function WeekCard({ lesson, slotIndex, slotTotal, onClick }: {
   lesson: UnifiedLesson
-  roomIndex: number | null   // 1, 2, ... (룸 표시용. null이면 단독)
-  roomTotal: number | null
+  slotIndex: number | null   // 1, 2, ... (slot 표시용. null이면 단독)
+  slotTotal: number | null
+  onClick: () => void
 }) {
   const isGroup = lesson.type === 'group'
-  const bg = isGroup ? 'bg-purple-50 border-purple-200' : 'bg-blue-50 border-blue-200'
+  const bg = isGroup ? 'bg-purple-50 border-purple-200 hover:bg-purple-100' : 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+  // 룸 라벨: 실제 룸 이름 우선, 없으면 slot index (옛 동작)
+  const roomLabel = lesson.roomName ?? (slotIndex && slotTotal ? `${slotIndex}/${slotTotal}` : null)
   return (
-    <div className={`flex-1 min-w-0 text-[10px] rounded border px-1.5 py-1 leading-tight ${bg} relative`}>
-      {roomIndex !== null && roomTotal !== null && (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex-1 min-w-0 text-left text-[10px] rounded border px-1.5 py-1 leading-tight ${bg} relative cursor-pointer transition-colors`}
+      title="클릭해서 수정/삭제"
+    >
+      {roomLabel && (
         <span
-          className="absolute top-0.5 right-0.5 text-[8px] font-bold text-neutral-400 tabular-nums bg-white/80 rounded px-0.5 leading-tight"
-          title={`${roomTotal}개 동시 진행 중 ${roomIndex}번째`}
+          className="absolute top-0.5 right-0.5 text-[8px] font-bold text-neutral-500 tabular-nums bg-white/80 rounded px-0.5 leading-tight max-w-[60%] truncate"
+          title={lesson.roomName ?? `${slotTotal}개 동시 진행 중 ${slotIndex}번째`}
         >
-          {roomIndex}/{roomTotal}
+          {roomLabel}
         </span>
       )}
       <div className="font-bold tabular-nums">{lesson.time ?? '—'}</div>
@@ -310,7 +345,7 @@ function WeekCard({ lesson, roomIndex, roomTotal }: {
       <div className="text-neutral-500 truncate">
         {(lesson.instructorName ?? '강사미정')} · {isGroup ? '그룹' : (lesson.passName ?? '개인')}
       </div>
-    </div>
+    </button>
   )
 }
 

@@ -104,3 +104,64 @@ create table if not exists chat_messages (
   created_at timestamptz default now()
 );
 create index if not exists chat_messages_session_idx on chat_messages (session_id, created_at);
+
+-- ============================================================
+-- v3.4: 룸 (수업 공간) 관리
+--
+-- 의도:
+--  - 운영자가 룸 N개 등록 (라파=필라테스 A실/B실 등) 후
+--    수업 추가시 룸 선택 → 동일 룸·동일 시간 중복 차단.
+--  - 멀티테넌트 SaaS — owner_id 격리, RLS 정책 포함.
+--
+-- 멱등: if not exists / drop policy if exists → 여러 번 실행 OK.
+-- ============================================================
+
+create table if not exists rooms (
+  id bigint generated always as identity primary key,
+  owner_id uuid references auth.users(id) on delete cascade,
+  name text not null,
+  display_order int not null default 0,
+  is_active boolean not null default true,
+  created_at timestamptz default now()
+);
+create index if not exists rooms_owner_idx on rooms (owner_id);
+create index if not exists rooms_active_idx on rooms (owner_id, is_active);
+
+-- lessons / group_sessions에 room_id FK 추가
+alter table lessons        add column if not exists room_id bigint references rooms(id) on delete set null;
+alter table group_sessions add column if not exists room_id bigint references rooms(id) on delete set null;
+
+-- 동일 룸·날짜·시간 중복 차단 (room_id NOT NULL인 경우만)
+-- 단, 같은 룸+시간에 individual 1개, group 1개 동시 충돌은 application layer에서 검증
+-- (다른 테이블이라 DB constraint로 못 잡음)
+create unique index if not exists lessons_room_time_unique
+  on lessons (room_id, lesson_date, lesson_time)
+  where room_id is not null;
+create unique index if not exists group_sessions_room_time_unique
+  on group_sessions (room_id, lesson_date, lesson_time)
+  where room_id is not null;
+
+-- ── RLS 활성화 + 정책 (owner_id 격리, 표준 패턴) ──
+alter table rooms enable row level security;
+drop policy if exists owner_all_select on rooms;
+drop policy if exists owner_all_insert on rooms;
+drop policy if exists owner_all_update on rooms;
+drop policy if exists owner_all_delete on rooms;
+create policy owner_all_select on rooms for select using (auth.uid() = owner_id);
+create policy owner_all_insert on rooms for insert with check (auth.uid() = owner_id);
+create policy owner_all_update on rooms for update using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+create policy owner_all_delete on rooms for delete using (auth.uid() = owner_id);
+
+-- ── 시드: 기존 사용자별 '메인실' 1개 자동 생성 (멱등) ──
+insert into rooms (owner_id, name, display_order)
+select distinct owner_id, '메인실', 0
+from (
+  select owner_id from lessons        where owner_id is not null
+  union
+  select owner_id from group_sessions where owner_id is not null
+  union
+  select owner_id from members        where owner_id is not null
+) u
+where not exists (
+  select 1 from rooms r where r.owner_id = u.owner_id
+);
