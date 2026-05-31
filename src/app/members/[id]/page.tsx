@@ -34,7 +34,18 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
   return (
     <div className="space-y-4 max-w-2xl">
       <a href="/members" className="text-sm text-neutral-500 hover:underline">← 회원 목록</a>
-      <h2 className="text-2xl font-semibold">{m.name}</h2>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h2 className="text-2xl font-semibold">{m.name}</h2>
+        <div className="flex items-center gap-2">
+          <a
+            href={`/messages?member=${m.id}`}
+            className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-3 py-1.5 rounded font-medium"
+            title="이 회원에게 메시지 보내기"
+          >
+            💬 메시지
+          </a>
+        </div>
+      </div>
       <MemberEditor member={m} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">

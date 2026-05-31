@@ -25,20 +25,27 @@ const LS_LAST_SESSION = 'rapa.assistant.lastSession.v2'
 const PAGE_EXAMPLES: Record<string, string[]> = {
   '/': ['이번 달 매출이랑 지출 알려줘', '다음 분기 부가세 얼마 적립?', '올해 종소세 예상?'],
   '/tax': ['올해 종소세 예상?', '간이로 바꾸면 부가세 얼마 줄어?', '청년창업감면 얼마 절감 중?'],
+  '/finances/categories': ['이 카테고리 어떤 거래에 써?', '광고선전비 부가세 공제 가능해?', '접대비 한도 얼마?'],
   '/finances': ['이번 달 매출이랑 지출', '광고비 어디에 제일 많이 썼어?', '권장 예비비 얼마?'],
   '/sales': ['이번 분기 매출 추이', '신규결제 vs 재결제 비율'],
   '/analytics': ['회원 활성도 어때?', '강사별 매출 기여도'],
   '/add': ['이 거래 카테고리 뭐가 맞아?', '비슷한 거래 과거에 있었어?'],
   '/members': ['휴면 회원 누구?', '활성 수강권 만료 임박한 회원'],
+  '/pass-products': ['가장 많이 팔린 수강권은?', '재결제율 높은 수강권?'],
+  '/messages': ['만료임박 회원에게 보낼 메시지 추천', '휴면 회원 메시지 템플릿'],
   '/instructors': ['김우영 강사 이번 달 급여?', '강사별 회원 수'],
   '/lessons': ['이번 주 노쇼 얼마나 있었어?', '최근 7일 수업 통계'],
   '/payroll': ['이번 달 총 강사료 얼마?', '3.3% 원천징수 합계'],
+  '/settings/operations': ['예약 가능 시간 얼마로 두는게 좋아?', '폐강 기준 추천', '일별 예약 횟수 적정선?'],
+  '/settings': ['청년창업감면 적용 받을 수 있어?', '노란우산공제 얼마 넣어야 절세에 좋아?'],
 }
 
 function getPageExamples(pathname: string): string[] {
   if (PAGE_EXAMPLES[pathname]) return PAGE_EXAMPLES[pathname]
-  for (const [key, exs] of Object.entries(PAGE_EXAMPLES)) {
-    if (key !== '/' && pathname.startsWith(key)) return exs
+  // 더 깊은 경로 먼저 매칭 (예: /settings/operations 가 /settings보다 우선)
+  const keys = Object.keys(PAGE_EXAMPLES).filter(k => k !== '/').sort((a, b) => b.length - a.length)
+  for (const key of keys) {
+    if (pathname.startsWith(key)) return PAGE_EXAMPLES[key]
   }
   return PAGE_EXAMPLES['/']
 }
@@ -46,16 +53,21 @@ function getPageExamples(pathname: string): string[] {
 function getPageLabel(pathname: string): string {
   if (pathname === '/') return '홈'
   if (pathname.startsWith('/tax')) return '세금'
-  if (pathname.startsWith('/finances/categories')) return '카테고리'
+  if (pathname.startsWith('/finances/categories')) return '카테고리 관리'
   if (pathname.startsWith('/finances')) return '재무'
   if (pathname.startsWith('/sales')) return '매출'
   if (pathname.startsWith('/analytics')) return '분석'
   if (pathname.startsWith('/add')) return '거래 입력'
   if (pathname.startsWith('/members')) return '회원'
+  if (pathname.startsWith('/pass-products')) return '수강권 카탈로그'
+  if (pathname.startsWith('/messages')) return '메시지'
   if (pathname.startsWith('/instructors')) return '강사'
+  if (pathname.startsWith('/lessons/individual')) return '개별 수업'
+  if (pathname.startsWith('/lessons/groups')) return '그룹 수업'
   if (pathname.startsWith('/lessons')) return '수업'
   if (pathname.startsWith('/payroll')) return '급여'
-  if (pathname.startsWith('/settings')) return '설정'
+  if (pathname.startsWith('/settings/operations')) return '운영정보 설정'
+  if (pathname.startsWith('/settings')) return '개인·세무 설정'
   return '워크스페이스'
 }
 
@@ -282,6 +294,13 @@ export function FloatingAssistant() {
               >
                 + 새 대화
               </button>
+              <a
+                href="/assistant"
+                className="text-[11px] bg-white/20 hover:bg-white/30 rounded px-2 py-1 font-medium flex items-center"
+                title="큰 화면으로 보기"
+              >
+                ⛶
+              </a>
               <button
                 onClick={() => setOpen(false)}
                 className="text-white/80 hover:text-white text-xl leading-none w-7 h-7 flex items-center justify-center rounded hover:bg-white/20"

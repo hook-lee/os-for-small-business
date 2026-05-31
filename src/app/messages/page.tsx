@@ -10,7 +10,9 @@ import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export const dynamic = 'force-dynamic'
 
-export default async function MessagesPage() {
+export default async function MessagesPage({ searchParams }: { searchParams: Promise<{ member?: string }> }) {
+  const sp = await searchParams
+  const prefillMemberId = sp.member ? parseInt(sp.member, 10) : null
   const today = new Date().toISOString().slice(0, 10)
   let members: Awaited<ReturnType<typeof fetchAllMembers>> = []
   let instructors: Awaited<ReturnType<typeof fetchAllInstructors>> = []
@@ -35,6 +37,7 @@ export default async function MessagesPage() {
         expiringIds={expiring.map(m => m.id)}
         dormantIds={dormant.map(m => m.id)}
         recent={recent}
+        prefillMemberId={prefillMemberId}
       />
     </>
   )

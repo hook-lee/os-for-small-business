@@ -10,16 +10,19 @@ interface PersonRef { id: number; name: string; phone: string | null }
 type Group = '전체회원' | '만료임박' | '휴면' | '강사' | '사용자정의'
 
 export function MessagesComposer({
-  members, instructors, expiringIds, dormantIds, recent,
+  members, instructors, expiringIds, dormantIds, recent, prefillMemberId,
 }: {
   members: PersonRef[]
   instructors: PersonRef[]
   expiringIds: number[]
   dormantIds: number[]
   recent: MessageRecord[]
+  prefillMemberId?: number | null
 }) {
   const router = useRouter()
-  const [group, setGroup] = useState<Group>('전체회원')
+  // prefillMemberId 있으면 자동으로 '사용자정의' 그룹 + 그 회원만
+  const [group, setGroup] = useState<Group>(prefillMemberId ? '사용자정의' : '전체회원')
+  const [customMemberIds, setCustomMemberIds] = useState<number[]>(prefillMemberId ? [prefillMemberId] : [])
   const [body, setBody] = useState('')
   const [subject, setSubject] = useState('')
   const [saving, setSaving] = useState(false)
@@ -30,8 +33,9 @@ export function MessagesComposer({
     if (group === '만료임박') return members.filter(m => expiringIds.includes(m.id))
     if (group === '휴면') return members.filter(m => dormantIds.includes(m.id))
     if (group === '강사') return instructors
-    return []
-  }, [group, members, instructors, expiringIds, dormantIds])
+    // 사용자정의
+    return members.filter(m => customMemberIds.includes(m.id))
+  }, [group, members, instructors, expiringIds, dormantIds, customMemberIds])
 
   const phoneList = useMemo(() => recipients.filter(r => r.phone).map(r => r.phone!).join('\n'), [recipients])
 
@@ -76,16 +80,50 @@ export function MessagesComposer({
           <div>
             <label className="block text-sm font-medium mb-1 text-neutral-600">수신 그룹</label>
             <div className="flex flex-wrap gap-1">
-              {(['전체회원', '만료임박', '휴면', '강사'] as Group[]).map(g => (
+              {(['전체회원', '만료임박', '휴면', '강사', '사용자정의'] as Group[]).map(g => (
                 <button
                   key={g}
                   onClick={() => setGroup(g)}
                   className={`text-sm px-3 py-1 rounded ${group === g ? 'bg-blue-600 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
                 >
-                  {g} {g === '만료임박' ? `(${expiringIds.length})` : g === '휴면' ? `(${dormantIds.length})` : g === '강사' ? `(${instructors.length})` : `(${members.length})`}
+                  {g} {g === '만료임박'
+                    ? `(${expiringIds.length})`
+                    : g === '휴면'
+                    ? `(${dormantIds.length})`
+                    : g === '강사'
+                    ? `(${instructors.length})`
+                    : g === '사용자정의'
+                    ? `(${customMemberIds.length})`
+                    : `(${members.length})`}
                 </button>
               ))}
             </div>
+            {group === '사용자정의' && (
+              <div className="mt-2 space-y-1">
+                <div className="flex flex-wrap gap-1">
+                  {customMemberIds.map(id => {
+                    const m = members.find(x => x.id === id)
+                    if (!m) return null
+                    return (
+                      <span key={id} className="inline-flex items-center gap-1 text-xs bg-blue-50 border border-blue-200 text-blue-700 rounded px-2 py-0.5">
+                        {m.name}
+                        <button
+                          type="button"
+                          onClick={() => setCustomMemberIds(prev => prev.filter(x => x !== id))}
+                          className="text-blue-500 hover:text-red-600"
+                          title="제외"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    )
+                  })}
+                  {customMemberIds.length === 0 && (
+                    <span className="text-xs text-neutral-400">선택된 회원 없음 — 회원 페이지에서 💬 메시지 버튼으로 추가하세요</span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
