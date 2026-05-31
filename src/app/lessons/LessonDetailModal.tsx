@@ -46,10 +46,7 @@ export function LessonDetailModal({
 
   async function handleSave() {
     if (!lesson) return
-    if (activeRooms.length >= 2 && !roomId) {
-      setError('룸을 선택하세요')
-      return
-    }
+    // 룸은 선택사항 — 미정 상태 허용. 룸 지정시에만 충돌 검증 (서버에서 처리).
     setBusy(true); setError('')
     try {
       const body = {
@@ -131,7 +128,7 @@ export function LessonDetailModal({
             <span className="font-medium">{lesson.instructorName ?? '미정'}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-neutral-500">룸</span>
+            <span className="text-neutral-500">룸 (선택)</span>
             {activeRooms.length === 0 ? (
               <span className="text-xs text-neutral-400">등록된 룸 없음</span>
             ) : (
@@ -140,7 +137,7 @@ export function LessonDetailModal({
                 onChange={e => setRoomId(e.target.value ? parseInt(e.target.value, 10) : null)}
                 className="border border-neutral-300 rounded px-2 py-1 text-sm"
               >
-                <option value="">미지정</option>
+                <option value="">미정 (당일 결정)</option>
                 {activeRooms.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
             )}

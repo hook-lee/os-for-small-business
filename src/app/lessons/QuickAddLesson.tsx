@@ -50,12 +50,9 @@ export function QuickAddLesson({
     fetch('/api/members').then(r => r.json()).then((j: { members?: Member[] }) => setMembers(j.members ?? []))
     fetch('/api/instructors').then(r => r.json()).then((j: { instructors?: Instructor[] }) => setInstructors(j.instructors ?? []))
     fetch('/api/rooms').then(r => r.json()).then((j: { rooms?: Room[] }) => {
-      const list = j.rooms ?? []
-      setRooms(list)
-      // 활성 룸 1개면 자동 선택
-      const active = list.filter(r => r.isActive)
-      if (active.length === 1) setSelectedRoomId(active[0].id)
-      else if (active.length === 0) setSelectedRoomId(null)
+      setRooms(j.rooms ?? [])
+      // 자동 선택 안 함 — 사용자가 명시적으로 미정/룸 선택
+      setSelectedRoomId(null)
     })
   }, [open, prefillDate])
 
@@ -69,12 +66,8 @@ export function QuickAddLesson({
     setError('')
     setSubmitting(true)
     try {
-      // 룸이 있는데 미선택이면 차단 (정책상 2개 이상은 필수)
-      if (activeRooms.length >= 2 && !selectedRoomId) {
-        setError('룸을 선택하세요')
-        setSubmitting(false)
-        return
-      }
+      // 룸은 선택사항 — 당일에 룸 정하는 경우 많다고 해서 강제 안 함.
+      // 단, 룸이 정해진 경우엔 cross-table 충돌 검증은 API가 해줌.
       if (type === 'individual') {
         if (!selectedMemberId) { setError('회원을 선택하세요'); setSubmitting(false); return }
         const res = await fetch('/api/lessons', {
@@ -229,29 +222,36 @@ export function QuickAddLesson({
             </>
           )}
 
-          {/* 룸 — 활성 룸 2개 이상이면 필수, 1개면 자동 (UI 숨김), 0개면 안내 */}
+          {/* 룸 — 선택사항. 2개 이상이면 셀렉터, 1개면 토글, 0개면 안내. 미정하면 당일에 정함. */}
           {activeRooms.length >= 2 && (
             <div>
-              <label className="block text-xs text-neutral-500 mb-1">룸 *</label>
+              <label className="block text-xs text-neutral-500 mb-1">룸 (선택)</label>
               <select
                 value={selectedRoomId ?? ''}
                 onChange={e => setSelectedRoomId(e.target.value ? parseInt(e.target.value, 10) : null)}
-                required
                 className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
               >
-                <option value="">선택하세요</option>
+                <option value="">미정 (당일 결정)</option>
                 {activeRooms.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
               </select>
             </div>
           )}
           {activeRooms.length === 1 && (
-            <div className="text-xs text-neutral-500 bg-neutral-50 border border-neutral-200 rounded p-2">
-              룸: <strong className="text-neutral-700">{activeRooms[0].name}</strong> (자동 선택)
+            <div>
+              <label className="block text-xs text-neutral-500 mb-1">룸 (선택)</label>
+              <select
+                value={selectedRoomId ?? ''}
+                onChange={e => setSelectedRoomId(e.target.value ? parseInt(e.target.value, 10) : null)}
+                className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
+              >
+                <option value="">미정 (당일 결정)</option>
+                <option value={activeRooms[0].id}>{activeRooms[0].name}</option>
+              </select>
             </div>
           )}
           {activeRooms.length === 0 && (
-            <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
-              ⚠ 등록된 룸이 없습니다. <a href="/settings/operations" className="underline">운영정보 설정</a>에서 추가하세요. (룸 없이도 저장 가능)
+            <div className="text-xs text-neutral-500 bg-neutral-50 border border-neutral-200 rounded p-2">
+              💡 룸 관리는 <a href="/settings/operations" className="text-blue-600 underline">운영정보 설정</a>에서 가능. 지금은 룸 미정으로 저장됩니다.
             </div>
           )}
 
