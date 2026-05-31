@@ -261,12 +261,12 @@ function DailyTimeline({ lessons, date, onSelectLesson }: {
       <table className="w-full text-sm">
         <thead className="bg-neutral-50 text-xs text-neutral-500 uppercase">
           <tr>
-            <th className="text-left px-3 py-2 w-20">시간</th>
-            <th className="text-left px-3 py-2 w-24">룸</th>
-            <th className="text-left px-3 py-2 w-24">수업 종류</th>
-            <th className="text-left px-3 py-2">회원</th>
-            <th className="text-left px-3 py-2">강사</th>
-            <th className="text-right px-3 py-2 w-20">상태</th>
+            <th className="text-left px-3 py-2 w-20 whitespace-nowrap">시간</th>
+            <th className="text-left px-3 py-2 w-28 whitespace-nowrap">룸</th>
+            <th className="text-left px-3 py-2 w-28 whitespace-nowrap">수업 종류</th>
+            <th className="text-left px-3 py-2 whitespace-nowrap">회원</th>
+            <th className="text-left px-3 py-2 whitespace-nowrap">강사</th>
+            <th className="text-right px-3 py-2 w-24 whitespace-nowrap">상태</th>
           </tr>
         </thead>
         <tbody>
@@ -304,23 +304,23 @@ function TimelineRow({
       className="border-t border-neutral-100 hover:bg-blue-50/40 cursor-pointer"
       title="클릭해서 수정/삭제"
     >
-      <td className="px-3 py-2 tabular-nums font-medium">{showTime ? (lesson.time ?? '—') : ''}</td>
-      <td className="px-3 py-2 text-xs text-neutral-600 truncate max-w-[120px]">
+      <td className="px-3 py-2 tabular-nums font-medium whitespace-nowrap">{showTime ? (lesson.time ?? '—') : ''}</td>
+      <td className="px-3 py-2 text-xs text-neutral-600 truncate whitespace-nowrap max-w-[140px]">
         {lesson.roomName ?? (slotIndex && slotTotal ? <span className="text-neutral-400">미지정 {slotIndex}/{slotTotal}</span> : <span className="text-neutral-400">—</span>)}
       </td>
-      <td className="px-3 py-2">
+      <td className="px-3 py-2 whitespace-nowrap">
         <span className={`text-xs px-2 py-0.5 rounded ${
           lesson.type === 'group' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
         }`}>
           {lesson.type === 'group' ? `그룹 · ${lesson.sessionName ?? '세션'}` : (lesson.passName ?? '개인')}
         </span>
       </td>
-      <td className="px-3 py-2 text-neutral-700">
+      <td className="px-3 py-2 text-neutral-700 whitespace-nowrap">
         {lesson.type === 'individual'
           ? (lesson.memberName ?? '—')
           : `${lesson.reservedCount ?? 0}/${lesson.capacity ?? '—'}명 예약`}
       </td>
-      <td className="px-3 py-2">
+      <td className="px-3 py-2 whitespace-nowrap">
         <span className="inline-flex items-center gap-1.5 text-neutral-700">
           <span
             className="inline-block w-2 h-2 rounded-sm"
@@ -330,7 +330,7 @@ function TimelineRow({
           {lesson.instructorName ?? '미정'}
         </span>
       </td>
-      <td className="px-3 py-2 text-right">
+      <td className="px-3 py-2 text-right whitespace-nowrap">
         {lesson.type === 'individual' ? (
           <StatusBadge status={lesson.status} />
         ) : (

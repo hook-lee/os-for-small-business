@@ -134,11 +134,11 @@ export default async function TaxPage() {
             <table className="w-full text-sm">
               <thead className="bg-neutral-50 text-xs text-neutral-500 uppercase">
                 <tr>
-                  <th className="text-left px-4 py-2 font-medium">분기</th>
-                  <th className="text-right px-4 py-2 font-medium">매출</th>
-                  <th className="text-center px-4 py-2 font-medium">유형</th>
-                  <th className="text-right px-4 py-2 font-medium">추정 부가세</th>
-                  <th className="text-right px-4 py-2 font-medium">매출 대비</th>
+                  <th className="text-left px-4 py-2 font-medium whitespace-nowrap">분기</th>
+                  <th className="text-right px-4 py-2 font-medium whitespace-nowrap">매출</th>
+                  <th className="text-center px-4 py-2 font-medium whitespace-nowrap">유형</th>
+                  <th className="text-right px-4 py-2 font-medium whitespace-nowrap">추정 부가세</th>
+                  <th className="text-right px-4 py-2 font-medium whitespace-nowrap">매출 대비</th>
                 </tr>
               </thead>
               <tbody>
@@ -146,19 +146,19 @@ export default async function TaxPage() {
                   const ratio = q.revenue > 0 ? (q.estimatedVAT / q.revenue * 100).toFixed(2) : '0'
                   return (
                     <tr key={q.quarter} className="border-t border-neutral-100">
-                      <td className="px-4 py-2 font-medium">{q.quarter}</td>
-                      <td className="px-4 py-2 text-right tabular-nums">{q.revenue.toLocaleString()}원</td>
-                      <td className="px-4 py-2 text-center">
+                      <td className="px-4 py-2 font-medium whitespace-nowrap">{q.quarter}</td>
+                      <td className="px-4 py-2 text-right tabular-nums whitespace-nowrap">{q.revenue.toLocaleString()}원</td>
+                      <td className="px-4 py-2 text-center whitespace-nowrap">
                         <span className={`text-xs px-2 py-0.5 rounded ${
                           q.type === 'simplified' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
                         }`}>
                           {q.type === 'simplified' ? '간이' : '일반'}
                         </span>
                       </td>
-                      <td className="px-4 py-2 text-right tabular-nums font-medium">
+                      <td className="px-4 py-2 text-right tabular-nums font-medium whitespace-nowrap">
                         {q.estimatedVAT.toLocaleString()}원
                       </td>
-                      <td className="px-4 py-2 text-right text-xs text-neutral-500 tabular-nums">{ratio}%</td>
+                      <td className="px-4 py-2 text-right text-xs text-neutral-500 tabular-nums whitespace-nowrap">{ratio}%</td>
                     </tr>
                   )
                 })}
@@ -183,23 +183,23 @@ export default async function TaxPage() {
               <table className="w-full text-xs">
                 <thead className="bg-neutral-50 text-neutral-500 sticky top-0">
                   <tr>
-                    <th className="text-left px-3 py-2 font-medium">월</th>
+                    <th className="text-left px-3 py-2 font-medium whitespace-nowrap">월</th>
                     {Object.keys(taxByCategory).map(c => (
-                      <th key={c} className="text-right px-3 py-2 font-medium">{c}</th>
+                      <th key={c} className="text-right px-3 py-2 font-medium whitespace-nowrap">{c}</th>
                     ))}
-                    <th className="text-right px-3 py-2 font-medium">합계</th>
+                    <th className="text-right px-3 py-2 font-medium whitespace-nowrap">합계</th>
                   </tr>
                 </thead>
                 <tbody>
                   {taxesByMonth.map(m => (
                     <tr key={m.yearMonth} className="border-t border-neutral-100">
-                      <td className="px-3 py-2 font-medium">{m.yearMonth}</td>
+                      <td className="px-3 py-2 font-medium whitespace-nowrap">{m.yearMonth}</td>
                       {Object.keys(taxByCategory).map(c => (
-                        <td key={c} className="px-3 py-2 text-right tabular-nums text-neutral-600">
+                        <td key={c} className="px-3 py-2 text-right tabular-nums text-neutral-600 whitespace-nowrap">
                           {m.byCategory[c] ? `${m.byCategory[c].toLocaleString()}원` : '-'}
                         </td>
                       ))}
-                      <td className="px-3 py-2 text-right tabular-nums font-semibold">
+                      <td className="px-3 py-2 text-right tabular-nums font-semibold whitespace-nowrap">
                         {m.total.toLocaleString()}원
                       </td>
                     </tr>

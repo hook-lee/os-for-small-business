@@ -231,15 +231,15 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
           <table className="w-full text-sm">
             <thead className="bg-neutral-50 text-xs text-neutral-500 uppercase">
               <tr>
-                <th className="text-left px-4 py-2 font-medium">이름</th>
-                <th className="text-left px-4 py-2 font-medium">상태</th>
-                <th className="text-left px-4 py-2 font-medium">전화번호</th>
-                <th className="text-left px-4 py-2 font-medium">수강권</th>
-                <th className="text-left px-4 py-2 font-medium">기간</th>
-                <th className="text-right px-4 py-2 font-medium">잔여</th>
-                <th className="text-left px-4 py-2 font-medium">최근 출석</th>
-                <th className="text-left px-4 py-2 font-medium">앱</th>
-                <th className="px-4 py-2"></th>
+                <th className="text-left px-4 py-2 font-medium whitespace-nowrap">이름</th>
+                <th className="text-left px-4 py-2 font-medium whitespace-nowrap w-24">상태</th>
+                <th className="text-left px-4 py-2 font-medium whitespace-nowrap w-36">전화번호</th>
+                <th className="text-left px-4 py-2 font-medium whitespace-nowrap">수강권</th>
+                <th className="text-left px-4 py-2 font-medium whitespace-nowrap w-56">기간</th>
+                <th className="text-right px-4 py-2 font-medium whitespace-nowrap w-24">잔여</th>
+                <th className="text-left px-4 py-2 font-medium whitespace-nowrap w-28">최근 출석</th>
+                <th className="text-left px-4 py-2 font-medium whitespace-nowrap w-16">앱</th>
+                <th className="px-4 py-2 whitespace-nowrap w-16"></th>
               </tr>
             </thead>
             <tbody>
@@ -249,16 +249,16 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
                 const isExpiringSoon = m._daysToExpire !== null && m._daysToExpire <= 7 && m._daysToExpire >= 0
                 return (
                   <tr key={m.id} className="border-t border-neutral-100 hover:bg-neutral-50">
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-2 whitespace-nowrap">
                       <a href={`/members/${m.id}`} className="font-medium text-blue-600 hover:underline">
                         {m.name}
                       </a>
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-2 whitespace-nowrap">
                       <StatusBadge status={m._status} />
                     </td>
-                    <td className="px-4 py-2 text-neutral-600">{m.phone ?? '—'}</td>
-                    <td className="px-4 py-2 text-neutral-600">
+                    <td className="px-4 py-2 text-neutral-600 whitespace-nowrap tabular-nums">{m.phone ?? '—'}</td>
+                    <td className="px-4 py-2 text-neutral-600 whitespace-nowrap">
                       {ap?.passName ? (
                         <>
                           {ap.passName}
@@ -266,7 +266,7 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
                         </>
                       ) : '—'}
                     </td>
-                    <td className="px-4 py-2 text-neutral-600 text-xs">
+                    <td className="px-4 py-2 text-neutral-600 text-xs whitespace-nowrap tabular-nums">
                       {ap?.startDate && ap?.endDate ? (
                         <>
                           {ap.startDate} ~ {ap.endDate}
@@ -274,20 +274,20 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
                         </>
                       ) : '—'}
                     </td>
-                    <td className={`px-4 py-2 text-right tabular-nums ${isLowRemaining ? 'text-red-600 font-semibold' : 'text-neutral-600'}`}>
+                    <td className={`px-4 py-2 text-right tabular-nums whitespace-nowrap ${isLowRemaining ? 'text-red-600 font-semibold' : 'text-neutral-600'}`}>
                       {m._remainingCount !== null ? `${m._remainingCount} / ${ap?.totalCount ?? '—'}` : '—'}
                     </td>
-                    <td className="px-4 py-2 text-neutral-600 text-xs tabular-nums">
+                    <td className="px-4 py-2 text-neutral-600 text-xs tabular-nums whitespace-nowrap">
                       {m.lastAttendedAt ?? '—'}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-2 whitespace-nowrap">
                       {m.appConnected ? (
                         <span className="text-xs px-2 py-0.5 rounded bg-blue-50 text-blue-700">연결</span>
                       ) : (
                         <span className="text-xs px-2 py-0.5 rounded bg-neutral-100 text-neutral-500">미연결</span>
                       )}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-2 whitespace-nowrap">
                       <button onClick={() => handleDelete(m)} className="text-xs px-2 py-0.5 rounded text-red-600 hover:bg-red-50">삭제</button>
                     </td>
                   </tr>

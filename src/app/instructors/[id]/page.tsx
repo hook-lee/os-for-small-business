@@ -72,23 +72,23 @@ export default async function InstructorDetailPage({
             <table className="w-full text-sm">
               <thead className="bg-neutral-50 text-xs text-neutral-500 uppercase">
                 <tr>
-                  <th className="text-left px-4 py-2 font-medium">이름</th>
-                  <th className="text-left px-4 py-2 font-medium">전화번호</th>
-                  <th className="text-left px-4 py-2 font-medium">수강권 수</th>
-                  <th className="text-left px-4 py-2 font-medium">최근 수강권</th>
-                  <th className="text-left px-4 py-2 font-medium">상태</th>
+                  <th className="text-left px-4 py-2 font-medium whitespace-nowrap">이름</th>
+                  <th className="text-left px-4 py-2 font-medium whitespace-nowrap">전화번호</th>
+                  <th className="text-right px-4 py-2 font-medium whitespace-nowrap">수강권 수</th>
+                  <th className="text-left px-4 py-2 font-medium whitespace-nowrap">최근 수강권</th>
+                  <th className="text-left px-4 py-2 font-medium whitespace-nowrap">상태</th>
                 </tr>
               </thead>
               <tbody>
                 {members.map(m => (
                   <tr key={m.memberId} className="border-t border-neutral-100 hover:bg-neutral-50">
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-2 whitespace-nowrap">
                       <a href={`/members/${m.memberId}`} className="font-medium text-blue-600 hover:underline">{m.memberName}</a>
                     </td>
-                    <td className="px-4 py-2 text-neutral-600">{m.memberPhone ?? '—'}</td>
-                    <td className="px-4 py-2 text-neutral-600">{m.passCount}</td>
-                    <td className="px-4 py-2 text-neutral-600">{m.latestPassName ?? '—'}</td>
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-2 text-neutral-600 whitespace-nowrap tabular-nums">{m.memberPhone ?? '—'}</td>
+                    <td className="px-4 py-2 text-neutral-600 whitespace-nowrap text-right tabular-nums">{m.passCount}</td>
+                    <td className="px-4 py-2 text-neutral-600 whitespace-nowrap">{m.latestPassName ?? '—'}</td>
+                    <td className="px-4 py-2 whitespace-nowrap">
                       <span className={`text-xs px-2 py-0.5 rounded ${m.latestPassStatus === '이용중' ? 'bg-blue-50 text-blue-700' : 'bg-neutral-100 text-neutral-500'}`}>
                         {m.latestPassStatus ?? '—'}
                       </span>

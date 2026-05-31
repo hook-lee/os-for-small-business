@@ -188,23 +188,23 @@ export function SessionRoster({ session, initialReservations }: Props) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-neutral-100">
-                <th className="text-left px-4 py-2 text-xs text-neutral-500 font-medium">회원</th>
-                <th className="text-left px-4 py-2 text-xs text-neutral-500 font-medium hidden sm:table-cell">연락처</th>
-                <th className="text-left px-4 py-2 text-xs text-neutral-500 font-medium">상태</th>
+                <th className="text-left px-4 py-2 text-xs text-neutral-500 font-medium whitespace-nowrap">회원</th>
+                <th className="text-left px-4 py-2 text-xs text-neutral-500 font-medium hidden sm:table-cell whitespace-nowrap">연락처</th>
+                <th className="text-left px-4 py-2 text-xs text-neutral-500 font-medium whitespace-nowrap">상태</th>
               </tr>
             </thead>
             <tbody>
               {reservations.map(r => (
                 <tr key={r.id} className="border-b border-neutral-50 last:border-0">
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <a href={`/members/${r.memberId}`} className="font-medium hover:text-blue-600">
                       {r.memberName}
                     </a>
                   </td>
-                  <td className="px-4 py-3 text-neutral-500 hidden sm:table-cell">
+                  <td className="px-4 py-3 text-neutral-500 hidden sm:table-cell whitespace-nowrap tabular-nums">
                     {r.memberPhone ?? '—'}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <span className={`text-xs px-2 py-0.5 rounded font-medium ${STATUS_COLOR[r.status]}`}>
                         {STATUS_LABEL[r.status]}

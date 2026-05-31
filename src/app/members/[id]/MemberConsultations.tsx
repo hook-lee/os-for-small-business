@@ -18,19 +18,19 @@ export async function MemberConsultations({ memberId, ownerId }: { memberId: num
         <table className="w-full text-sm">
           <thead className="bg-neutral-50 text-xs text-neutral-500 uppercase">
             <tr>
-              <th className="text-left px-3 py-2 w-28">일자</th>
-              <th className="text-left px-3 py-2 w-24">인입경로</th>
+              <th className="text-left px-3 py-2 w-28 whitespace-nowrap">일자</th>
+              <th className="text-left px-3 py-2 w-24 whitespace-nowrap">인입경로</th>
               <th className="text-left px-3 py-2">내용</th>
-              <th className="text-left px-3 py-2 w-20">담당</th>
+              <th className="text-left px-3 py-2 w-24 whitespace-nowrap">담당</th>
             </tr>
           </thead>
           <tbody>
             {consultations.map(c => (
               <tr key={c.id} className="border-t border-neutral-100">
-                <td className="px-3 py-2 tabular-nums text-neutral-700">{c.consultationDate}</td>
-                <td className="px-3 py-2 text-neutral-600">{c.inflowChannel ?? '—'}</td>
+                <td className="px-3 py-2 tabular-nums text-neutral-700 whitespace-nowrap">{c.consultationDate}</td>
+                <td className="px-3 py-2 text-neutral-600 whitespace-nowrap">{c.inflowChannel ?? '—'}</td>
                 <td className="px-3 py-2 text-neutral-700">{c.content ?? <span className="text-neutral-400">—</span>}</td>
-                <td className="px-3 py-2 text-neutral-600">{c.staffName ?? '—'}</td>
+                <td className="px-3 py-2 text-neutral-600 whitespace-nowrap">{c.staffName ?? '—'}</td>
               </tr>
             ))}
           </tbody>
