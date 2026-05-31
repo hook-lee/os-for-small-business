@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type FormEvent } from 'react'
+import { useState, useMemo, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import type { Consultation } from '@/lib/supabase/consultations'
@@ -21,6 +21,13 @@ export function ConsultationsManager({
   const [showAdd, setShowAdd] = useState(false)
   const [filter, setFilter] = useState<'all' | 'pending' | 'converted'>('all')
 
+  // 보조 필터
+  const [channelFilter, setChannelFilter] = useState<string>('all')
+  const [staffFilter, setStaffFilter] = useState<string>('all')
+  const [dateFrom, setDateFrom] = useState<string>('')
+  const [dateTo, setDateTo] = useState<string>('')
+  const [query, setQuery] = useState('')
+
   // 폼 상태
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -32,11 +39,47 @@ export function ConsultationsManager({
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  const filtered = consultations.filter(c => {
-    if (filter === 'pending') return !c.convertedToMember
-    if (filter === 'converted') return c.convertedToMember
-    return true
-  })
+  // xlsx import 데이터에 등장한 모든 인입경로 unique (라파의 실제 값 우선 노출)
+  const usedChannels = useMemo(() => {
+    const s = new Set<string>()
+    consultations.forEach(c => { if (c.inflowChannel) s.add(c.inflowChannel) })
+    INFLOW_CHANNELS.forEach(c => s.add(c))
+    return Array.from(s)
+  }, [consultations])
+
+  // 등장한 담당스태프 unique
+  const usedStaffs = useMemo(() => {
+    const s = new Set<string>()
+    consultations.forEach(c => { if (c.staffName) s.add(c.staffName) })
+    instructors.forEach(i => s.add(i.name))
+    return Array.from(s)
+  }, [consultations, instructors])
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return consultations.filter(c => {
+      if (filter === 'pending' && c.convertedToMember) return false
+      if (filter === 'converted' && !c.convertedToMember) return false
+      if (channelFilter !== 'all' && c.inflowChannel !== channelFilter) return false
+      if (staffFilter !== 'all' && c.staffName !== staffFilter) return false
+      if (dateFrom && c.consultationDate < dateFrom) return false
+      if (dateTo && c.consultationDate > dateTo) return false
+      if (q) {
+        const hit =
+          c.name.toLowerCase().includes(q) ||
+          (c.phone ?? '').toLowerCase().includes(q) ||
+          (c.content ?? '').toLowerCase().includes(q)
+        if (!hit) return false
+      }
+      return true
+    })
+  }, [consultations, filter, channelFilter, staffFilter, dateFrom, dateTo, query])
+
+  const hasActiveFilter = channelFilter !== 'all' || staffFilter !== 'all' || dateFrom || dateTo || query
+
+  function resetFilters() {
+    setChannelFilter('all'); setStaffFilter('all'); setDateFrom(''); setDateTo(''); setQuery('')
+  }
 
   async function reloadList() {
     try {
@@ -150,6 +193,50 @@ export function ConsultationsManager({
         <span>미전환 {consultations.filter(c => !c.convertedToMember).length}건</span>
         <span className="text-neutral-300">·</span>
         <span>전환 {consultations.filter(c => c.convertedToMember).length}건</span>
+      </div>
+
+      {/* 보조 필터 */}
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <FilterSelect
+          label="인입경로"
+          value={channelFilter}
+          onChange={setChannelFilter}
+          options={[{ value: 'all', label: '인입경로 전체' }, ...usedChannels.map(c => ({ value: c, label: c }))]}
+        />
+        <FilterSelect
+          label="담당스태프"
+          value={staffFilter}
+          onChange={setStaffFilter}
+          options={[{ value: 'all', label: '담당스태프 전체' }, ...usedStaffs.map(s => ({ value: s, label: s }))]}
+        />
+        <div className="inline-flex items-center gap-1">
+          <span className="text-xs text-neutral-500">기간</span>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={e => setDateFrom(e.target.value)}
+            className="text-sm border border-neutral-300 rounded px-2 py-1"
+          />
+          <span className="text-neutral-400 text-xs">~</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={e => setDateTo(e.target.value)}
+            className="text-sm border border-neutral-300 rounded px-2 py-1"
+          />
+        </div>
+        <input
+          type="text"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="이름 / 전화 / 내용 검색"
+          className="flex-1 min-w-[200px] text-sm border border-neutral-300 rounded px-2 py-1"
+        />
+        {hasActiveFilter && (
+          <button onClick={resetFilters} className="text-xs text-neutral-500 hover:text-red-600 underline">
+            초기화
+          </button>
+        )}
       </div>
 
       {/* 추가 폼 */}
@@ -299,6 +386,28 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div>
       <label className="block text-xs text-neutral-500 mb-1">{label}</label>
       {children}
+    </div>
+  )
+}
+
+function FilterSelect({
+  label, value, onChange, options,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  options: Array<{ value: string; label: string }>
+}) {
+  return (
+    <div className="inline-flex items-center gap-1">
+      <span className="text-xs text-neutral-500">{label}</span>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="text-sm border border-neutral-300 rounded px-2 py-1"
+      >
+        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+      </select>
     </div>
   )
 }

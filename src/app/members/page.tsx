@@ -1,15 +1,16 @@
 import { fetchAllMembers } from '@/lib/supabase/members'
 import { fetchAllPasses } from '@/lib/supabase/passes'
-import { findExpiringMembers, findDormantMembers } from '@/lib/analytics/member-segments'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { MembersTable } from './MembersTable'
 import { MembersTabBar } from '@/components/MembersTabBar'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
+import { buildMemberStatusMap, buildMemberMetricsMap } from '@/lib/analytics/member-status'
 
 export const dynamic = 'force-dynamic'
 
 type ActivePassInfo = {
   passName: string
+  passType: string | null
   startDate: string | null
   endDate: string | null
   totalCount: number | null
@@ -17,9 +18,7 @@ type ActivePassInfo = {
   paidAt: string | null
 }
 
-export default async function MembersPage({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
-  const params = await searchParams
-  const filter = params.filter ?? 'all'
+export default async function MembersPage() {
   const today = new Date().toISOString().slice(0, 10)
 
   let members: Awaited<ReturnType<typeof fetchAllMembers>> = []
@@ -31,17 +30,12 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
     } catch {}
   }
 
-  const expiring = findExpiringMembers(members, passes, today, 7)
-  const dormant = findDormantMembers(members, today, 60)
+  // 회원 상태 + 메트릭 계산
+  const memberIds = members.map(m => m.id)
+  const statusMap = buildMemberStatusMap(memberIds, passes, today)
+  const metricsMap = buildMemberMetricsMap(memberIds, passes, today)
 
-  const expiringIds = new Set(expiring.map(e => e.member.id))
-  const dormantIds = new Set(dormant.map(d => d.member.id))
-
-  let displayed = members
-  if (filter === 'expiring') displayed = members.filter(m => expiringIds.has(m.id))
-  if (filter === 'dormant') displayed = members.filter(m => dormantIds.has(m.id))
-
-  // 회원별 가장 최근 "이용중" 패스 매핑
+  // 가장 최근 active 패스 정보 (테이블 표시용)
   const activePassMap: Record<number, ActivePassInfo> = {}
   const tempMap = new Map<number, ActivePassInfo>()
   for (const p of passes) {
@@ -50,6 +44,7 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
     if (!cur || (p.paidAt ?? '') > (cur.paidAt ?? '')) {
       tempMap.set(p.memberId, {
         passName: p.passName,
+        passType: p.passType,
         startDate: p.startDate,
         endDate: p.endDate,
         totalCount: p.totalCount,
@@ -60,6 +55,19 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
   }
   for (const [id, info] of tempMap.entries()) activePassMap[id] = info
 
+  // 상태별 카운트 (필터 버튼 라벨용)
+  const statusCounts = { active: 0, expired: 0, no_pass: 0 }
+  for (const s of statusMap.values()) statusCounts[s]++
+
+  // 회원 객체에 status/metrics 첨부 (테이블에서 바로 필터링 가능하도록)
+  const enriched = members.map(m => ({
+    ...m,
+    _status: statusMap.get(m.id) ?? 'no_pass' as const,
+    _passType: metricsMap.get(m.id)?.passType ?? null,
+    _remainingCount: metricsMap.get(m.id)?.remainingCount ?? null,
+    _daysToExpire: metricsMap.get(m.id)?.daysToExpire ?? null,
+  }))
+
   return (
     <div className="space-y-4">
       <MembersTabBar />
@@ -69,11 +77,8 @@ export default async function MembersPage({ searchParams }: { searchParams: Prom
         </div>
       )}
       <MembersTable
-        members={displayed}
-        currentFilter={filter}
-        totalCount={members.length}
-        expiringCount={expiring.length}
-        dormantCount={dormant.length}
+        members={enriched}
+        statusCounts={statusCounts}
         activePassMap={activePassMap}
       />
     </div>
