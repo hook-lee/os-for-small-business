@@ -9,6 +9,8 @@ import { PassesList } from './PassesList'
 import { MemberMemoEditor } from './MemberMemoEditor'
 import { MemberEditor } from './MemberEditor'
 import { MemberAccessLink } from './MemberAccessLink'
+import { MemberConsultations } from './MemberConsultations'
+import { MemberPassEvents } from './MemberPassEvents'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export const dynamic = 'force-dynamic'
@@ -65,6 +67,14 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
           <IssuePassForm memberId={m.id} />
         </div>
         <PassesList initial={passes} />
+      </div>
+
+      <div className="mt-6">
+        <MemberConsultations memberId={m.id} ownerId={ownerId} />
+      </div>
+
+      <div className="mt-6">
+        <MemberPassEvents memberId={m.id} ownerId={ownerId} />
       </div>
     </div>
   )

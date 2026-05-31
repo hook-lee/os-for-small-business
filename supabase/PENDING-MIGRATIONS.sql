@@ -165,3 +165,81 @@ from (
 where not exists (
   select 1 from rooms r where r.owner_id = u.owner_id
 );
+
+-- ============================================================
+-- v3.5: 상담 + 수강권 변경 이력
+--
+-- 1) consultations: 신규/잠재 회원 상담 기록 (회원 전환 추적)
+-- 2) pass_events: 수강권 발급·변경·만료 audit log
+--
+-- 멱등: if not exists / drop policy if exists. 여러 번 실행 OK.
+-- ============================================================
+
+-- 1) 상담 고객
+create table if not exists consultations (
+  id bigint generated always as identity primary key,
+  owner_id uuid references auth.users(id) on delete cascade,
+  member_id bigint references members(id) on delete set null,  -- 회원 전환 시 매핑
+  name text not null,
+  phone text,
+  consultation_date date not null,
+  inflow_channel text,           -- '방문상담' / '전화' / '카톡' 등 자유
+  content text,
+  staff_name text,                -- 담당스태프 (강사 또는 외부)
+  staff_id bigint references instructors(id) on delete set null,
+  converted_to_member boolean not null default false,
+  memo text,
+  created_at timestamptz default now()
+);
+create index if not exists consultations_owner_idx on consultations (owner_id);
+create index if not exists consultations_date_idx on consultations (consultation_date desc);
+create index if not exists consultations_member_idx on consultations (member_id);
+
+alter table consultations enable row level security;
+drop policy if exists owner_all_select on consultations;
+drop policy if exists owner_all_insert on consultations;
+drop policy if exists owner_all_update on consultations;
+drop policy if exists owner_all_delete on consultations;
+create policy owner_all_select on consultations for select using (auth.uid() = owner_id);
+create policy owner_all_insert on consultations for insert with check (auth.uid() = owner_id);
+create policy owner_all_update on consultations for update using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+create policy owner_all_delete on consultations for delete using (auth.uid() = owner_id);
+
+-- 2) 수강권 변경 이력 (audit log)
+--    event_type: issued / modified / expired / deleted
+--    before_data, after_data: { "전체횟수": "10", "이용시작일": "2026-01-02", ... }
+--    source: 'app' (앱 내 변경) / 'import' (xlsx import) / 'trigger' (DB)
+create table if not exists pass_events (
+  id bigint generated always as identity primary key,
+  owner_id uuid references auth.users(id) on delete cascade,
+  pass_id bigint references passes(id) on delete cascade,
+  member_id bigint references members(id) on delete cascade,
+  member_name text not null,        -- raw name (회원 매칭 안 됐을 때도 보존)
+  pass_name text,
+  event_type text not null check (event_type in ('issued','modified','expired','deleted')),
+  changed_at timestamptz not null,
+  changed_by text,                  -- '김유진' 같은 raw text
+  changed_by_id bigint references instructors(id) on delete set null,
+  before_data jsonb,
+  after_data jsonb,
+  source text default 'app',
+  created_at timestamptz default now()
+);
+create index if not exists pass_events_owner_idx on pass_events (owner_id);
+create index if not exists pass_events_member_idx on pass_events (member_id);
+create index if not exists pass_events_pass_idx on pass_events (pass_id);
+create index if not exists pass_events_changed_at_idx on pass_events (changed_at desc);
+-- 멱등 import용 중복 체크 인덱스 (owner + member_name + changed_at + event_type)
+create unique index if not exists pass_events_import_uniq
+  on pass_events (owner_id, member_name, changed_at, event_type)
+  where source = 'import';
+
+alter table pass_events enable row level security;
+drop policy if exists owner_all_select on pass_events;
+drop policy if exists owner_all_insert on pass_events;
+drop policy if exists owner_all_update on pass_events;
+drop policy if exists owner_all_delete on pass_events;
+create policy owner_all_select on pass_events for select using (auth.uid() = owner_id);
+create policy owner_all_insert on pass_events for insert with check (auth.uid() = owner_id);
+create policy owner_all_update on pass_events for update using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+create policy owner_all_delete on pass_events for delete using (auth.uid() = owner_id);

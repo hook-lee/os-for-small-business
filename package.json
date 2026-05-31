@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "import:rapha": "tsx scripts/import-rapha-data.ts",
+    "import:rapha:dry": "tsx scripts/import-rapha-data.ts --dry-run"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
