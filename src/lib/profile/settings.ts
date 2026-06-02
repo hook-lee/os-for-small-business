@@ -11,6 +11,8 @@ export interface UserProfile {
   noranusanAnnualContribution: number
   pensionAnnualContribution: number
   taxPayerType: 'general' | 'simplified'
+  taxStartMonth: string | null         // 사업 개시 연월 'YYYY-MM' (과세 타임라인 시작점)
+  taxGeneralSinceMonth: string | null  // 일반과세 전환 연월 'YYYY-MM'. null이면 전환 없음
 }
 
 export const DEFAULT_PROFILE: UserProfile = {
@@ -23,7 +25,9 @@ export const DEFAULT_PROFILE: UserProfile = {
   youngStartupReductionRate: 0,
   noranusanAnnualContribution: 0,
   pensionAnnualContribution: 0,
-  taxPayerType: 'general',
+  taxPayerType: 'simplified',   // 신규 소규모 사업자 기본값 = 간이과세자
+  taxStartMonth: null,
+  taxGeneralSinceMonth: null,
 }
 
 interface ProfileRow {
@@ -38,6 +42,8 @@ interface ProfileRow {
   noranusan_annual_contribution: string | number
   pension_annual_contribution: string | number
   tax_payer_type?: string | null
+  tax_start_month?: string | null
+  tax_general_since_month?: string | null
 }
 
 function rowToProfile(row: ProfileRow): UserProfile {
@@ -55,6 +61,8 @@ function rowToProfile(row: ProfileRow): UserProfile {
     noranusanAnnualContribution: Number(row.noranusan_annual_contribution),
     pensionAnnualContribution: Number(row.pension_annual_contribution),
     taxPayerType: (row.tax_payer_type === 'simplified' ? 'simplified' : 'general') as 'general' | 'simplified',
+    taxStartMonth: row.tax_start_month ?? null,
+    taxGeneralSinceMonth: row.tax_general_since_month ?? null,
   }
 }
 
@@ -109,6 +117,8 @@ export async function saveProfile(profile: UserProfile, ownerId: string): Promis
     noranusan_annual_contribution: profile.noranusanAnnualContribution,
     pension_annual_contribution: profile.pensionAnnualContribution,
     tax_payer_type: profile.taxPayerType ?? 'general',
+    tax_start_month: profile.taxStartMonth ?? null,
+    tax_general_since_month: profile.taxGeneralSinceMonth ?? null,
     updated_at: new Date().toISOString(),
   }
 
@@ -126,7 +136,7 @@ export async function saveProfile(profile: UserProfile, ownerId: string): Promis
   ): Promise<void> => {
     const msg = error.message
     const missing: string[] = []
-    for (const col of ['workspace_name', 'role', 'business_phone', 'tax_payer_type']) {
+    for (const col of ['workspace_name', 'role', 'business_phone', 'tax_payer_type', 'tax_start_month', 'tax_general_since_month']) {
       if (msg.includes(col)) missing.push(col)
     }
     if (missing.length === 0) throw new Error(`프로필 저장 실패: ${msg}`)

@@ -1,8 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import { computeMonthlySummary, computeAllMonthsSummary } from '@/lib/analytics/monthly-summary'
-import type { Transaction } from '@/types/domain'
+import type { Transaction, TxClassification } from '@/types/domain'
 
-function tx(date: string, category: string, amount: number, method: '카드' | '계좌이체' | '현금' = '카드'): Transaction {
+function tx(
+  date: string,
+  category: string,
+  amount: number,
+  method: '카드' | '계좌이체' | '현금' = '카드',
+  classification: TxClassification = amount > 0 ? 'business' : 'living',
+): Transaction {
   return {
     date,
     rawCategory: category,
@@ -11,7 +17,7 @@ function tx(date: string, category: string, amount: number, method: '카드' | '
     method,
     counterparty: undefined,
     person: undefined,
-    classification: amount > 0 ? 'business' : 'living',
+    classification,
     memo: undefined,
   } as Transaction
 }
@@ -35,13 +41,13 @@ describe('computeMonthlySummary', () => {
     expect(s.transactionCount).toBe(3)
   })
 
-  it('사업 비용 vs 개인 비용 분리', () => {
+  it('사업 비용 vs 개인 비용 분리 (classification 기준)', () => {
     const txs = [
-      tx('2026-05-01', '임대료', -1430000),       // business
-      tx('2026-05-02', '공과금', -113000),        // business
-      tx('2026-05-03', '식비', -25000),           // personal
-      tx('2026-05-04', '의류비', -50000),         // personal
-      tx('2026-05-05', '교통비', -3000),          // personal
+      tx('2026-05-01', '임대료', -1430000, '카드', 'business'),
+      tx('2026-05-02', '공과금', -113000, '카드', 'business'),
+      tx('2026-05-03', '식비', -25000, '카드', 'living'),
+      tx('2026-05-04', '의류비', -50000, '카드', 'living'),
+      tx('2026-05-05', '교통비', -3000, '카드', 'living'),
     ]
     const s = computeMonthlySummary(txs, '2026-05')
     expect(s.businessCosts['임대료']).toBe(1430000)
@@ -56,8 +62,8 @@ describe('computeMonthlySummary', () => {
   it('영업이익 + 순수익 계산', () => {
     const txs = [
       tx('2026-05-01', '매출', 1000000),
-      tx('2026-05-02', '임대료', -200000),       // 사업
-      tx('2026-05-03', '식비', -50000),          // 개인
+      tx('2026-05-02', '임대료', -200000, '카드', 'business'),
+      tx('2026-05-03', '식비', -50000, '카드', 'living'),
     ]
     const s = computeMonthlySummary(txs, '2026-05')
     expect(s.revenue).toBe(1000000)
@@ -67,16 +73,18 @@ describe('computeMonthlySummary', () => {
     expect(s.netProfit).toBe(750000)
   })
 
-  it('기타 비용 + 자본성 제외', () => {
+  it('대표 인출·세금 적립·자산성은 비용 합계에서 제외', () => {
     const txs = [
-      tx('2026-05-01', '자산', -100000),         // 제외 (capital)
-      tx('2026-05-02', '대표자급여', -500000),   // 제외 (owner draw)
-      tx('2026-05-03', '알수없는카테고리', -30000), // 기타
+      tx('2026-05-01', '비품', -100000, '카드', 'capital'),        // 자산성 → otherCosts
+      tx('2026-05-02', '대표자급여', -500000, '계좌이체', 'owner_draw'),
+      tx('2026-05-03', '예비비', -200000, '계좌이체', 'reserve'),
     ]
     const s = computeMonthlySummary(txs, '2026-05')
     expect(s.businessCostTotal).toBe(0)
     expect(s.personalCostTotal).toBe(0)
-    expect(s.otherCosts).toBe(30000)
+    expect(s.otherCosts).toBe(100000)   // capital
+    expect(s.ownerDraw).toBe(500000)
+    expect(s.reserve).toBe(200000)
   })
 
   it('빈 월', () => {
@@ -93,7 +101,7 @@ describe('computeAllMonthsSummary', () => {
     const txs = [
       tx('2026-05-01', '매출', 100000),
       tx('2026-03-15', '매출', 50000),
-      tx('2026-04-20', '임대료', -200000),
+      tx('2026-04-20', '임대료', -200000, '카드', 'business'),
     ]
     const summaries = computeAllMonthsSummary(txs)
     expect(summaries.map(s => s.yearMonth)).toEqual(['2026-03', '2026-04', '2026-05'])

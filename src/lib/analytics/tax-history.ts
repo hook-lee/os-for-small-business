@@ -1,12 +1,11 @@
 /**
  * 세금 history 분석 — 과거 세금 실측 + 간이/일반 과세 전환 시뮬레이션.
  *
- * 라파 운영자 케이스:
- * - 2024-04 ~ 2025-06: 간이과세자 (15개월)
- * - 2025-07 ~ 2026-06: 일반과세자 (12개월)
- * - 2026-07 ~ : 직전 1년 매출 < 1억800만이면 간이 전환 가능
+ * ⚠️ 과세 유형 타임라인은 하드코딩하지 않는다 — 각 원장이 설정하기 나름.
+ * `buildTaxPeriods()`가 프로필(사업 개시 연월 · 현재 과세 유형 · 일반 전환 연월)로부터
+ * 타임라인을 생성한다. 기본값: 사업 개시일부터 현재 과세 유형의 단일 기간.
  *
- * 1억800만원 = 부가가치세법상 간이과세자 기준 (2024년 개정 후 기준)
+ * 1억800만원 = 부가가치세법상 간이과세자 기준 (2024년 개정 후 기준 — 법령값이라 공통).
  */
 import type { Transaction } from '@/types/domain'
 
@@ -19,24 +18,68 @@ export interface TaxPeriod {
   end: string     // 'YYYY-MM' (inclusive)
   type: TaxPayerType
   monthCount: number
+  ongoing?: boolean   // 진행 중인 (현재) 기간이면 true
+}
+
+export interface TaxTimelineInput {
+  /** 사업 개시 연월 ('YYYY-MM'). 미설정 시 fallbackStartMonth → asOfMonth 순으로 fallback. */
+  startMonth?: string | null
+  /** 현재 과세 유형 (profile.taxPayerType). */
+  currentType: TaxPayerType
+  /** 일반과세 전환 연월 ('YYYY-MM'). null이면 전환 없이 단일 기간(currentType). */
+  generalSinceMonth?: string | null
+  /** startMonth 미설정 시 사용할 거래 데이터의 첫 달. */
+  fallbackStartMonth?: string | null
+  /** 기준 '현재' 월. 기본 = 오늘. */
+  asOfMonth?: string
+}
+
+function prevMonth(ym: string): string {
+  const [y, m] = ym.split('-').map(Number)
+  if (m === 1) return `${y - 1}-12`
+  return `${y}-${String(m - 1).padStart(2, '0')}`
+}
+
+function monthCountInclusive(start: string, end: string): number {
+  const [sy, sm] = start.split('-').map(Number)
+  const [ey, em] = end.split('-').map(Number)
+  return Math.max(1, (ey - sy) * 12 + (em - sm) + 1)
 }
 
 /**
- * 사용자 정의 과세 전환 타임라인.
- * 추후 settings 페이지에서 사용자가 수정 가능하도록 확장 가능.
+ * 프로필 입력으로부터 과세 유형 타임라인 생성.
+ * - generalSinceMonth가 개시월보다 뒤면: 간이(개시~전환전월) → 일반(전환월~현재) 2구간.
+ * - 그 외: 현재 유형 단일 구간(개시~현재).
+ * (간이↔일반을 여러 번 오간 복잡한 이력은 단일 전환 모델로 표현 — 추후 확장 가능.)
  */
-export const TAX_PERIODS: TaxPeriod[] = [
-  { start: '2024-04', end: '2025-06', type: 'simplified', monthCount: 15 },
-  { start: '2025-07', end: '2026-06', type: 'general',    monthCount: 12 },
-]
+export function buildTaxPeriods(input: TaxTimelineInput): TaxPeriod[] {
+  const now = input.asOfMonth ?? new Date().toISOString().slice(0, 7)
+  const start = input.startMonth || input.fallbackStartMonth || now
+  const gs = input.generalSinceMonth
 
-export function getTaxPayerTypeAt(yearMonth: string): TaxPayerType {
-  for (const p of TAX_PERIODS) {
+  if (gs && gs > start) {
+    const simpleEnd = prevMonth(gs)
+    const generalEnd = now >= gs ? now : gs
+    return [
+      { start, end: simpleEnd, type: 'simplified', monthCount: monthCountInclusive(start, simpleEnd) },
+      { start: gs, end: generalEnd, type: 'general', monthCount: monthCountInclusive(gs, generalEnd), ongoing: true },
+    ]
+  }
+
+  const end = now >= start ? now : start
+  return [
+    { start, end, type: input.currentType, monthCount: monthCountInclusive(start, end), ongoing: true },
+  ]
+}
+
+export function getTaxPayerTypeAt(periods: TaxPeriod[], yearMonth: string): TaxPayerType {
+  for (const p of periods) {
     if (yearMonth >= p.start && yearMonth <= p.end) return p.type
   }
-  // 정의된 기간 이후 → 간이 가능 (조건부, 매출 따라). 일단 simplified로 두고 UI에서 안내
-  if (yearMonth > TAX_PERIODS[TAX_PERIODS.length - 1].end) return 'simplified'
-  return 'general'
+  if (periods.length === 0) return 'general'
+  // 정의된 기간 밖 → 가장 가까운 경계의 유형 사용
+  if (yearMonth < periods[0].start) return periods[0].type
+  return periods[periods.length - 1].type
 }
 
 export interface QuarterlyVATEstimate {
@@ -63,7 +106,7 @@ function quarterRange(year: number, q: 1 | 2 | 3 | 4): { start: string; end: str
  * - 간이: 매출 × 30% × 10% = 매출의 3%
  * - 일반: 매출 × 10% - 매입세액 (매입 가능 카테고리만)
  */
-export function computeQuarterlyVATHistory(txs: Transaction[]): QuarterlyVATEstimate[] {
+export function computeQuarterlyVATHistory(txs: Transaction[], periods: TaxPeriod[]): QuarterlyVATEstimate[] {
   const VAT_DEDUCTIBLE_CATEGORIES = new Set([
     '임대료', '관리비', '공과금', '소모품', '소품', '도서인쇄비', '마케팅비', '정기결제',
   ])
@@ -93,7 +136,7 @@ export function computeQuarterlyVATHistory(txs: Transaction[]): QuarterlyVATEsti
       }
     }
     // 해당 분기의 첫 달로 과세 유형 결정 (대부분의 경우 분기 내 동일)
-    const type = getTaxPayerTypeAt(start)
+    const type = getTaxPayerTypeAt(periods, start)
     let estimatedVAT: number
     if (type === 'simplified') {
       estimatedVAT = Math.round(revenue * 0.30 * 0.10)

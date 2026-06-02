@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import type { MonthlySummary } from '@/lib/analytics/monthly-summary'
-import { BUSINESS_COST_CATEGORIES, PERSONAL_COST_CATEGORIES } from '@/lib/analytics/monthly-summary'
+import { collectCostCategories } from '@/lib/analytics/monthly-summary'
 import { MonthlyBarChart } from '@/components/Charts/MonthlyBarChart'
 
 export function MonthlyDashboard({
@@ -22,17 +22,23 @@ export function MonthlyDashboard({
       yearMonth: ym, revenue: 0,
       revenueByMethod: { card: 0, transfer: 0, cash: 0, other: 0 },
       revenueCountByMethod: { card: 0, transfer: 0, cash: 0, other: 0 },
-      businessCosts: Object.fromEntries(BUSINESS_COST_CATEGORIES.map(c => [c, 0])),
+      businessCosts: {},
       businessCostTotal: 0,
       operatingProfit: 0,
-      personalCosts: Object.fromEntries(PERSONAL_COST_CATEGORIES.map(c => [c, 0])),
+      personalCosts: {},
       personalCostTotal: 0,
       netProfit: 0,
+      ownerDraw: 0,
+      reserve: 0,
       otherCosts: 0,
       transactionCount: 0,
     },
     [allSummaries, ym],
   )
+
+  // 패널에 표시할 카테고리 행 — 전체 월에서 실제 등장한 카테고리만 (하드코딩 X)
+  const businessCats = useMemo(() => collectCostCategories(allSummaries, 'business'), [allSummaries])
+  const personalCats = useMemo(() => collectCostCategories(allSummaries, 'personal'), [allSummaries])
 
   function changeMonth(newYm: string) {
     setYm(newYm)
@@ -112,9 +118,13 @@ export function MonthlyDashboard({
         <Card>
           <h3 className="text-sm font-semibold text-neutral-700 mb-3">🏢 사업 비용</h3>
           <div className="space-y-1.5">
-            {BUSINESS_COST_CATEGORIES.map(cat => (
-              <Row key={cat} label={cat} value={summary.businessCosts[cat] ?? 0} />
-            ))}
+            {businessCats.length === 0 ? (
+              <p className="text-xs text-neutral-400 py-2">아직 분류된 사업 비용이 없습니다.</p>
+            ) : (
+              businessCats.map(cat => (
+                <Row key={cat} label={cat} value={summary.businessCosts[cat] ?? 0} />
+              ))
+            )}
             <div className="border-t border-neutral-200 pt-2 mt-2">
               <Row label="소계" value={summary.businessCostTotal} bold />
             </div>
@@ -132,9 +142,13 @@ export function MonthlyDashboard({
         <Card>
           <h3 className="text-sm font-semibold text-neutral-700 mb-3">👤 개인 비용</h3>
           <div className="space-y-1.5">
-            {PERSONAL_COST_CATEGORIES.map(cat => (
-              <Row key={cat} label={cat} value={summary.personalCosts[cat] ?? 0} />
-            ))}
+            {personalCats.length === 0 ? (
+              <p className="text-xs text-neutral-400 py-2">아직 분류된 개인 비용이 없습니다.</p>
+            ) : (
+              personalCats.map(cat => (
+                <Row key={cat} label={cat} value={summary.personalCosts[cat] ?? 0} />
+              ))
+            )}
             <div className="border-t border-neutral-200 pt-2 mt-2">
               <Row label="소계" value={summary.personalCostTotal} bold />
             </div>
@@ -146,10 +160,25 @@ export function MonthlyDashboard({
             </div>
             <div className="text-[10px] text-violet-600 mt-0.5">영업이익 - 개인 비용</div>
           </div>
-          {summary.otherCosts > 0 && (
-            <div className="mt-2 text-xs text-neutral-500">
-              기타 분류 외 지출: -{summary.otherCosts.toLocaleString()}원
-              <span className="text-[10px] text-neutral-400 ml-1">(자산성 제외, 카테고리 분류 안 됨)</span>
+          {(summary.ownerDraw > 0 || summary.reserve > 0 || summary.otherCosts > 0) && (
+            <div className="mt-3 pt-2 border-t border-neutral-100 space-y-0.5 text-xs text-neutral-500">
+              <div className="text-[10px] text-neutral-400 mb-0.5">아래는 비용 합계에서 제외 (별도 항목)</div>
+              {summary.ownerDraw > 0 && (
+                <div className="flex items-center justify-between">
+                  <span>대표 인출</span><span className="tabular-nums">-{summary.ownerDraw.toLocaleString()}원</span>
+                </div>
+              )}
+              {summary.reserve > 0 && (
+                <div className="flex items-center justify-between">
+                  <span>세금 적립</span><span className="tabular-nums">-{summary.reserve.toLocaleString()}원</span>
+                </div>
+              )}
+              {summary.otherCosts > 0 && (
+                <div className="flex items-center justify-between">
+                  <span>자산성 지출 <span className="text-[10px] text-neutral-400">(감가상각 대상)</span></span>
+                  <span className="tabular-nums">-{summary.otherCosts.toLocaleString()}원</span>
+                </div>
+              )}
             </div>
           )}
         </Card>
@@ -180,7 +209,7 @@ export function MonthlyDashboard({
       )}
 
       <p className="text-xs text-neutral-400">
-        💡 사업 비용 9개 + 개인 비용 12개 = 21개 분류. 자산성(임시 자산/사무용품) + 대표자급여 + 매출은 비용 합계에서 제외. 영업이익은 세금 시뮬레이터의 사업소득 기반.
+        💡 비용은 각 거래의 분류(사업/개인)에 따라 자동 집계됩니다. 대표 인출·세금 적립·자산성 지출은 비용 합계에서 제외돼요. 카테고리는 /settings · 카테고리 관리에서 직접 설계할 수 있습니다.
       </p>
     </div>
   )

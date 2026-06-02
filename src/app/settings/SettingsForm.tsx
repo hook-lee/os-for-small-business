@@ -181,6 +181,34 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
         </div>
       </div>
 
+      <div className="pt-3 border-t border-neutral-200">
+        <h3 className="text-sm font-semibold text-neutral-700 mb-1">사업자 유형 타임라인 (세금 페이지)</h3>
+        <p className="text-xs text-neutral-500 mb-2">세금 페이지의 과세 유형 타임라인을 직접 설정합니다. 비워두면 거래 첫 달부터 현재 유형으로 표시돼요.</p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">사업 개시 연월</label>
+        <input
+          type="month"
+          value={profile.taxStartMonth ?? ''}
+          onChange={e => setProfile({ ...profile, taxStartMonth: e.target.value || null })}
+          className="border rounded px-2 py-1 w-full"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">일반과세 전환 연월 (선택)</label>
+        <input
+          type="month"
+          value={profile.taxGeneralSinceMonth ?? ''}
+          onChange={e => setProfile({ ...profile, taxGeneralSinceMonth: e.target.value || null })}
+          className="border rounded px-2 py-1 w-full"
+        />
+        <p className="text-xs text-neutral-500 mt-1">
+          간이과세자로 시작했다가 일반과세자로 바뀐 달. 처음부터 한 유형이면 비워두세요.
+        </p>
+      </div>
+
       <button
         type="submit"
         className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"

@@ -7,7 +7,7 @@ import { KpiCard } from '@/components/ui/KpiCard'
 import { FinancesTabBar } from '@/components/FinancesTabBar'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
 import {
-  TAX_PERIODS,
+  buildTaxPeriods,
   SIMPLIFIED_THRESHOLD,
   checkSimplifiedEligibility,
   computeQuarterlyVATHistory,
@@ -24,9 +24,21 @@ export default async function TaxPage() {
   const today = new Date().toISOString().slice(0, 10)
   const year = parseInt(today.slice(0, 4), 10)
 
+  // === 과세 유형 타임라인 (원장 프로필 기반 — 하드코딩 X) ===
+  const txMonths = transactions.map(t => t.date.slice(0, 7)).filter(Boolean)
+  const firstTxMonth = txMonths.length ? txMonths.reduce((a, b) => (a < b ? a : b)) : null
+  const taxPeriods = buildTaxPeriods({
+    startMonth: profile.taxStartMonth,
+    currentType: profile.taxPayerType ?? 'simplified',
+    generalSinceMonth: profile.taxGeneralSinceMonth,
+    fallbackStartMonth: firstTxMonth,
+    asOfMonth: today.slice(0, 7),
+  })
+  const currentTaxType = taxPeriods[taxPeriods.length - 1]?.type ?? profile.taxPayerType ?? 'simplified'
+
   // === 신규 분석 ===
   const eligibility = checkSimplifiedEligibility(transactions, today.slice(0, 7))
-  const quarterlyVAT = computeQuarterlyVATHistory(transactions)
+  const quarterlyVAT = computeQuarterlyVATHistory(transactions, taxPeriods)
   const actualTaxes = extractActualTaxes(transactions)
   const taxesByMonth = aggregateTaxesByMonth(actualTaxes)
 
@@ -57,37 +69,42 @@ export default async function TaxPage() {
         <h2 className="text-lg font-semibold mb-3">📅 사업자 유형 타임라인</h2>
         <Card>
           <div className="space-y-2">
-            {TAX_PERIODS.map(p => (
+            {taxPeriods.map(p => (
               <div key={p.start} className="flex items-center gap-3 text-sm">
                 <div className={`w-2 h-12 rounded ${p.type === 'simplified' ? 'bg-emerald-400' : 'bg-blue-400'}`} />
                 <div className="flex-1">
                   <div className="font-semibold">
-                    {p.start} ~ {p.end}
+                    {p.start} ~ {p.ongoing ? '현재' : p.end}
                     <span className={`ml-2 text-xs px-2 py-0.5 rounded ${
                       p.type === 'simplified' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'
                     }`}>
                       {p.type === 'simplified' ? '간이과세자' : '일반과세자'}
                     </span>
                   </div>
-                  <div className="text-xs text-neutral-500 mt-0.5">{p.monthCount}개월</div>
+                  <div className="text-xs text-neutral-500 mt-0.5">{p.monthCount}개월{p.ongoing ? ' (진행 중)' : ''}</div>
                 </div>
               </div>
             ))}
-            <div className="flex items-center gap-3 text-sm pt-2 border-t border-neutral-200">
-              <div className="w-2 h-12 rounded bg-amber-400" />
-              <div className="flex-1">
-                <div className="font-semibold">
-                  2026-07 ~
-                  <span className="ml-2 text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700">
-                    간이 전환 조건부
-                  </span>
-                </div>
-                <div className="text-xs text-neutral-500 mt-0.5">
-                  직전 1년 매출 &lt; 1억800만원 시 간이과세자 전환 가능
+            {currentTaxType === 'general' && (
+              <div className="flex items-center gap-3 text-sm pt-2 border-t border-neutral-200">
+                <div className="w-2 h-12 rounded bg-amber-400" />
+                <div className="flex-1">
+                  <div className="font-semibold">
+                    간이 전환 (조건부)
+                    <span className="ml-2 text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700">
+                      매년 7월 재판정
+                    </span>
+                  </div>
+                  <div className="text-xs text-neutral-500 mt-0.5">
+                    직전 1년 매출 &lt; 1억800만원이면 다음 과세기간(7월)부터 간이과세자 전환 가능
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
+          <p className="text-xs text-neutral-400 mt-3">
+            💡 이 타임라인은 /settings의 사업 개시 연월·과세 유형·일반 전환 시점으로 자동 생성됩니다.
+          </p>
         </Card>
       </section>
 

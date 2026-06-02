@@ -42,7 +42,7 @@ export default async function AnalyticsPage() {
                 <KpiCard title="매출" amount={t.revenue} />
                 <KpiCard title="지출" amount={-t.expense} />
                 <KpiCard title="순이익" amount={t.net} />
-                <KpiCard title="유진 급여" amount={t.ownerDraw} />
+                <KpiCard title="대표 인출" amount={t.ownerDraw} />
                 <KpiCard title="예비비" amount={t.reserve} />
               </div>
             </div>
