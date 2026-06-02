@@ -15,6 +15,7 @@ interface TransactionRow {
   member_id?: number | null
   instructor_id?: number | null
   pass_product_id?: number | null
+  pass_id?: number | null
 }
 
 function rowToTransaction(row: TransactionRow): Transaction {
@@ -32,6 +33,7 @@ function rowToTransaction(row: TransactionRow): Transaction {
     memberId: row.member_id ?? null,
     instructorId: row.instructor_id ?? null,
     passProductId: row.pass_product_id ?? null,
+    passId: row.pass_id ?? null,
   }
 }
 
@@ -77,6 +79,7 @@ export interface NewTransactionInput {
   memberId?: number | null
   instructorId?: number | null
   passProductId?: number | null
+  passId?: number | null
 }
 
 export async function insertTransaction(input: NewTransactionInput, ownerId: string): Promise<void> {
@@ -94,8 +97,21 @@ export async function insertTransaction(input: NewTransactionInput, ownerId: str
     member_id: input.memberId ?? null,
     instructor_id: input.instructorId ?? null,
     pass_product_id: input.passProductId ?? null,
+    pass_id: input.passId ?? null,
   }
   if (ownerId !== 'no-auth') row.owner_id = ownerId
   const { error } = await supabase.from('transactions').insert(row)
   if (error) throw new Error(`Supabase insert failed: ${error.message}`)
+}
+
+/**
+ * pass_id로 연결된 매출 거래 삭제 (수강권 삭제 시 동반 정리용).
+ * owner_id 격리. 삭제된 행 수와 무관하게 성공 처리 (연결 매출이 없을 수도 있음 — 과거 발급분).
+ */
+export async function deleteTransactionsByPass(passId: number, ownerId: string): Promise<void> {
+  const supabase = getSupabaseClient()
+  let q = supabase.from('transactions').delete().eq('pass_id', passId)
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { error } = await q
+  if (error) throw new Error(`Supabase delete (by pass) failed: ${error.message}`)
 }

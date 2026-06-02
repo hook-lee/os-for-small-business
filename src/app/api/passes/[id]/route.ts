@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { deletePass, updatePass } from '@/lib/supabase/passes'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
+import { invalidateCache } from '@/lib/data/loader'
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   if (!hasSupabaseConfig()) return NextResponse.json({ error: 'Supabase 미설정' }, { status: 503 })
@@ -36,6 +37,8 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   if (!Number.isFinite(id) || id <= 0) return NextResponse.json({ error: '유효하지 않은 id' }, { status: 400 })
   try {
     await deletePass(id, ownerId)
+    // v3.7: 삭제 시 연결 매출도 함께 정리되므로 transactions 캐시 무효화
+    invalidateCache(ownerId)
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })

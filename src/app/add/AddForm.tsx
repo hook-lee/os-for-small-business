@@ -367,7 +367,7 @@ export function AddForm() {
             {isSalesMode && (
               <>
                 <div className="text-xs text-neutral-600 bg-blue-50 border border-blue-200 px-3 py-2 rounded">
-                  💡 회원 + 수강권 둘 다 선택하시면 <strong>수강권 발급</strong>으로 자동 처리됩니다. 둘 중 하나라도 비우면 잡매출(가계부)로 기록.
+                  💡 회원 + 수강권 둘 다 선택하시면 <strong>수강권 발급</strong>으로 자동 처리됩니다. 이때 동일 금액이 <strong>가계부 매출로도 자동 기록</strong>돼요 (따로 안 적어도 됨). 둘 중 하나라도 비우면 잡매출(가계부)로만 기록.
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1 text-neutral-600">회원</label>
@@ -415,7 +415,7 @@ export function AddForm() {
                       </option>
                     ))}
                   </select>
-                  <div className="text-xs text-neutral-400 mt-1">선택하면 정가가 자동 입력됩니다 (수정 가능).</div>
+                  <div className="text-xs text-neutral-400 mt-1">선택하면 정가가 자동 입력돼요. <strong className="text-neutral-600">할인했다면 위 금액을 실제 받은 금액으로 고쳐주세요</strong> — 그 금액이 그대로 가계부 매출이 됩니다.</div>
                 </div>
               </>
             )}

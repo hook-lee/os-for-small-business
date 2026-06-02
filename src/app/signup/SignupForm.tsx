@@ -80,7 +80,9 @@ export function SignupForm() {
               youngStartupReductionRate: 0,
               noranusanAnnualContribution: 0,
               pensionAnnualContribution: 0,
-              taxPayerType: 'general',
+              taxPayerType: 'simplified',
+              taxStartMonth: new Date().toISOString().slice(0, 7),
+              taxGeneralSinceMonth: null,
             }),
           })
         } catch { /* profile 저장 실패는 치명적이지 않음 — 설정 페이지에서 다시 입력 가능 */ }

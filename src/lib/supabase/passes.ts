@@ -1,4 +1,7 @@
 import { getSupabaseClient } from './client'
+import { insertTransaction, deleteTransactionsByPass } from './transactions'
+import { fetchMemberById } from './members'
+import { classify } from '@/lib/categories/normalize'
 
 export interface Pass {
   id: number
@@ -140,7 +143,52 @@ export async function issuePass(
     .select('id')
     .single()
   if (error) throw new Error(`Issue pass failed: ${error.message}`)
-  return (data as { id: number }).id
+  const newPassId = (data as { id: number }).id
+
+  // v3.7: 가계부 매출 자동 생성.
+  // 수강권 발급 = 결제 = 매출. transactions에 동일 결제를 '매출'(+)로 기록해
+  // 가계부 매출과 수강권 결제가 항상 일치하도록 한다. (매출 통계는 transactions만 합산)
+  // Supabase JS는 멀티테이블 트랜잭션이 없으므로, 매출 생성 실패 시 방금 만든 pass를 롤백.
+  const paymentAmount = input.paymentAmount ?? product.price
+  const paymentMethod = input.paymentMethod ?? '카드'
+  const paymentType = input.paymentType ?? '신규결제'
+  try {
+    let memberName: string | undefined
+    try {
+      const member = await fetchMemberById(input.memberId, ownerId)
+      memberName = member?.name ?? undefined
+    } catch {
+      // 회원 조회 실패해도 매출 기록은 진행 (counterparty만 비움)
+    }
+
+    await insertTransaction(
+      {
+        date: today, // paid_at과 동일 — 결제일 기준 매출 인식
+        rawCategory: '매출',
+        category: '매출',
+        amount: Math.abs(paymentAmount), // 매출은 +
+        method: paymentMethod,
+        counterparty: memberName, // 거래처 = 회원 이름
+        classification: classify('매출'), // 'business'
+        memo: `${product.name} ${paymentType}`,
+        memberId: input.memberId,
+        instructorId: input.instructorId,
+        passProductId: input.productId,
+        passId: newPassId,
+      },
+      ownerId,
+    )
+  } catch (txErr) {
+    // 롤백: 매출 생성 실패 → 방금 만든 수강권 삭제 (둘은 항상 함께 존재해야 정합 유지)
+    try {
+      await deletePass(newPassId, ownerId)
+    } catch {
+      // best-effort 롤백 — 실패해도 아래 에러로 사용자에게 알림
+    }
+    throw new Error(`수강권 매출 연동 실패 (수강권 롤백됨): ${(txErr as Error).message}`)
+  }
+
+  return newPassId
 }
 
 export async function fetchAllPasses(ownerId: string): Promise<Pass[]> {
@@ -166,6 +214,11 @@ export async function fetchAllPasses(ownerId: string): Promise<Pass[]> {
 
 export async function deletePass(id: number, ownerId: string): Promise<void> {
   const supabase = getSupabaseClient()
+  // v3.7: 발급 시 자동 생성된 연결 매출(transactions.pass_id=id)을 먼저 정리.
+  // 결제(pass)를 지우면 그 매출도 함께 사라져야 가계부 정합이 유지된다.
+  // 과거 import분은 연결 매출이 없으므로 0건 삭제 — 에러 아님.
+  await deleteTransactionsByPass(id, ownerId)
+
   let q = supabase.from('passes').delete().eq('id', id)
   if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
   const { error } = await q

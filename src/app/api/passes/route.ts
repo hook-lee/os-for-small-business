@@ -3,6 +3,7 @@ import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { fetchPassProductById } from '@/lib/supabase/pass-products'
 import { issuePass } from '@/lib/supabase/passes'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
+import { invalidateCache } from '@/lib/data/loader'
 
 export async function POST(req: Request) {
   if (!hasSupabaseConfig()) return NextResponse.json({ error: 'Supabase 미설정' }, { status: 503 })
@@ -38,6 +39,8 @@ export async function POST(req: Request) {
       product,
       ownerId,
     )
+    // v3.7: 발급 시 가계부 매출이 자동 생성되므로 transactions 캐시 무효화
+    invalidateCache(ownerId)
     return NextResponse.json({ ok: true, id })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })

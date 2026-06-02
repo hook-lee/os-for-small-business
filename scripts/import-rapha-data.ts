@@ -2,8 +2,13 @@
  * 라파 필라테스 회기점 데이터 import.
  *
  * Usage:
- *   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
- *     npx tsx scripts/import-rapha-data.ts [--dry-run] [--members=PATH] [--consultations=PATH] [--pass-history=PATH]
+ *   npm run import:rapha:dry    (dry-run)
+ *   npm run import:rapha        (실제 실행)
+ *
+ *   환경변수는 .env.local 자동 로드 (dotenv).
+ *   수동 override 가능:
+ *     SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
+ *       npx tsx scripts/import-rapha-data.ts [--dry-run] [--members=PATH] ...
  *
  * 기본 파일 경로:
  *   ~/Downloads/회원목록_*.xlsx
@@ -21,6 +26,11 @@
  *
  * Dry-run: 실제 INSERT/UPDATE 안 함. 리포트만 출력.
  */
+import { config as dotenvConfig } from 'dotenv'
+// .env.local 우선, 없으면 .env
+dotenvConfig({ path: '.env.local' })
+dotenvConfig()
+
 import { createClient } from '@supabase/supabase-js'
 import * as XLSX from 'xlsx'
 import path from 'node:path'
