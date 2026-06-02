@@ -13,7 +13,9 @@ const ROLE_RANK: Record<Instructor['role'], number> = {
   instructor: 2,
 }
 
-interface RateDraft {
+interface EditDraft {
+  name: string
+  phone: string
   ratePrivate: string
   rateRehab: string
   rateDuet: string
@@ -48,7 +50,7 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
     [instructors],
   )
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [rateDraft, setRateDraft] = useState<RateDraft>({ ratePrivate: '', rateRehab: '', rateDuet: '', rateGroup: '' })
+  const [editDraft, setEditDraft] = useState<EditDraft>({ name: '', phone: '', ratePrivate: '', rateRehab: '', rateDuet: '', rateGroup: '' })
   const [savingId, setSavingId] = useState<number | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [addSaving, setAddSaving] = useState(false)
@@ -56,7 +58,9 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
 
   function startEdit(inst: Instructor) {
     setEditingId(inst.id)
-    setRateDraft({
+    setEditDraft({
+      name: inst.name,
+      phone: inst.phone ?? '',
       ratePrivate: String(inst.ratePrivate),
       rateRehab: String(inst.rateRehab),
       rateDuet: String(inst.rateDuet),
@@ -64,21 +68,27 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
     })
   }
 
-  async function saveRates(id: number) {
-    const ratePrivate = parseInt(rateDraft.ratePrivate, 10)
-    const rateRehab = parseInt(rateDraft.rateRehab, 10)
-    const rateDuet = parseInt(rateDraft.rateDuet, 10)
-    const rateGroup = parseInt(rateDraft.rateGroup, 10)
+  async function saveEdit(id: number) {
+    const name = editDraft.name.trim()
+    if (!name) {
+      alert('이름은 비울 수 없습니다')
+      return
+    }
+    const ratePrivate = parseInt(editDraft.ratePrivate, 10)
+    const rateRehab = parseInt(editDraft.rateRehab, 10)
+    const rateDuet = parseInt(editDraft.rateDuet, 10)
+    const rateGroup = parseInt(editDraft.rateGroup, 10)
     if ([ratePrivate, rateRehab, rateDuet, rateGroup].some(r => !Number.isFinite(r) || r < 0)) {
       alert('시급은 0 이상 숫자만 입력 가능')
       return
     }
+    const phone = editDraft.phone.trim() || null
     setSavingId(id)
     try {
       const res = await fetch(`/api/instructors/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ratePrivate, rateRehab, rateDuet, rateGroup }),
+        body: JSON.stringify({ name, phone, ratePrivate, rateRehab, rateDuet, rateGroup }),
       })
       const json = await res.json() as { ok?: boolean; error?: string }
       if (!res.ok) {
@@ -86,7 +96,7 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
         return
       }
       setInstructors(prev => prev.map(i =>
-        i.id === id ? { ...i, ratePrivate, rateRehab, rateDuet, rateGroup } : i,
+        i.id === id ? { ...i, name, phone, ratePrivate, rateRehab, rateDuet, rateGroup } : i,
       ))
       setEditingId(null)
     } catch {
@@ -229,7 +239,17 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
                       {inst.color && (
                         <span className="inline-block w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: inst.color }} />
                       )}
-                      <a href={`/instructors/${inst.id}`} className="font-medium text-blue-600 hover:underline">{inst.name}</a>
+                      {editingId === inst.id ? (
+                        <input
+                          type="text"
+                          value={editDraft.name}
+                          onChange={e => setEditDraft(d => ({ ...d, name: e.target.value }))}
+                          className="w-28 border border-neutral-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="이름"
+                        />
+                      ) : (
+                        <a href={`/instructors/${inst.id}`} className="font-medium text-blue-600 hover:underline">{inst.name}</a>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-neutral-600 whitespace-nowrap">
@@ -241,8 +261,28 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
                       <span className="text-sm">{roleLabel(inst.role)}</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-neutral-600 whitespace-nowrap tabular-nums">{inst.phone ?? '—'}</td>
-                  <td className="px-4 py-3 text-neutral-600 whitespace-nowrap text-center tabular-nums">{memberCounts[inst.id] ?? 0}명</td>
+                  <td className="px-4 py-3 text-neutral-600 whitespace-nowrap tabular-nums">
+                    {editingId === inst.id ? (
+                      <input
+                        type="text"
+                        value={editDraft.phone}
+                        onChange={e => setEditDraft(d => ({ ...d, phone: e.target.value }))}
+                        className="w-32 border border-neutral-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="010-0000-0000"
+                      />
+                    ) : (
+                      inst.phone ?? '—'
+                    )}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-center tabular-nums">
+                    <a
+                      href={`/instructors/${inst.id}`}
+                      className="text-blue-600 hover:underline"
+                      title="담당 회원 보기 (이용중 기준)"
+                    >
+                      {memberCounts[inst.id] ?? 0}명
+                    </a>
+                  </td>
                   <td className="px-4 py-3 tabular-nums">
                     {editingId === inst.id ? (
                       <div className="grid grid-cols-4 gap-2 min-w-[320px]">
@@ -253,8 +293,8 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
                             </label>
                             <input
                               type="number"
-                              value={rateDraft[key]}
-                              onChange={e => setRateDraft(d => ({ ...d, [key]: e.target.value }))}
+                              value={editDraft[key]}
+                              onChange={e => setEditDraft(d => ({ ...d, [key]: e.target.value }))}
                               className="w-full border border-neutral-300 rounded px-2 py-1 text-right text-sm"
                               min="0"
                               step="1000"
@@ -273,7 +313,7 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
                     {editingId === inst.id ? (
                       <div className="inline-flex gap-1">
                         <button
-                          onClick={() => saveRates(inst.id)}
+                          onClick={() => saveEdit(inst.id)}
                           disabled={savingId === inst.id}
                           className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-blue-300"
                         >

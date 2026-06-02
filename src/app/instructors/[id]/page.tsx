@@ -64,7 +64,12 @@ export default async function InstructorDetailPage({
       )}
 
       <div>
-        <h3 className="text-lg font-semibold mt-6 mb-2">담당 회원 ({members.length}명)</h3>
+        <h3 className="text-lg font-semibold mt-6 mb-2">
+          담당 회원{' '}
+          <span className="text-base font-normal text-neutral-500">
+            (이용중 {members.filter(m => m.isActive).length}명 · 누적 {members.length}명)
+          </span>
+        </h3>
         {members.length === 0 ? (
           <p className="text-sm text-neutral-400">아직 담당 회원이 없습니다.</p>
         ) : (

@@ -148,15 +148,18 @@ export async function fetchInstructorById(id: number, ownerId: string): Promise<
   return data ? rowToInstructor(data as InstructorRow) : null
 }
 
-// 강사가 담당하는 회원들 (passes 통해)
-export async function fetchMembersByInstructor(instructorId: number, ownerId: string): Promise<Array<{
+export interface InstructorMemberRow {
   memberId: number
   memberName: string
   memberPhone: string | null
-  passCount: number          // 이 강사 밑에서 산 수강권 개수
+  passCount: number          // 이 강사 밑에서 산 수강권 개수 (누적)
   latestPassName: string | null
   latestPassStatus: string | null
-}>> {
+  isActive: boolean          // 이 강사 밑에서 '이용중' 수강권을 1개 이상 보유
+}
+
+// 강사가 담당하는 회원들 (passes 통해)
+export async function fetchMembersByInstructor(instructorId: number, ownerId: string): Promise<InstructorMemberRow[]> {
   const supabase = getSupabaseClient()
   // passes에서 instructor_id로 필터, member join. owner_id로 한 번 더 격리.
   let q = supabase
@@ -169,10 +172,7 @@ export async function fetchMembersByInstructor(instructorId: number, ownerId: st
   if (error) throw new Error(`Fetch instructor members failed: ${error.message}`)
 
   // 회원별 그룹화 + 카운트
-  const map = new Map<number, {
-    memberId: number; memberName: string; memberPhone: string | null;
-    passCount: number; latestPassName: string | null; latestPassStatus: string | null;
-  }>()
+  const map = new Map<number, InstructorMemberRow>()
   for (const row of (data ?? []) as Array<{
     member_id: number; pass_name: string; status: string | null; paid_at: string | null;
     members: { id: number; name: string; phone: string | null } | { id: number; name: string; phone: string | null }[] | null;
@@ -180,29 +180,41 @@ export async function fetchMembersByInstructor(instructorId: number, ownerId: st
     // Supabase 1:1 join은 객체로 옴; 단 array로 올 수도 있어서 둘 다 처리
     const member = Array.isArray(row.members) ? row.members[0] : row.members
     if (!member) continue
+    const active = row.status === '이용중'
     const existing = map.get(member.id)
     if (existing) {
       existing.passCount++
+      if (active) existing.isActive = true
     } else {
       map.set(member.id, {
         memberId: member.id,
         memberName: member.name,
         memberPhone: member.phone,
         passCount: 1,
-        latestPassName: row.pass_name,
+        latestPassName: row.pass_name,   // paid_at desc 정렬이라 첫 row = 최신
         latestPassStatus: row.status,
+        isActive: active,
       })
     }
   }
-  return Array.from(map.values()).sort((a, b) => a.memberName.localeCompare(b.memberName))
+  // 이용중 회원 먼저, 그 다음 이름순
+  return Array.from(map.values()).sort((a, b) => {
+    if (a.isActive !== b.isActive) return a.isActive ? -1 : 1
+    return a.memberName.localeCompare(b.memberName)
+  })
 }
 
+/**
+ * 강사가 현재 담당 중인 회원 수 = 이 강사 밑에서 '이용중' 수강권을 가진 unique 회원.
+ * (만료 회원은 제외 — 누적 집계가 아니라 현재 담당 인원을 보여주기 위함)
+ */
 export async function countMembersByInstructor(instructorId: number, ownerId: string): Promise<number> {
   const supabase = getSupabaseClient()
   let q = supabase
     .from('passes')
     .select('member_id')
     .eq('instructor_id', instructorId)
+    .eq('status', '이용중')
   if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
   const { data, error } = await q
   if (error) return 0
