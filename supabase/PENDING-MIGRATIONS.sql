@@ -254,3 +254,110 @@ create policy owner_all_delete on pass_events for delete using (auth.uid() = own
 
 alter table pass_products add column if not exists category text;
 create index if not exists pass_products_category_idx on pass_products (category) where category is not null;
+
+-- ============================================================
+-- v3.7: 수강권 발급 → 가계부 매출 자동 연결
+--
+-- 문제:
+--  - 지금까지 수강권(pass) 발급은 passes 테이블에만 기록됐고
+--    가계부(transactions)에 매출이 안 생겼다.
+--  - 매출 통계는 transactions만 합산 → 발급분 매출이 통째로 누락.
+--    이게 "가계부 매출 < 수강권 결제" 불일치의 구조적 원인.
+--
+-- 해결:
+--  - 수강권 발급 시 동일 결제를 transactions에 '매출'(+금액)로 자동 생성.
+--  - 두 테이블을 pass_id로 연결 → 가계부 = 수강권 결제 항상 정합.
+--  - 매출 통계는 여전히 transactions만 합산 (passes.payment_amount 합산 금지 규칙 유지).
+--    pass_id는 "이 매출이 어느 수강권에서 왔나" 추적용일 뿐 → 이중집계 아님.
+--  - 수강권 삭제 시 연결 매출도 코드에서 함께 삭제.
+--    FK는 on delete set null 안전망 (직접 SQL 삭제 시에도 매출 데이터는 보존, 링크만 해제).
+--
+-- 과거 import분(788건)은 백필 안 함 — 가계부 xlsx에 이미 실제 매출이 들어있어
+-- 백필하면 이중집계됨. 자동 연결은 "앱에서 새로 발급하는 분"부터만 적용.
+--
+-- 멱등: add column if not exists / create index if not exists. 여러 번 실행 OK.
+-- ============================================================
+
+alter table transactions add column if not exists pass_id bigint references passes(id) on delete set null;
+create index if not exists transactions_pass_idx on transactions (pass_id) where pass_id is not null;
+
+-- ============================================================
+-- v3.8: 사업자 유형 타임라인 (원장 직접 설정)
+--
+-- 문제:
+--  - 세금 페이지의 과세유형 전환 타임라인이 코드에 라파 필라테스 히스토리로
+--    하드코딩(2024-04~2025-06 간이, 2025-07~ 일반)돼 모든 계정에 동일하게 노출됐다.
+--  - "모든 데이터는 원장이 설계하기 나름" 원칙 위배 — 신규 가입자에게
+--    남의 사업 히스토리가 보임.
+--
+-- 해결:
+--  - 타임라인을 profile 컬럼 2개로 빼서 원장이 /settings에서 직접 입력.
+--    · tax_start_month        : 사업 개시 연월 'YYYY-MM' (타임라인 시작점)
+--    · tax_general_since_month: 간이 → 일반 전환 연월 'YYYY-MM' (없으면 단일 유형)
+--  - 코드(buildTaxPeriods)는 이 두 값 + tax_payer_type로 타임라인을 생성.
+--    비우면 거래 첫 달부터 현재 유형(기본 간이) 단일 구간으로 표시.
+--
+-- 멱등: add column if not exists. 여러 번 실행 OK.
+-- ============================================================
+
+alter table profile add column if not exists tax_start_month text;          -- 'YYYY-MM'
+alter table profile add column if not exists tax_general_since_month text;   -- 'YYYY-MM' (null = 전환 없음)
+
+-- ── 라파 필라테스 기존 타임라인 보존 (멱등: 이미 값이 있으면 덮어쓰지 않음) ──
+-- 신규 가입자엔 영향 없음. workspace_name으로 라파만 타겟.
+update profile
+set tax_start_month         = coalesce(tax_start_month, '2024-04'),
+    tax_general_since_month = coalesce(tax_general_since_month, '2025-07'),
+    tax_payer_type          = 'general'
+where workspace_name = '라파 필라테스';
+
+-- ============================================================
+-- v3.9: 회원별 강사 시급/인센티브 (월별 급여 정산 우선 적용)
+--
+-- 문제:
+--  - 강사 시급은 강사 단위(개인/재활/듀엣/그룹 4종)로만 정해졌다.
+--  - 실제로는 "이 회원은 이 강사한테 특별 시급" / "재등록 보상 인센티브" 처럼
+--    회원×강사 단위로 금액이 달라지는 케이스가 있다.
+--
+-- 해결:
+--  - member_instructor_rates: (회원, 강사) 쌍에 대해
+--      · custom_rate            : 단일 시급(회당). null = 강사 기본 시급 사용.
+--                                 값이 있으면 그 회원의 모든 수업은 카테고리 무시하고 이 시급으로 계산.
+--      · incentive_per_session  : 회당 추가 인센티브(원). 기본 0.
+--      · memo                   : 사유 (예: "10회 재등록 보상")
+--  - 월별 급여 정산(payroll)에서 이 값이 강사 기본 시급보다 우선 적용된다.
+--    급여 = (카테고리 집계 × 강사 기본시급) + 회원별 조정액
+--    회원별 조정액 = Σ[(단일시급 − 기본시급)×회수 + 인센티브×회수]
+--
+-- 멱등: if not exists / drop policy if exists. 여러 번 실행 OK.
+-- ============================================================
+
+create table if not exists member_instructor_rates (
+  id bigint generated always as identity primary key,
+  owner_id uuid references auth.users(id) on delete cascade,
+  member_id bigint not null references members(id) on delete cascade,
+  instructor_id bigint not null references instructors(id) on delete cascade,
+  custom_rate integer,                              -- null = 강사 기본 시급 사용
+  incentive_per_session integer not null default 0, -- 회당 추가 인센티브
+  memo text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (member_id, instructor_id)
+);
+create index if not exists mir_owner_idx on member_instructor_rates (owner_id);
+create index if not exists mir_member_idx on member_instructor_rates (member_id);
+create index if not exists mir_instructor_idx on member_instructor_rates (instructor_id);
+
+alter table member_instructor_rates enable row level security;
+drop policy if exists owner_all_select on member_instructor_rates;
+drop policy if exists owner_all_insert on member_instructor_rates;
+drop policy if exists owner_all_update on member_instructor_rates;
+drop policy if exists owner_all_delete on member_instructor_rates;
+create policy owner_all_select on member_instructor_rates for select using (auth.uid() = owner_id);
+create policy owner_all_insert on member_instructor_rates for insert with check (auth.uid() = owner_id);
+create policy owner_all_update on member_instructor_rates for update using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+create policy owner_all_delete on member_instructor_rates for delete using (auth.uid() = owner_id);
+
+-- 월별 급여 정산에 "회원별 시급·인센티브 조정액"을 저장 (reload 시 gross 복원용).
+-- total_amount에는 이미 조정액이 반영돼 있고, adjustment는 그 내역 보존·재계산용.
+alter table payroll_records add column if not exists adjustment bigint not null default 0;

@@ -74,17 +74,21 @@ export async function POST(req: Request) {
 
 ## 카테고리 분류 (transactions.classification)
 
-xlsx 우측 패널의 분류와 우리 코드의 classification:
+**원칙: 분류의 source of truth는 각 거래(row)의 `classification` 필드.** 카테고리 이름을 코드에 하드코딩한 목록(예전 `BUSINESS_COST_CATEGORIES`)은 제거됨 — 원장마다 카테고리를 직접 설계하기 때문에 이름 목록을 코드가 알 수 없음.
 
-| classification | 카테고리 | 의미 |
+`monthly-summary.ts`는 카테고리 이름이 아니라 `classification` 값으로 집계:
+
+| classification | 집계 방식 | 의미 |
 |---|---|---|
-| `business` | 사업 비용 9개: 급여 / 유진 급여 / 예비비 / 임대료 / 관리비 / 세금 / 공과금 / 보험료 / 정기결제 | 영업이익 차감 |
-| `living` | 개인 비용 12개: 교통비 / 품위유지비 / 교육비 / 식비 / 의류비 / 의료비 / 소모품 / 소품 / 도서인쇄비 / 마케팅비 / 경조사비 / 수수료 | 순수익 차감 |
-| `capital` | 자산 / 보통예금 / 사무용품 | 비용 합계 제외 (감가상각 대상) |
-| `reserve` | 예비비 | 세금 적립용. 비용 X |
-| `owner_draw` | 대표자급여 / 유진 급여 | 사업소득 차감 X |
+| `business` | `businessCosts[category]` 누적 → 영업이익 차감 | 사업 비용 |
+| `living` | `personalCosts[category]` 누적 → 순수익 차감 | 개인 비용 |
+| `capital` | `otherCosts` (비용 합계 제외) | 감가상각 대상 자산 |
+| `reserve` | `reserve` (비용 X) | 세금 적립용 |
+| `owner_draw` | `ownerDraw` (비용 X, 사업소득 차감 X) | 대표 인출 |
 
-`src/lib/analytics/monthly-summary.ts`의 `BUSINESS_COST_CATEGORIES` / `PERSONAL_COST_CATEGORIES` 상수가 source of truth.
+- 카테고리 → classification 매핑은 **원장이 /settings · 카테고리 관리**에서 설계 (expense_categories.classification).
+- 신규 가입자 기본값: `src/lib/categories/defaults.ts` (24개 generic, 예: 대표자급여=owner_draw / 예비비=reserve). 라파 xlsx 전용 이름(유진 급여 등)은 default에 없음.
+- 패널에 표시할 카테고리 목록은 `collectCostCategories(summaries, panel)`로 실제 데이터에서 동적 추출 (금액순 정렬).
 
 ## 세금 — 사업자 유형 전환 타임라인
 
