@@ -8,6 +8,7 @@ export interface PayrollRecord {
   rehabCount: number
   duetCount: number
   groupCount: number
+  adjustment: number  // 회원별 시급·인센티브 조정액 (v3.9)
   totalAmount: number
   bonus: number
   deduction: number
@@ -26,6 +27,7 @@ interface PayrollRow {
   rehab_count: number
   duet_count: number
   group_count: number
+  adjustment: number | null
   total_amount: number
   bonus: number
   deduction: number
@@ -45,6 +47,7 @@ function rowToPayroll(row: PayrollRow): PayrollRecord {
     rehabCount: row.rehab_count,
     duetCount: row.duet_count,
     groupCount: row.group_count,
+    adjustment: Number(row.adjustment ?? 0),
     totalAmount: Number(row.total_amount),
     bonus: Number(row.bonus),
     deduction: Number(row.deduction),
@@ -79,6 +82,7 @@ export interface UpsertPayrollInput {
   rehabCount: number
   duetCount: number
   groupCount: number
+  adjustment?: number
   totalAmount: number
   bonus?: number
   deduction?: number
@@ -97,6 +101,7 @@ export async function upsertPayroll(input: UpsertPayrollInput, ownerId: string):
     rehab_count: input.rehabCount,
     duet_count: input.duetCount,
     group_count: input.groupCount,
+    adjustment: input.adjustment ?? 0,
     total_amount: input.totalAmount,
     bonus: input.bonus ?? 0,
     deduction: input.deduction ?? 0,

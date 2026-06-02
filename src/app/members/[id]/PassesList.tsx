@@ -126,6 +126,9 @@ export function PassesList({ initial }: { initial: Pass[] }) {
       {passes.map(p => {
         const label = `${p.paidAt ?? '—'} ${p.passName} ${p.paymentAmount?.toLocaleString() ?? '—'}원`
         const isDeleting = deletingId === p.id
+        const instructorName = p.instructorId != null
+          ? (instructors.find(i => i.id === p.instructorId)?.name ?? null)
+          : null
         return (
           <Card key={p.id} className="space-y-1">
             {editingId === p.id ? (
@@ -230,6 +233,7 @@ export function PassesList({ initial }: { initial: Pass[] }) {
                 </div>
                 <div className="text-sm text-neutral-600">
                   {p.startDate ?? '—'} ~ {p.endDate ?? '—'} · {p.remainingCount ?? '—'}/{p.totalCount ?? '—'}회 잔여
+                  {instructorName && <> · 담당 <span className="text-neutral-700 font-medium">{instructorName}</span></>}
                 </div>
                 <div className="text-xs text-neutral-500">
                   {p.paymentType ?? '—'} · {p.paymentAmount?.toLocaleString() ?? '—'}원 · {p.paymentMethod ?? '—'} · {p.paidAt ?? '—'}

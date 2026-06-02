@@ -1,6 +1,8 @@
 import { fetchMemberById } from '@/lib/supabase/members'
 import { fetchPassesByMember } from '@/lib/supabase/passes'
 import { fetchLessonsByMember } from '@/lib/supabase/lessons'
+import { fetchAllInstructors } from '@/lib/supabase/instructors'
+import { fetchRatesByMember } from '@/lib/supabase/member-instructor-rates'
 import { computeMemberLTV, computeAttendanceStats } from '@/lib/analytics/member-stats'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { notFound } from 'next/navigation'
@@ -11,6 +13,7 @@ import { MemberEditor } from './MemberEditor'
 import { MemberAccessLink } from './MemberAccessLink'
 import { MemberConsultations } from './MemberConsultations'
 import { MemberPassEvents } from './MemberPassEvents'
+import { MemberInstructorRates } from './MemberInstructorRates'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
 
 export const dynamic = 'force-dynamic'
@@ -23,15 +26,32 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
   const ownerId = await requireOwnerId().catch(() => 'no-auth')
 
   const today = new Date().toISOString().slice(0, 10)
-  const [m, passes, lessons] = await Promise.all([
+  const [m, passes, lessons, instructors, memberRates] = await Promise.all([
     fetchMemberById(id, ownerId),
     fetchPassesByMember(id, ownerId),
     fetchLessonsByMember(id, ownerId),
+    fetchAllInstructors(ownerId).catch(() => []),
+    fetchRatesByMember(id, ownerId).catch(() => []),
   ])
   if (!m) notFound()
 
   const ltv = computeMemberLTV(passes)
   const attendance = computeAttendanceStats(lessons, today)
+
+  // 담당 강사 = 이 회원의 '이용중' 수강권에 연결된 강사 (없으면 가장 최근 수강권 기준).
+  // passes는 paid_at desc 정렬이라 [0]이 최신.
+  const instructorMap = new Map(instructors.map(i => [i.id, i]))
+  const activeInstructorIds = [...new Set(
+    passes.filter(p => p.status === '이용중' && p.instructorId != null).map(p => p.instructorId as number),
+  )]
+  const fallbackInstructorId = passes.find(p => p.instructorId != null)?.instructorId ?? null
+  const assignedInstructorIds = activeInstructorIds.length > 0
+    ? activeInstructorIds
+    : (fallbackInstructorId != null ? [fallbackInstructorId] : [])
+  const assignedInstructors = assignedInstructorIds
+    .map(iid => instructorMap.get(iid))
+    .filter((i): i is NonNullable<typeof i> => i != null)
+  const hasActiveAssignment = activeInstructorIds.length > 0
 
   return (
     <div className="space-y-4 max-w-2xl">
@@ -49,6 +69,45 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
         </div>
       </div>
       <MemberEditor member={m} />
+
+      {/* 담당 강사 — 회원↔강사 싱크 (수강권의 instructor_id 기반) */}
+      <div className="rounded-lg border border-neutral-200 bg-white p-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-neutral-500 shrink-0">
+            담당 강사 {hasActiveAssignment ? '(이용중 기준)' : '(최근 수강권 기준)'}
+          </span>
+          {assignedInstructors.length === 0 ? (
+            <span className="text-sm text-neutral-400">— 연결된 강사 없음 (수강권 발급/수정 시 강사를 지정하세요)</span>
+          ) : (
+            assignedInstructors.map(inst => (
+              <a
+                key={inst.id}
+                href={`/instructors/${inst.id}`}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-full"
+              >
+                {inst.color && <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: inst.color }} />}
+                {inst.name}
+              </a>
+            ))
+          )}
+        </div>
+      </div>
+
+      {assignedInstructors.length > 0 && (
+        <MemberInstructorRates
+          memberId={m.id}
+          instructors={assignedInstructors.map(i => ({
+            id: i.id,
+            name: i.name,
+            color: i.color,
+            ratePrivate: i.ratePrivate,
+            rateRehab: i.rateRehab,
+            rateDuet: i.rateDuet,
+            rateGroup: i.rateGroup,
+          }))}
+          initialRates={memberRates}
+        />
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
         <KpiBox title="총 결제액" value={`${ltv.totalPaid.toLocaleString()}원`} sub={`${ltv.passCount}건`} />

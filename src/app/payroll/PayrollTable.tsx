@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import type { Instructor } from '@/lib/supabase/instructors'
 import type { PayrollRecord } from '@/lib/supabase/payroll'
-import { computePayrollTotal, computeTaxWithholding } from '@/lib/analytics/payroll'
+import { computePayrollTotal, computeTaxWithholding, type MemberPayrollLine } from '@/lib/analytics/payroll'
 
 interface EditState {
   privateCount: string
   rehabCount: string
   duetCount: string
   groupCount: string
+  adjustment: string  // 회원별 시급·인센티브 조정액 (자동 집계로 채워짐)
   bonus: string
   deduction: string
   memo: string
@@ -24,6 +25,7 @@ function recordToEdit(r: PayrollRecord | null): EditState {
     rehabCount: String(r?.rehabCount ?? 0),
     duetCount: String(r?.duetCount ?? 0),
     groupCount: String(r?.groupCount ?? 0),
+    adjustment: String(r?.adjustment ?? 0),
     bonus: String(r?.bonus ?? 0),
     deduction: String(r?.deduction ?? 0),
     memo: r?.memo ?? '',
@@ -51,6 +53,8 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
   })
   const [saving, setSaving] = useState<Record<number, boolean>>({})
   const [error, setError] = useState('')
+  // 자동 집계가 채운 회원별 조정 내역 (표시용, DB 영속 X — adjustment 숫자만 저장됨)
+  const [autoLines, setAutoLines] = useState<Record<number, MemberPayrollLine[]>>({})
 
   function updateEdit(instId: number, patch: Partial<EditState>) {
     setEdits(prev => ({ ...prev, [instId]: { ...prev[instId], ...patch } }))
@@ -63,11 +67,14 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
       duetCount: parseInt(edit.duetCount, 10) || 0,
       groupCount: parseInt(edit.groupCount, 10) || 0,
     })
-    const taxWithholding = computeTaxWithholding(breakdown.grossTotal)
+    const adjustment = parseInt(edit.adjustment, 10) || 0
+    const naiveGross = breakdown.grossTotal
+    const grossTotal = naiveGross + adjustment
+    const taxWithholding = computeTaxWithholding(grossTotal)
     const bonus = parseInt(edit.bonus, 10) || 0
     const deduction = parseInt(edit.deduction, 10) || 0
-    const net = breakdown.grossTotal + bonus - taxWithholding - deduction
-    return { ...breakdown, taxWithholding, bonus, deduction, net }
+    const net = grossTotal + bonus - taxWithholding - deduction
+    return { ...breakdown, naiveGross, adjustment, grossTotal, taxWithholding, bonus, deduction, net }
   }
 
   async function handleSave(inst: Instructor) {
@@ -86,6 +93,7 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
           rehabCount: parseInt(edit.rehabCount, 10) || 0,
           duetCount: parseInt(edit.duetCount, 10) || 0,
           groupCount: parseInt(edit.groupCount, 10) || 0,
+          adjustment: result.adjustment,
           totalAmount: result.grossTotal,
           bonus: result.bonus,
           deduction: result.deduction,
@@ -116,8 +124,9 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
   function resetInstructor(instId: number) {
     setEdits(prev => ({
       ...prev,
-      [instId]: { privateCount: '0', rehabCount: '0', duetCount: '0', groupCount: '0', bonus: '0', deduction: '0', memo: '', paid: false },
+      [instId]: { privateCount: '0', rehabCount: '0', duetCount: '0', groupCount: '0', adjustment: '0', bonus: '0', deduction: '0', memo: '', paid: false },
     }))
+    setAutoLines(prev => ({ ...prev, [instId]: [] }))
   }
 
   function resetAll() {
@@ -125,10 +134,11 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
     setEdits(() => {
       const map: Record<number, EditState> = {}
       for (const inst of instructors) {
-        map[inst.id] = { privateCount: '0', rehabCount: '0', duetCount: '0', groupCount: '0', bonus: '0', deduction: '0', memo: '', paid: false }
+        map[inst.id] = { privateCount: '0', rehabCount: '0', duetCount: '0', groupCount: '0', adjustment: '0', bonus: '0', deduction: '0', memo: '', paid: false }
       }
       return map
     })
+    setAutoLines({})
   }
 
   async function applyAutoCounts(instructorId: number, silent: boolean = false) {
@@ -139,7 +149,12 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
     }
     try {
       const res = await fetch(`/api/payroll/auto?instructorId=${instructorId}&yearMonth=${yearMonth}`)
-      const json = await res.json() as { counts?: { privateCount: number; rehabCount: number; duetCount: number; groupCount: number; individualLessonsCount: number; groupSessionsCount: number } | null; error?: string }
+      const json = await res.json() as {
+        counts?: { privateCount: number; rehabCount: number; duetCount: number; groupCount: number; individualLessonsCount: number; groupSessionsCount: number } | null
+        adjustment?: number
+        lines?: MemberPayrollLine[]
+        error?: string
+      }
       if (!res.ok || !json.counts) {
         if (!silent) alert(`자동 집계 실패: ${json.error ?? 'unknown'}`)
         return
@@ -153,8 +168,10 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
           rehabCount: String(c.rehabCount),
           duetCount: String(c.duetCount),
           groupCount: String(c.groupCount),
+          adjustment: String(json.adjustment ?? 0),
         },
       }))
+      setAutoLines(prev => ({ ...prev, [instructorId]: json.lines ?? [] }))
     } catch {
       if (!silent) alert('네트워크 오류')
     }
@@ -216,7 +233,7 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
       </div>
 
       <div className="text-xs text-neutral-500 bg-blue-50 border border-blue-200 px-3 py-2 rounded">
-        💡 &quot;자동 집계&quot; 버튼으로 lessons + group_sessions 데이터에서 그 달 강사가 진행한 수업 횟수를 자동으로 채워넣어요. 보너스·공제는 별도 수동 입력.
+        💡 &quot;자동 집계&quot; 버튼으로 lessons + group_sessions 데이터에서 그 달 강사가 진행한 수업 횟수를 자동으로 채워넣어요. 회원별 전용 시급·인센티브(회원 상세에서 설정)가 있으면 자동으로 조정액에 반영됩니다. 보너스·공제는 별도 수동 입력.
       </div>
 
       {error && <div className="text-sm text-red-600">{error}</div>}
@@ -294,6 +311,32 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
                 subtotal={result.groupTotal}
               />
             </div>
+
+            {(result.adjustment !== 0 || (autoLines[inst.id]?.length ?? 0) > 0) && (
+              <div className="rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-emerald-800">회원별 시급·인센티브 조정</span>
+                  <span className={`font-semibold tabular-nums ${result.adjustment >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                    {result.adjustment >= 0 ? '+' : ''}{result.adjustment.toLocaleString()}원
+                  </span>
+                </div>
+                {(autoLines[inst.id] ?? []).map(line => (
+                  <div key={line.memberId} className="flex items-center justify-between text-emerald-700">
+                    <span>
+                      {line.memberName ?? `회원 #${line.memberId}`} · {line.lessonCount}회
+                      {line.baseRate != null && <> · 단일 {line.baseRate.toLocaleString()}원</>}
+                      {line.incentivePerSession > 0 && <> · 인센티브 +{line.incentivePerSession.toLocaleString()}/회</>}
+                    </span>
+                    <span className={`tabular-nums ${line.delta >= 0 ? '' : 'text-red-600'}`}>
+                      {line.delta >= 0 ? '+' : ''}{line.delta.toLocaleString()}원
+                    </span>
+                  </div>
+                ))}
+                {result.adjustment !== 0 && (autoLines[inst.id]?.length ?? 0) === 0 && (
+                  <div className="text-emerald-700/70">상세 내역은 &quot;자동 집계&quot;를 다시 누르면 표시됩니다.</div>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
               <NumberInput label="총 급여" value={result.grossTotal} readOnly />

@@ -1,10 +1,27 @@
 import { getSupabaseClient } from './client'
-import { bucketLessonCounts } from '@/lib/analytics/payroll-auto'
+import { bucketLessonCounts, passNameToPayrollCategory } from '@/lib/analytics/payroll-auto'
+import type { MemberLessonBucket, PayrollCounts } from '@/lib/analytics/payroll'
 
-export async function fetchAutoPayrollCounts(instructorId: number, yearMonth: string, ownerId: string): Promise<{
-  privateCount: number; rehabCount: number; duetCount: number; groupCount: number;
-  individualLessonsCount: number;
-  groupSessionsCount: number;
+export interface AutoPayrollCounts {
+  privateCount: number; rehabCount: number; duetCount: number; groupCount: number
+  individualLessonsCount: number
+  groupSessionsCount: number
+}
+
+export async function fetchAutoPayrollCounts(instructorId: number, yearMonth: string, ownerId: string): Promise<AutoPayrollCounts> {
+  const { counts } = await fetchAutoPayrollBreakdown(instructorId, yearMonth, ownerId)
+  return counts
+}
+
+/**
+ * 자동 집계 + 회원별 분해.
+ * - counts: 카테고리별 합계 (group_sessions 포함, 기존과 동일) — 강사 기본 시급 계산용.
+ * - byMember: 회원별 개별 수업 카테고리 카운트 — 회원별 시급/인센티브 조정 계산용.
+ *   (group_sessions는 회원 비귀속이라 byMember에 미포함, counts.groupCount엔 포함됨)
+ */
+export async function fetchAutoPayrollBreakdown(instructorId: number, yearMonth: string, ownerId: string): Promise<{
+  counts: AutoPayrollCounts
+  byMember: MemberLessonBucket[]
 }> {
   try {
     const supabase = getSupabaseClient()
@@ -15,7 +32,7 @@ export async function fetchAutoPayrollCounts(instructorId: number, yearMonth: st
 
     let lessonsQ = supabase
       .from('lessons')
-      .select('pass_id, passes(pass_name)')
+      .select('pass_id, member_id, passes(pass_name), members(id, name)')
       .eq('instructor_id', instructorId)
       .gte('lesson_date', start)
       .lte('lesson_date', end)
@@ -33,19 +50,56 @@ export async function fetchAutoPayrollCounts(instructorId: number, yearMonth: st
     if (ownerId !== 'no-auth') groupQ = groupQ.eq('owner_id', ownerId)
     const { data: groupSessions } = await groupQ
 
-    type LessonRow = { pass_id: number | null; passes: { pass_name: string } | { pass_name: string }[] | null }
-    const passNames = ((lessons ?? []) as LessonRow[]).map(l => {
+    type LessonRow = {
+      pass_id: number | null
+      member_id: number | null
+      passes: { pass_name: string } | { pass_name: string }[] | null
+      members: { id: number; name: string } | { id: number; name: string }[] | null
+    }
+    const rows = (lessons ?? []) as LessonRow[]
+    const passNames = rows.map(l => {
       const p = Array.isArray(l.passes) ? l.passes[0] : l.passes
       return p?.pass_name ?? null
     })
 
-    const counts = bucketLessonCounts(passNames, (groupSessions ?? []).length)
+    const groupSessionsCount = (groupSessions ?? []).length
+    const counts = bucketLessonCounts(passNames, groupSessionsCount)
+
+    // 회원별 분해
+    const memberMap = new Map<number, MemberLessonBucket>()
+    for (const l of rows) {
+      const memberId = l.member_id
+      if (memberId == null) continue
+      const member = Array.isArray(l.members) ? l.members[0] : l.members
+      const pass = Array.isArray(l.passes) ? l.passes[0] : l.passes
+      const cat = passNameToPayrollCategory(pass?.pass_name ?? null)
+      let bucket = memberMap.get(memberId)
+      if (!bucket) {
+        bucket = {
+          memberId,
+          memberName: member?.name ?? null,
+          counts: { privateCount: 0, rehabCount: 0, duetCount: 0, groupCount: 0 } as PayrollCounts,
+        }
+        memberMap.set(memberId, bucket)
+      }
+      if (cat === 'private') bucket.counts.privateCount++
+      else if (cat === 'rehab') bucket.counts.rehabCount++
+      else if (cat === 'duet') bucket.counts.duetCount++
+      else if (cat === 'group') bucket.counts.groupCount++
+    }
+
     return {
-      ...counts,
-      individualLessonsCount: passNames.length,
-      groupSessionsCount: (groupSessions ?? []).length,
+      counts: {
+        ...counts,
+        individualLessonsCount: passNames.length,
+        groupSessionsCount,
+      },
+      byMember: Array.from(memberMap.values()),
     }
   } catch {
-    return { privateCount: 0, rehabCount: 0, duetCount: 0, groupCount: 0, individualLessonsCount: 0, groupSessionsCount: 0 }
+    return {
+      counts: { privateCount: 0, rehabCount: 0, duetCount: 0, groupCount: 0, individualLessonsCount: 0, groupSessionsCount: 0 },
+      byMember: [],
+    }
   }
 }
