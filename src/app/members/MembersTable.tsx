@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import type { Member } from '@/lib/supabase/members'
 import { MEMBER_STATUS_LABEL, type MemberStatus } from '@/lib/analytics/member-status'
+import { PassPaymentSection, emptyPassPayment, type PassPaymentDraft } from './PassPaymentSection'
 
 type ActivePassInfo = {
   passName: string
@@ -45,9 +46,11 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
 
   const [showAddForm, setShowAddForm] = useState(false)
   const [saving, setSaving] = useState(false)
+  const today = new Date().toISOString().slice(0, 10)
   const [form, setForm] = useState({
     name: '', phone: '', email: '', gender: '', birthDate: '', memo: '',
   })
+  const [payment, setPayment] = useState<PassPaymentDraft>(() => emptyPassPayment(today))
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -73,11 +76,14 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
 
   function resetForm() {
     setForm({ name: '', phone: '', email: '', gender: '', birthDate: '', memo: '' })
+    setPayment(emptyPassPayment(today))
     setShowAddForm(false)
   }
 
   async function handleAdd() {
     if (!form.name.trim()) { alert('이름을 입력해주세요.'); return }
+    // 첫 결제 켰는데 상품 미선택이면 막기
+    if (payment.enabled && !payment.productId) { alert('첫 결제를 켜셨어요. 수강권 상품을 선택하거나 결제를 꺼주세요.'); return }
     setSaving(true)
     try {
       const res = await fetch('/api/members', {
@@ -92,8 +98,30 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
           memo: form.memo.trim() || null,
         }),
       })
-      const json = await res.json() as { ok?: boolean; error?: string }
+      const json = await res.json() as { ok?: boolean; error?: string; id?: number }
       if (!res.ok) { alert(`추가 실패: ${json.error ?? 'unknown'}`); return }
+
+      // 첫 결제 함께 등록 → 수강권 발급(매출 자동). 회원은 이미 생성됐으므로 결제 실패해도 회원은 유지.
+      if (payment.enabled && payment.productId && json.id) {
+        const payRes = await fetch('/api/passes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            memberId: json.id,
+            productId: parseInt(payment.productId, 10),
+            instructorId: payment.instructorId ? parseInt(payment.instructorId, 10) : null,
+            startDate: payment.date,
+            paidAt: payment.date,
+            paymentAmount: payment.amount ? parseInt(payment.amount, 10) : undefined,
+            paymentMethod: payment.paymentMethod,
+            paymentType: payment.paymentType,
+          }),
+        })
+        const payJson = await payRes.json() as { ok?: boolean; error?: string }
+        if (!payRes.ok) {
+          alert(`회원은 등록됐지만 수강권 발급 실패: ${payJson.error ?? 'unknown'}\n회원 상세에서 다시 발급해주세요.`)
+        }
+      }
       resetForm()
       router.refresh()
     } catch {
@@ -214,6 +242,9 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
               <input type="text" value={form.memo} onChange={e => setForm(f => ({ ...f, memo: e.target.value }))} className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm" placeholder="기타 메모" />
             </FormField>
           </div>
+
+          <PassPaymentSection value={payment} onChange={setPayment} />
+
           <div className="flex gap-2">
             <button onClick={handleAdd} disabled={saving} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-blue-300">
               {saving ? '저장 중...' : '저장'}

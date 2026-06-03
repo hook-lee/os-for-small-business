@@ -13,3 +13,16 @@
 body {
   font-family: ui-sans-serif, system-ui, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
 }
+
+/*
+ * Tailwind v4 preflight는 button의 기본 cursor:pointer를 제거(브라우저 기본=화살표).
+ * → 탭·버튼이 "버튼처럼" 안 느껴짐. 클릭 가능한 요소에 손가락 커서를 복원한다.
+ * base 레이어라 필요 시 cursor-* 유틸리티로 개별 덮어쓰기 가능. disabled는 제외.
+ */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
+}

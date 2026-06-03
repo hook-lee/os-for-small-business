@@ -101,6 +101,7 @@ export interface IssuePassInput {
   paymentMethod?: '카드' | '계좌이체' | '현금'
   installment?: string
   paymentType?: '신규결제' | '재결제'  // default '신규결제'
+  paidAt?: string            // 결제일(yyyy-mm-dd). 미입력 시 오늘. 매출 인식일·발급일로 사용 (소급 등록 지원)
 }
 
 export async function issuePass(
@@ -115,6 +116,7 @@ export async function issuePass(
   end.setDate(end.getDate() + product.durationDays)
   const endDate = end.toISOString().slice(0, 10)
   const today = new Date().toISOString().slice(0, 10)
+  const paidAt = input.paidAt ?? today   // 결제일(소급 가능). 매출 인식일·발급일 기준
 
   const row: Record<string, unknown> = {
     member_id: input.memberId,
@@ -130,11 +132,11 @@ export async function issuePass(
     status: '이용중',
     payment_type: input.paymentType ?? '신규결제',
     payment_amount: input.paymentAmount ?? product.price,
-    paid_at: today,
+    paid_at: paidAt,
     payment_method: input.paymentMethod ?? '카드',
     installment: input.installment ?? '일시불',
     is_family: false,
-    issued_at: today,
+    issued_at: paidAt,
   }
   if (ownerId !== 'no-auth') row.owner_id = ownerId
   const { data, error } = await supabase
