@@ -4,23 +4,31 @@ import { useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import type { AnnualGoal } from '@/lib/profile/settings'
 
-/** 저장값(원·0~1) → 폼 입력값(만원·%) 변환. null/0 → '' */
-function toInput(v: number | null, kind: 'man' | 'count' | 'rate'): string {
+type Kind = 'money' | 'count' | 'rate'
+
+/** 저장값(원·개수·0~1) → 폼 입력 표시값. money는 천단위 콤마, rate는 %. null/0 → '' */
+function toInput(v: number | null, kind: Kind): string {
   if (v == null || v === 0) return ''
-  if (kind === 'man') return String(Math.round(v / 10_000))
+  if (kind === 'money') return Math.round(v).toLocaleString()
   if (kind === 'rate') return String(Math.round(v * 100))
   return String(Math.round(v))
 }
 
-/** 폼 입력값 → 저장값. 빈 문자열 → null */
-function fromInput(s: string, kind: 'man' | 'count' | 'rate'): number | null {
-  const t = s.trim()
+/** 폼 입력값 → 저장값(원·개수·0~1). 빈 문자열 → null. money/count는 콤마 제거 후 파싱 */
+function fromInput(s: string, kind: Kind): number | null {
+  const t = s.replace(/,/g, '').trim()
   if (t === '') return null
   const n = Number(t)
   if (!Number.isFinite(n) || n < 0) return null
-  if (kind === 'man') return Math.round(n) * 10_000
   if (kind === 'rate') return Math.min(n / 100, 1)
-  return Math.floor(n)
+  return Math.floor(n)   // money·count 모두 원/개수 그대로
+}
+
+/** 입력 중 천단위 콤마 자동 삽입 (숫자만 남기고 toLocaleString) */
+function formatThousands(s: string): string {
+  const digits = s.replace(/[^\d]/g, '')
+  if (digits === '') return ''
+  return Number(digits).toLocaleString()
 }
 
 export function GoalsForm({
@@ -34,8 +42,8 @@ export function GoalsForm({
 }) {
   const router = useRouter()
   const g = initialGoal
-  const [revenue, setRevenue] = useState(toInput(g?.revenue ?? null, 'man'))
-  const [netProfit, setNetProfit] = useState(toInput(g?.netProfit ?? null, 'man'))
+  const [revenue, setRevenue] = useState(toInput(g?.revenue ?? null, 'money'))
+  const [netProfit, setNetProfit] = useState(toInput(g?.netProfit ?? null, 'money'))
   const [activeMembers, setActiveMembers] = useState(toInput(g?.activeMembers ?? null, 'count'))
   const [newMembers, setNewMembers] = useState(toInput(g?.newMembers ?? null, 'count'))
   const [trialRate, setTrialRate] = useState(toInput(g?.trialConversionRate ?? null, 'rate'))
@@ -49,8 +57,8 @@ export function GoalsForm({
     setStatus('saving')
     setErrorMsg('')
     const goal: AnnualGoal = {
-      revenue: fromInput(revenue, 'man'),
-      netProfit: fromInput(netProfit, 'man'),
+      revenue: fromInput(revenue, 'money'),
+      netProfit: fromInput(netProfit, 'money'),
       activeMembers: fromInput(activeMembers, 'count'),
       newMembers: fromInput(newMembers, 'count'),
       trialConversionRate: fromInput(trialRate, 'rate'),
@@ -80,16 +88,16 @@ export function GoalsForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4 max-w-lg">
       <div className="grid grid-cols-2 gap-3">
-        <Field label="연 매출 목표" unit="만원" value={revenue} onChange={setRevenue} placeholder="예: 12000" />
-        <Field label="순이익 목표" unit="만원" value={netProfit} onChange={setNetProfit} placeholder="예: 4000" />
-        <Field label="활성 회원 목표" unit="명" value={activeMembers} onChange={setActiveMembers} placeholder="예: 80" />
-        <Field label="신규 회원 목표" unit="명/연" value={newMembers} onChange={setNewMembers} placeholder="예: 60" />
-        <Field label="체험→등록 전환율 목표" unit="%" value={trialRate} onChange={setTrialRate} placeholder="예: 50" />
-        <Field label="재등록률 목표" unit="%" value={reregRate} onChange={setReregRate} placeholder="예: 70" />
+        <Field label="연 매출 목표" unit="원" value={revenue} onChange={v => setRevenue(formatThousands(v))} placeholder="예: 104,000,000" />
+        <Field label="순이익 목표" unit="원" value={netProfit} onChange={v => setNetProfit(formatThousands(v))} placeholder="예: 40,000,000" />
+        <Field label="활성 회원 목표" unit="명" value={activeMembers} onChange={v => setActiveMembers(formatThousands(v))} placeholder="예: 80" />
+        <Field label="신규 회원 목표" unit="명/연" value={newMembers} onChange={v => setNewMembers(formatThousands(v))} placeholder="예: 60" />
+        <Field label="체험→등록 전환율 목표" unit="%" value={trialRate} onChange={setTrialRate} numeric placeholder="예: 50" />
+        <Field label="재등록률 목표" unit="%" value={reregRate} onChange={setReregRate} numeric placeholder="예: 70" />
       </div>
 
       <p className="text-xs text-neutral-500">
-        비워두면 해당 지표는 &lsquo;목표 미설정&rsquo;으로 표시됩니다. 매출·순이익은 <b>만원</b> 단위로 입력하세요 (예: 12000 = 1억 2천만원).
+        비워두면 해당 지표는 &lsquo;목표 미설정&rsquo;으로 표시됩니다. 매출·순이익은 <b>원 단위</b>로 입력하세요 — 천 단위 콤마는 자동으로 들어갑니다 (예: 1억 = 100,000,000).
       </p>
 
       <div className="flex items-center gap-3">
@@ -107,25 +115,28 @@ export function GoalsForm({
 }
 
 function Field({
-  label, unit, value, onChange, placeholder,
+  label, unit, value, onChange, placeholder, numeric,
 }: {
   label: string
   unit: string
   value: string
   onChange: (v: string) => void
   placeholder?: string
+  /** true면 type=number (rate 등 작은 값). 기본은 text + 콤마 표시 */
+  numeric?: boolean
 }) {
   return (
     <div>
       <label className="block text-xs font-medium text-neutral-600 mb-1">{label}</label>
       <div className="flex items-center gap-1.5">
         <input
-          type="number"
-          min="0"
+          type={numeric ? 'number' : 'text'}
+          inputMode="numeric"
+          min={numeric ? '0' : undefined}
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
-          className="border border-neutral-300 rounded-lg px-2.5 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-violet-500"
+          className="border border-neutral-300 rounded-lg px-2.5 py-1.5 text-sm w-full text-right tabular-nums focus:outline-none focus:ring-2 focus:ring-violet-500"
         />
         <span className="text-xs text-neutral-400 whitespace-nowrap">{unit}</span>
       </div>
