@@ -51,7 +51,7 @@ export function PassPaymentSection({ value, onChange }: {
     <div className="rounded-lg border border-blue-200 bg-blue-50/40 p-3 space-y-3">
       <label className="flex items-center gap-2 text-sm font-medium text-blue-900 cursor-pointer">
         <input type="checkbox" checked={value.enabled} onChange={e => set({ enabled: e.target.checked })} />
-        💳 첫 결제(수강권)도 함께 등록 — 켜면 매출이 자동으로 잡힙니다 (선택)
+        💳 수강권도 함께 등록 — 켜면 매출이 자동으로 잡힙니다 (선택)
       </label>
 
       {value.enabled && (

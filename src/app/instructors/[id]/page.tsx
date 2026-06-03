@@ -1,10 +1,12 @@
 import { fetchInstructorById, fetchMembersByInstructor } from '@/lib/supabase/instructors'
 import { fetchAllPasses } from '@/lib/supabase/passes'
+import { fetchAllRates } from '@/lib/supabase/member-instructor-rates'
 import { computeInstructorKPI, groupPassesByMember } from '@/lib/analytics/instructor-kpi'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/Card'
 import { notFound } from 'next/navigation'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
+import { MemberIncentiveInput } from './MemberIncentiveInput'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +25,10 @@ export default async function InstructorDetailPage({
   if (!instructor) notFound()
 
   const members = await fetchMembersByInstructor(id, ownerId)
+
+  // 이 강사의 회원별 인센티브(회당) — 인라인 편집 prefill용. custom_rate·memo도 함께 보존.
+  const allRates = await fetchAllRates(ownerId).catch(() => [])
+  const rateByMember = new Map(allRates.filter(r => r.instructorId === id).map(r => [r.memberId, r]))
 
   // KPI 계산
   let kpi: ReturnType<typeof computeInstructorKPI> | null = null
@@ -64,12 +70,15 @@ export default async function InstructorDetailPage({
       )}
 
       <div>
-        <h3 className="text-lg font-semibold mt-6 mb-2">
+        <h3 className="text-lg font-semibold mt-6 mb-1">
           담당 회원{' '}
           <span className="text-base font-normal text-neutral-500">
             (이용중 {members.filter(m => m.isActive).length}명 · 누적 {members.length}명)
           </span>
         </h3>
+        <p className="text-xs text-neutral-500 mb-2">
+          💡 회원별 <b>회당 인센티브</b>를 여기서 바로 입력·저장하면 월별 급여 정산에 자동 반영됩니다. (회원마다 다르게 줄 수 있어요)
+        </p>
         {members.length === 0 ? (
           <p className="text-sm text-neutral-400">아직 담당 회원이 없습니다.</p>
         ) : (
@@ -82,6 +91,7 @@ export default async function InstructorDetailPage({
                   <th className="text-right px-4 py-2 font-medium whitespace-nowrap">수강권 수</th>
                   <th className="text-left px-4 py-2 font-medium whitespace-nowrap">최근 수강권</th>
                   <th className="text-left px-4 py-2 font-medium whitespace-nowrap">상태</th>
+                  <th className="text-right px-4 py-2 font-medium whitespace-nowrap">인센티브 (회당)</th>
                 </tr>
               </thead>
               <tbody>
@@ -97,6 +107,15 @@ export default async function InstructorDetailPage({
                       <span className={`text-xs px-2 py-0.5 rounded ${m.latestPassStatus === '이용중' ? 'bg-blue-50 text-blue-700' : 'bg-neutral-100 text-neutral-500'}`}>
                         {m.latestPassStatus ?? '—'}
                       </span>
+                    </td>
+                    <td className="px-4 py-2 text-right whitespace-nowrap">
+                      <MemberIncentiveInput
+                        memberId={m.memberId}
+                        instructorId={id}
+                        initialIncentive={rateByMember.get(m.memberId)?.incentivePerSession ?? 0}
+                        customRate={rateByMember.get(m.memberId)?.customRate ?? null}
+                        memo={rateByMember.get(m.memberId)?.memo ?? null}
+                      />
                     </td>
                   </tr>
                 ))}

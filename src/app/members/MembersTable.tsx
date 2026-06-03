@@ -82,8 +82,8 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
 
   async function handleAdd() {
     if (!form.name.trim()) { alert('이름을 입력해주세요.'); return }
-    // 첫 결제 켰는데 상품 미선택이면 막기
-    if (payment.enabled && !payment.productId) { alert('첫 결제를 켜셨어요. 수강권 상품을 선택하거나 결제를 꺼주세요.'); return }
+    // 수강권 함께 등록 켰는데 상품 미선택이면 막기
+    if (payment.enabled && !payment.productId) { alert('수강권 등록을 켜셨어요. 수강권 상품을 선택하거나 꺼주세요.'); return }
     setSaving(true)
     try {
       const res = await fetch('/api/members', {

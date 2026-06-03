@@ -172,11 +172,17 @@ export function InstructorScorecard({ rows, periodKey }: { rows: InstructorScore
                       )
                     })}
                     <td className="px-4 py-3 text-right whitespace-nowrap tabular-nums">
-                      {r.incentive.hasAny ? (
-                        <span className="text-neutral-700">{incentiveText(r.incentive)}</span>
-                      ) : (
-                        <span className="text-amber-600 text-xs">⚠ 미설정</span>
-                      )}
+                      <a
+                        href={`/instructors/${r.instructorId}`}
+                        title="클릭하면 이 강사 회원별 인센티브를 설정할 수 있어요"
+                        className="hover:underline"
+                      >
+                        {r.incentive.hasAny ? (
+                          <span className="text-neutral-700">{incentiveText(r.incentive)}</span>
+                        ) : (
+                          <span className="text-amber-600 text-xs">⚠ 미설정 · 설정하기 →</span>
+                        )}
+                      </a>
                     </td>
                   </tr>
                 )
