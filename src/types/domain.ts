@@ -60,7 +60,12 @@ export interface IncomeTaxResult {
   businessIncome: number    // 사업소득금액
   taxableBase: number       // 과세표준
   computedTax: number       // 산출세액 (감면 전)
-  estimatedTax: number      // 예상 납부액 (세액공제 + 청년창업감면 반영)
+  estimatedTax: number      // 예상 납부액 = 국세분 (세액공제 + 청년창업감면 반영, 지방세 제외)
+  nationalTax: number       // 종합소득세 (국세) — estimatedTax와 동일값, 명시용
+  localTax: number          // 지방소득세 (= 국세분 × 10%)
+  totalTax: number          // 국세 + 지방세 합 (실제 빠져나가는 총액)
+  pensionCredit: number     // 연금저축 세액공제액 (참고용)
+  filingYear: number        // 신고·납부 연도 (= 귀속연도 + 1, 다음해 5월)
   asOfDate: string
 }
 

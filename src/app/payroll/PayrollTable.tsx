@@ -141,14 +141,14 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
     setAutoLines({})
   }
 
-  async function applyAutoCounts(instructorId: number, silent: boolean = false) {
+  async function applyAutoCounts(instructorId: number, silent: boolean = false, mode: 'full' | 'todate' = 'full') {
     if (!silent) {
       const current = edits[instructorId]
       const hasManual = parseInt(current.privateCount) || parseInt(current.rehabCount) || parseInt(current.duetCount) || parseInt(current.groupCount)
       if (hasManual && !confirm('현재 입력된 횟수가 자동 집계 값으로 덮어쓰여집니다. 계속할까요?')) return
     }
     try {
-      const res = await fetch(`/api/payroll/auto?instructorId=${instructorId}&yearMonth=${yearMonth}`)
+      const res = await fetch(`/api/payroll/auto?instructorId=${instructorId}&yearMonth=${yearMonth}&mode=${mode}`)
       const json = await res.json() as {
         counts?: { privateCount: number; rehabCount: number; duetCount: number; groupCount: number; individualLessonsCount: number; groupSessionsCount: number } | null
         adjustment?: number
@@ -177,10 +177,11 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
     }
   }
 
-  async function applyAutoAll() {
-    if (!confirm('모든 강사의 횟수를 자동 집계로 덮어쓸까요? (저장 안 한 변경사항은 사라집니다)')) return
+  async function applyAutoAll(mode: 'full' | 'todate' = 'full') {
+    const label = mode === 'todate' ? '현 시점까지' : '전체(예약 포함)'
+    if (!confirm(`모든 강사의 횟수를 [${label}] 자동 집계로 덮어쓸까요? (저장 안 한 변경사항은 사라집니다)`)) return
     for (const inst of instructors) {
-      await applyAutoCounts(inst.id, true)
+      await applyAutoCounts(inst.id, true, mode)
     }
   }
 
@@ -211,10 +212,18 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
             className="border border-neutral-300 rounded px-2 py-1 text-sm"
           />
           <button
-            onClick={applyAutoAll}
+            onClick={() => applyAutoAll('full')}
+            title="그 달에 예약된 모든 수업 기준 (완료 표시 안 해도 포함)"
             className="text-sm bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded hover:bg-blue-100"
           >
             ✨ 전체 자동 집계
+          </button>
+          <button
+            onClick={() => applyAutoAll('todate')}
+            title="오늘까지 진행된 수업만 기준"
+            className="text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded hover:bg-emerald-100"
+          >
+            📅 현 시점 집계
           </button>
           <button
             onClick={resetAll}
@@ -232,8 +241,9 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
         <Stat label="실 지급 (net)" value={`${totals.net.toLocaleString()}원`} highlight />
       </div>
 
-      <div className="text-xs text-neutral-500 bg-blue-50 border border-blue-200 px-3 py-2 rounded">
-        💡 &quot;자동 집계&quot; 버튼으로 lessons + group_sessions 데이터에서 그 달 강사가 진행한 수업 횟수를 자동으로 채워넣어요. 회원별 전용 시급·인센티브(회원 상세에서 설정)가 있으면 자동으로 조정액에 반영됩니다. 보너스·공제는 별도 수동 입력.
+      <div className="text-xs text-neutral-500 bg-blue-50 border border-blue-200 px-3 py-2 rounded space-y-1">
+        <p>💡 자동 집계는 lessons + group_sessions에서 개인·재활·듀엣·그룹 횟수를 채워넣어요. 개별 수업도 <b>예약(scheduled)되면 잡힙니다</b> — 사전 취소·삭제분은 제외. 회원별 전용 시급·인센티브(회원 상세 설정)는 자동으로 조정액에 반영. 보너스·공제는 수동.</p>
+        <p>· <b className="text-blue-700">✨ 전체</b> = 그 달 예약된 모든 수업 기준(아직 완료 표시 안 해도 포함). · <b className="text-emerald-700">📅 현 시점</b> = 오늘까지 진행된 수업만.</p>
       </div>
 
       {error && <div className="text-sm text-red-600">{error}</div>}
@@ -263,10 +273,19 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
                 </label>
                 <button
                   type="button"
-                  onClick={() => applyAutoCounts(inst.id)}
+                  onClick={() => applyAutoCounts(inst.id, false, 'full')}
+                  title="그 달 예약 전체"
                   className="text-xs text-blue-600 hover:text-blue-700 px-2 py-1 rounded hover:bg-blue-50"
                 >
-                  자동 집계
+                  자동(전체)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyAutoCounts(inst.id, false, 'todate')}
+                  title="오늘까지 진행분"
+                  className="text-xs text-emerald-600 hover:text-emerald-700 px-2 py-1 rounded hover:bg-emerald-50"
+                >
+                  자동(현재)
                 </button>
                 <button
                   type="button"

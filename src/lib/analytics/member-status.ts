@@ -57,6 +57,27 @@ export function computeMemberStatus(memberPasses: PassLike[], today: string): Me
 }
 
 /**
+ * 수업 추가 가드: 이 회원에게 지금 수업을 잡아도 되는가?
+ *  - usable=true  : 사용 가능한 수강권 있음 (정상)
+ *  - usable=false : 잔여 0회 / 기간 만료 / 수강권 없음 → 무료 수업 위험 경고용
+ * UI에서 경고 배너 + 저장 시 한 번 더 확인하는 데 쓴다.
+ */
+export interface PassGuard {
+  usable: boolean
+  status: MemberStatus
+  reason: string
+}
+
+export function evaluatePassGuard(passes: PassLike[], today: string): PassGuard {
+  const status = computeMemberStatus(passes, today)
+  if (status === 'active') return { usable: true, status, reason: '' }
+  const reason = status === 'no_pass'
+    ? '등록된 수강권이 없습니다'
+    : '이용 가능한 수강권이 없습니다 (잔여 0회 또는 기간 만료)'
+  return { usable: false, status, reason }
+}
+
+/**
  * 회원 ID → 상태 매핑 (한 번에 계산).
  */
 export function buildMemberStatusMap(

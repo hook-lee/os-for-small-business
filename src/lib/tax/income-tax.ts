@@ -4,6 +4,25 @@ import { computeBracketTax } from './brackets'
 
 const DEFAULT_PERSONAL_DEDUCTION = 1_500_000  // 본인 인적공제 (1명당)
 const STANDARD_TAX_CREDIT = 70_000             // 표준세액공제
+const PENSION_CREDIT_LIMIT = 6_000_000         // 연금저축 세액공제 한도 (IRP 합산 900만은 단순화 위해 미반영)
+const LOCAL_TAX_RATE = 0.10                    // 지방소득세 = 종소세(국세) × 10%
+
+/**
+ * 노란우산공제(소기업·소상공인 공제) 소득공제 한도 (2025 상향).
+ * 사업소득금액 4천만 이하 600만 / 4천~1억 400만 / 1억 초과 200만.
+ */
+function noranusanLimit(businessIncome: number): number {
+  if (businessIncome <= 40_000_000) return 6_000_000
+  if (businessIncome <= 100_000_000) return 4_000_000
+  return 2_000_000
+}
+
+/**
+ * 연금저축 세액공제율: 종합소득금액 4,500만 이하 15% / 초과 12% (지방세 별도).
+ */
+function pensionCreditRate(businessIncome: number): number {
+  return businessIncome <= 45_000_000 ? 0.15 : 0.12
+}
 
 export interface IncomeTaxOptions {
   personalDeductionCount?: number              // 인적공제 인원 (디폴트 1)
@@ -49,15 +68,27 @@ export function simulateIncomeTax(
   const businessIncome = annualizedRevenue - annualizedExpense
 
   const personalDeduction = (options.personalDeductionCount ?? 1) * DEFAULT_PERSONAL_DEDUCTION
-  const noranusan = options.noranusanContribution ?? 0
+  // 노란우산: 한도 cap 적용 (소득공제)
+  const noranusan = Math.min(options.noranusanContribution ?? 0, noranusanLimit(businessIncome))
+  // 연금저축은 소득공제가 아니라 '세액공제' — 과세표준에서 빼지 않고 산출세액에서 차감한다.
   const pension = options.pensionSavings ?? 0
+  const pensionCredit = Math.round(
+    Math.min(pension, PENSION_CREDIT_LIMIT) * pensionCreditRate(businessIncome),
+  )
 
-  const taxableBase = Math.max(0, businessIncome - personalDeduction - noranusan - pension)
+  const taxableBase = Math.max(0, businessIncome - personalDeduction - noranusan)
   const computedTax = computeBracketTax(taxableBase)
-  const taxCredits = STANDARD_TAX_CREDIT + (options.additionalTaxCredit ?? 0)
+
+  // 세액공제: 표준세액공제 + 연금저축 세액공제 + 기타
+  const taxCredits = STANDARD_TAX_CREDIT + pensionCredit + (options.additionalTaxCredit ?? 0)
   const afterCredits = Math.max(0, computedTax - taxCredits)
+
+  // 청년창업감면 (afterCredits에 비율 적용)
   const reduction = options.youngStartupReduction ?? 0
-  const estimatedTax = Math.round(afterCredits * (1 - reduction))
+  const nationalTax = Math.round(afterCredits * (1 - reduction))   // 종합소득세(국세)
+  const localTax = Math.round(nationalTax * LOCAL_TAX_RATE)        // 지방소득세
+  const totalTax = nationalTax + localTax                          // 실제 빠져나가는 총액
+  const estimatedTax = nationalTax                                 // 하위호환: 국세분
 
   return {
     year,
@@ -67,6 +98,11 @@ export function simulateIncomeTax(
     taxableBase,
     computedTax,
     estimatedTax,
+    nationalTax,
+    localTax,
+    totalTax,
+    pensionCredit,
+    filingYear: year + 1,
     asOfDate,
   }
 }

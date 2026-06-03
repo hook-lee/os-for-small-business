@@ -29,6 +29,9 @@ export function QuickAddLesson({
   const [rooms, setRooms] = useState<Room[]>([])
   const [memberQuery, setMemberQuery] = useState('')
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null)
+  // 만료 회원 가드 — 선택된 회원의 수강권 사용 가능 여부
+  const [passGuard, setPassGuard] = useState<{ usable: boolean; reason: string } | null>(null)
+  const [guardLoading, setGuardLoading] = useState(false)
   const [selectedInstructorId, setSelectedInstructorId] = useState<number | null>(null)
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null)
 
@@ -61,6 +64,26 @@ export function QuickAddLesson({
     setSelectedMemberId(match?.id ?? null)
   }, [memberQuery, members])
 
+  // 회원이 선택되면 수강권 가드 조회 (잔여 0회·기간 만료 = 무료 수업 위험 경고)
+  useEffect(() => {
+    if (type !== 'individual' || selectedMemberId == null) {
+      setPassGuard(null)
+      return
+    }
+    let cancelled = false
+    setGuardLoading(true)
+    setPassGuard(null)
+    fetch(`/api/members/${selectedMemberId}/pass-guard`)
+      .then(r => r.json())
+      .then((g: { usable?: boolean; reason?: string }) => {
+        if (cancelled) return
+        setPassGuard({ usable: g.usable !== false, reason: g.reason ?? '' })
+      })
+      .catch(() => { if (!cancelled) setPassGuard(null) })
+      .finally(() => { if (!cancelled) setGuardLoading(false) })
+    return () => { cancelled = true }
+  }, [selectedMemberId, type])
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError('')
@@ -70,6 +93,14 @@ export function QuickAddLesson({
       // 단, 룸이 정해진 경우엔 cross-table 충돌 검증은 API가 해줌.
       if (type === 'individual') {
         if (!selectedMemberId) { setError('회원을 선택하세요'); setSubmitting(false); return }
+        // 만료 회원 가드 — 무료 수업 방지: 사용 가능 수강권 없으면 한 번 더 확인
+        if (passGuard && !passGuard.usable) {
+          const name = memberQuery || '이 회원'
+          if (!confirm(`⚠ ${name}님은 ${passGuard.reason}.\n무료 수업이 될 수 있어요. 그래도 추가할까요?`)) {
+            setSubmitting(false)
+            return
+          }
+        }
         const res = await fetch('/api/lessons', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -106,6 +137,7 @@ export function QuickAddLesson({
       // 폼 리셋
       setMemberQuery('')
       setSelectedMemberId(null)
+      setPassGuard(null)
       setSessionName('')
       onClose()
     } catch (e) {
@@ -189,7 +221,19 @@ export function QuickAddLesson({
               <datalist id="quick-add-member-options">
                 {members.map(m => <option key={m.id} value={m.name}>{m.phone ?? ''}</option>)}
               </datalist>
-              {selectedMemberId && <div className="text-xs text-blue-600 mt-1">✓ 매칭됨</div>}
+              {selectedMemberId && (
+                guardLoading ? (
+                  <div className="text-xs text-neutral-400 mt-1">✓ 매칭됨 · 수강권 확인 중…</div>
+                ) : passGuard && !passGuard.usable ? (
+                  <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2 mt-1">
+                    ⚠ <b>{memberQuery}</b>님은 {passGuard.reason}. 이대로 추가하면 <b>무료 수업</b>이 될 수 있어요.
+                  </div>
+                ) : passGuard && passGuard.usable ? (
+                  <div className="text-xs text-green-600 mt-1">✓ 매칭됨 · 이용 가능한 수강권 있음</div>
+                ) : (
+                  <div className="text-xs text-blue-600 mt-1">✓ 매칭됨</div>
+                )
+              )}
             </div>
           )}
 

@@ -16,7 +16,7 @@ import { fetchActivePassesByMember } from '@/lib/supabase/passes'
 import { loadTransactions } from '@/lib/data/loader'
 import { fetchAutoPayrollCounts } from '@/lib/supabase/payroll-auto'
 import { computePayrollTotal } from '@/lib/analytics/payroll'
-import { simulateVAT, type Quarter } from '@/lib/tax/vat'
+import { simulateVAT, simulateAnnualVAT, type Quarter } from '@/lib/tax/vat'
 import { simulateIncomeTax } from '@/lib/tax/income-tax'
 import { recommendReserve } from '@/lib/tax/reserve'
 import { loadProfile } from '@/lib/profile/settings'
@@ -217,12 +217,16 @@ export function buildTools(ownerId: string): ToolHandler[] {
       const profile = await loadProfile(ownerId)
 
       const vatOptions = { taxPayerType: profile.taxPayerType }
+      // 분기별 추정 (참고용 breakdown). 일반은 분기 신고가 실제이고, 간이는 분기 개념이 없어 참고치.
       const vatByQuarter = [1, 2, 3, 4].map(q => {
         const r = simulateVAT(txs, year, q as Quarter, vatOptions)
         return { quarter: q, outputVAT: r.outputVAT, inputVAT: r.inputVAT, estimatedVAT: r.estimatedVAT }
       })
+      // 연간 부가세 = 단일 소스(simulateAnnualVAT). 간이 면제 판정·납부기한·신고라벨 포함.
+      const annualVAT = simulateAnnualVAT(txs, year, asOfDate, vatOptions)
 
       const incomeTax = simulateIncomeTax(txs, asOfDate, {
+        personalDeductionCount: profile.personalDeductionCount,
         youngStartupReduction: profile.isYoungStartupEligible ? profile.youngStartupReductionRate : 0,
         noranusanContribution: profile.noranusanAnnualContribution,
         pensionSavings: profile.pensionAnnualContribution,
@@ -235,7 +239,11 @@ export function buildTools(ownerId: string): ToolHandler[] {
         youngStartupReductionRate: profile.youngStartupReductionRate,
         vat: {
           byQuarter: vatByQuarter,
-          annualEstimate: vatByQuarter.reduce((s, q) => s + Math.max(0, q.estimatedVAT), 0),
+          annualEstimate: annualVAT.estimatedAnnualVAT,
+          annualizedSales: annualVAT.annualizedSales,
+          exempt: annualVAT.exempt,
+          dueDate: annualVAT.dueDate,
+          filingLabel: annualVAT.filingLabel,
         },
         incomeTax,
       }
@@ -262,6 +270,7 @@ export function buildTools(ownerId: string): ToolHandler[] {
       const txs = await loadTransactions(ownerId)
       const profile = await loadProfile(ownerId)
       const r = recommendReserve(txs, asOfDate, {
+        personalDeductionCount: profile.personalDeductionCount,
         youngStartupReduction: profile.isYoungStartupEligible ? profile.youngStartupReductionRate : 0,
         noranusanContribution: profile.noranusanAnnualContribution,
         pensionSavings: profile.pensionAnnualContribution,

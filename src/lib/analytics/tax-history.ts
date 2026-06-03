@@ -5,11 +5,13 @@
  * `buildTaxPeriods()`가 프로필(사업 개시 연월 · 현재 과세 유형 · 일반 전환 연월)로부터
  * 타임라인을 생성한다. 기본값: 사업 개시일부터 현재 과세 유형의 단일 기간.
  *
- * 1억800만원 = 부가가치세법상 간이과세자 기준 (2024년 개정 후 기준 — 법령값이라 공통).
+ * 1억400만원 = 부가가치세법상 간이과세자 적용 기준 (2024.7.1 개정 후 — 법령값이라 공통).
+ *   직전 1년 공급대가가 이 금액 이상이면 다음 과세기간(7월)부터 일반과세자로 강제 전환,
+ *   미만이면 간이 유지(일반과세자는 간이로 복귀 가능). 부동산임대·과세유흥은 4,800만원(별도).
  */
 import type { Transaction } from '@/types/domain'
 
-export const SIMPLIFIED_THRESHOLD = 108_000_000   // 1억800만원
+export const SIMPLIFIED_THRESHOLD = 104_000_000   // 1억400만원 (2024.7.1~)
 
 export type TaxPayerType = 'simplified' | 'general'
 

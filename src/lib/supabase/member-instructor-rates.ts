@@ -76,6 +76,23 @@ export async function fetchRateMapByInstructor(
   }
 }
 
+/**
+ * 전 강사의 시급/인센티브 설정 전체 (강사 성과 비교 페이지용).
+ * 강사별 1쿼리(fetchRateMapByInstructor) 대신 1쿼리로 받아 호출부에서 그룹화.
+ */
+export async function fetchAllRates(ownerId: string): Promise<MemberInstructorRate[]> {
+  try {
+    const supabase = getSupabaseClient()
+    let q = supabase.from('member_instructor_rates').select('*')
+    if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+    const { data, error } = await q
+    if (error) return []
+    return ((data ?? []) as MemberInstructorRateRow[]).map(rowToRate)
+  } catch {
+    return []
+  }
+}
+
 export interface UpsertMemberInstructorRateInput {
   memberId: number
   instructorId: number

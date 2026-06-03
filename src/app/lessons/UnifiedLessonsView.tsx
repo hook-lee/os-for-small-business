@@ -1,9 +1,18 @@
 'use client'
 
-import { useState, useMemo, type MouseEvent } from 'react'
+import { useState, useMemo, useEffect, type MouseEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import {
+  DndContext,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
 import { Card } from '@/components/ui/Card'
 import type { UnifiedLesson } from '@/lib/supabase/lessons-combined'
+import { DraggableLesson, DroppableDay } from './dnd'
 import {
   type ViewMode,
   type LessonCategory,
@@ -57,6 +66,44 @@ export function UnifiedLessonsView({
   const [addPrefillDate, setAddPrefillDate] = useState(initialAnchor)
   const [detailLesson, setDetailLesson] = useState<UnifiedLesson | null>(null)
 
+  // 드래그 이동용 로컬 사본 (낙관적 업데이트 → 실패 시 롤백). 서버 refresh되면 prop으로 재동기화.
+  const [localLessons, setLocalLessons] = useState<UnifiedLesson[]>(lessons)
+  useEffect(() => { setLocalLessons(lessons) }, [lessons])
+
+  // 클릭(상세)과 드래그 구분: 마우스 8px 이동 / 터치 250ms 길게 누르면 드래그
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
+  )
+
+  async function moveLesson(lesson: UnifiedLesson, newDate: string) {
+    if (lesson.date === newDate) return
+    const apiBase = lesson.type === 'group' ? '/api/group-sessions' : '/api/lessons'
+    const sameKey = (l: UnifiedLesson) => l.type === lesson.type && l.id === lesson.id
+    // 낙관적 이동
+    setLocalLessons(prev => prev.map(l => (sameKey(l) ? { ...l, date: newDate } : l)))
+    try {
+      const res = await fetch(`${apiBase}/${lesson.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lessonDate: newDate, lessonTime: lesson.time, roomId: lesson.roomId }),
+      })
+      const json = await res.json() as { ok?: boolean; error?: string }
+      if (!res.ok) throw new Error(json.error ?? '이동 실패')
+      router.refresh()
+    } catch (e) {
+      // 롤백
+      setLocalLessons(prev => prev.map(l => (sameKey(l) ? { ...l, date: lesson.date } : l)))
+      alert(`수업 이동 실패: ${(e as Error).message}`)
+    }
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    const lesson = event.active.data.current?.lesson as UnifiedLesson | undefined
+    const newDate = event.over?.data.current?.date as string | undefined
+    if (lesson && newDate) moveLesson(lesson, newDate)
+  }
+
   // 필터 상태
   const [category, setCategory] = useState<LessonCategory>('all')
   const [instructorFilter, setInstructorFilter] = useState<number | null>(null)
@@ -72,14 +119,14 @@ export function UnifiedLessonsView({
     router.push(`/lessons?mode=${encodeURIComponent(mode)}&date=${newAnchor}`)
   }
 
-  // 필터 적용된 lessons
+  // 필터 적용된 lessons (드래그 이동 반영된 localLessons 기준)
   const filtered = useMemo(
-    () => applyLessonFilters(lessons, {
+    () => applyLessonFilters(localLessons, {
       category,
       timeBand: mode === '월별' ? timeBand : 'all',
       instructorId: instructorFilter,
     }),
-    [lessons, category, timeBand, mode, instructorFilter],
+    [localLessons, category, timeBand, mode, instructorFilter],
   )
 
   return (
@@ -160,32 +207,38 @@ export function UnifiedLessonsView({
         onClose={() => setDetailLesson(null)}
       />
 
+      {(mode === '주별' || mode === '월별') && (
+        <div className="text-[11px] text-neutral-400">💡 카드를 다른 날로 <b>드래그</b>하면 그날로 이동합니다 (시간·룸 유지). 모바일은 카드를 살짝 길게 누른 뒤 드래그. 시간 변경은 카드 클릭.</div>
+      )}
+
       {/* 뷰 본체 */}
-      {mode === '일별' && (
-        dailyLayout === '강사별'
-          ? <DailyByInstructor
-              lessons={filtered.filter(l => l.date === anchor)}
-              date={anchor}
-              instructors={instructors}
-              onSelectLesson={setDetailLesson}
-            />
-          : <DailyTimeline lessons={filtered} date={anchor} onSelectLesson={setDetailLesson} />
-      )}
-      {mode === '주별' && (
-        <WeeklyView
-          lessons={filtered}
-          weekStart={getWeekStart(anchor)}
-          onSelectLesson={setDetailLesson}
-        />
-      )}
-      {mode === '월별' && (
-        <MonthlyCardList
-          lessons={filtered}
-          yearMonth={anchor.slice(0, 7)}
-          onSelectDate={d => { changeMode('일별'); changeAnchor(d) }}
-          onSelectLesson={setDetailLesson}
-        />
-      )}
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        {mode === '일별' && (
+          dailyLayout === '강사별'
+            ? <DailyByInstructor
+                lessons={filtered.filter(l => l.date === anchor)}
+                date={anchor}
+                instructors={instructors}
+                onSelectLesson={setDetailLesson}
+              />
+            : <DailyTimeline lessons={filtered} date={anchor} onSelectLesson={setDetailLesson} />
+        )}
+        {mode === '주별' && (
+          <WeeklyView
+            lessons={filtered}
+            weekStart={getWeekStart(anchor)}
+            onSelectLesson={setDetailLesson}
+          />
+        )}
+        {mode === '월별' && (
+          <MonthlyCardList
+            lessons={filtered}
+            yearMonth={anchor.slice(0, 7)}
+            onSelectDate={d => { changeMode('일별'); changeAnchor(d) }}
+            onSelectLesson={setDetailLesson}
+          />
+        )}
+      </DndContext>
     </div>
   )
 }
@@ -380,7 +433,7 @@ function WeeklyView({ lessons, weekStart, onSelectLesson }: {
         const isToday = d === new Date().toISOString().slice(0, 10)
         const isWeekend = i === 0 || i === 6
         return (
-          <div key={d} className="bg-white rounded-lg border border-neutral-200 min-h-[200px] flex flex-col">
+          <DroppableDay key={d} date={d} className="bg-white rounded-lg border border-neutral-200 min-h-[200px] flex flex-col">
             <div className={`px-2 py-1.5 border-b border-neutral-100 flex items-center justify-between ${
               isToday ? 'bg-blue-50' : ''
             }`}>
@@ -399,19 +452,20 @@ function WeeklyView({ lessons, weekStart, onSelectLesson }: {
                 timeSlots.map((slot, idx) => (
                   <div key={idx} className="flex gap-0.5">
                     {slot.map((l, roomIdx) => (
-                      <WeekCard
-                        key={`${l.type}-${l.id}`}
-                        lesson={l}
-                        slotIndex={slot.length > 1 ? roomIdx + 1 : null}
-                        slotTotal={slot.length > 1 ? slot.length : null}
-                        onClick={() => onSelectLesson(l)}
-                      />
+                      <DraggableLesson key={`${l.type}-${l.id}`} lesson={l} className="flex-1 min-w-0">
+                        <WeekCard
+                          lesson={l}
+                          slotIndex={slot.length > 1 ? roomIdx + 1 : null}
+                          slotTotal={slot.length > 1 ? slot.length : null}
+                          onClick={() => onSelectLesson(l)}
+                        />
+                      </DraggableLesson>
                     ))}
                   </div>
                 ))
               )}
             </div>
-          </div>
+          </DroppableDay>
         )
       })}
     </div>
@@ -443,7 +497,7 @@ function WeekCard({ lesson, slotIndex, slotTotal, onClick }: {
         onClick={onClick}
         onMouseEnter={handleEnter}
         onMouseLeave={handleLeave}
-        className={`flex-1 min-w-0 text-left text-[10px] rounded border border-neutral-200 border-l-4 px-1.5 py-1 leading-tight ${bg} relative cursor-pointer transition-colors`}
+        className={`w-full min-w-0 text-left text-[10px] rounded border border-neutral-200 border-l-4 px-1.5 py-1 leading-tight ${bg} relative cursor-pointer transition-colors`}
         style={{ borderLeftColor: color }}
         title="호버하면 미리보기. 클릭하면 수정/삭제."
       >

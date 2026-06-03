@@ -1,5 +1,53 @@
 import { getSupabaseClient, hasSupabaseConfig } from '@/lib/supabase/client'
 
+/**
+ * 연간 목표 (올해 KPI 목표). 각 항목 null = 미설정.
+ * 금액은 원, 인원은 명, 비율은 0~1.
+ */
+export interface AnnualGoal {
+  revenue: number | null              // 연 매출 목표 (원)
+  netProfit: number | null            // 순이익 목표 (원)
+  activeMembers: number | null        // 활성 회원 목표 (명)
+  newMembers: number | null           // 신규 회원 목표 (명/연)
+  trialConversionRate: number | null  // 체험→등록 전환율 목표 (0~1)
+  reregistrationRate: number | null   // 재등록률 목표 (0~1)
+}
+
+export const EMPTY_ANNUAL_GOAL: AnnualGoal = {
+  revenue: null,
+  netProfit: null,
+  activeMembers: null,
+  newMembers: null,
+  trialConversionRate: null,
+  reregistrationRate: null,
+}
+
+/** 연도(YYYY) → 목표 매핑 sanitize. 잘못된 값은 null 처리. */
+export function sanitizeAnnualGoals(raw: unknown): Record<string, AnnualGoal> {
+  if (!raw || typeof raw !== 'object') return {}
+  const out: Record<string, AnnualGoal> = {}
+  for (const [year, val] of Object.entries(raw as Record<string, unknown>)) {
+    if (!/^\d{4}$/.test(year)) continue
+    if (!val || typeof val !== 'object') continue
+    const g = val as Record<string, unknown>
+    const num = (v: unknown, opts?: { rate?: boolean }): number | null => {
+      const n = Number(v)
+      if (!Number.isFinite(n) || n < 0) return null
+      if (opts?.rate) return n > 1 ? Math.min(n / 100, 1) : n  // 0~100 입력도 0~1로 정규화
+      return n
+    }
+    out[year] = {
+      revenue: num(g.revenue),
+      netProfit: num(g.netProfit),
+      activeMembers: g.activeMembers == null ? null : Math.floor(num(g.activeMembers) ?? 0) || null,
+      newMembers: g.newMembers == null ? null : Math.floor(num(g.newMembers) ?? 0) || null,
+      trialConversionRate: num(g.trialConversionRate, { rate: true }),
+      reregistrationRate: num(g.reregistrationRate, { rate: true }),
+    }
+  }
+  return out
+}
+
 export interface UserProfile {
   workspaceName: string | null   // 센터명 (가입 시 필수, 예: '라파 필라테스')
   role: string | null            // 직급 (가입 시 필수: '원장' / '매니저' / '강사' / 기타)
@@ -10,9 +58,11 @@ export interface UserProfile {
   youngStartupReductionRate: 0 | 0.5 | 1.0
   noranusanAnnualContribution: number
   pensionAnnualContribution: number
+  personalDeductionCount: number       // 인적공제 인원 (본인 포함, 1인당 150만). 기본 1 = 본인만
   taxPayerType: 'general' | 'simplified'
   taxStartMonth: string | null         // 사업 개시 연월 'YYYY-MM' (과세 타임라인 시작점)
   taxGeneralSinceMonth: string | null  // 일반과세 전환 연월 'YYYY-MM'. null이면 전환 없음
+  annualGoals: Record<string, AnnualGoal>  // 연도(YYYY) → 연간 KPI 목표. 기본 {} = 미설정
 }
 
 export const DEFAULT_PROFILE: UserProfile = {
@@ -25,9 +75,11 @@ export const DEFAULT_PROFILE: UserProfile = {
   youngStartupReductionRate: 0,
   noranusanAnnualContribution: 0,
   pensionAnnualContribution: 0,
+  personalDeductionCount: 1,    // 본인 1명 (보수적 기본값)
   taxPayerType: 'simplified',   // 신규 소규모 사업자 기본값 = 간이과세자
   taxStartMonth: null,
   taxGeneralSinceMonth: null,
+  annualGoals: {},
 }
 
 interface ProfileRow {
@@ -41,9 +93,11 @@ interface ProfileRow {
   young_startup_reduction_rate: string | number
   noranusan_annual_contribution: string | number
   pension_annual_contribution: string | number
+  personal_deduction_count?: string | number | null
   tax_payer_type?: string | null
   tax_start_month?: string | null
   tax_general_since_month?: string | null
+  annual_goals?: Record<string, unknown> | string | null
 }
 
 function rowToProfile(row: ProfileRow): UserProfile {
@@ -60,10 +114,18 @@ function rowToProfile(row: ProfileRow): UserProfile {
     youngStartupReductionRate,
     noranusanAnnualContribution: Number(row.noranusan_annual_contribution),
     pensionAnnualContribution: Number(row.pension_annual_contribution),
+    personalDeductionCount: row.personal_deduction_count == null ? 1 : Math.max(1, Number(row.personal_deduction_count)),
     taxPayerType: (row.tax_payer_type === 'simplified' ? 'simplified' : 'general') as 'general' | 'simplified',
     taxStartMonth: row.tax_start_month ?? null,
     taxGeneralSinceMonth: row.tax_general_since_month ?? null,
+    annualGoals: sanitizeAnnualGoals(
+      typeof row.annual_goals === 'string' ? safeJsonParse(row.annual_goals) : row.annual_goals,
+    ),
   }
+}
+
+function safeJsonParse(s: string): unknown {
+  try { return JSON.parse(s) } catch { return {} }
 }
 
 /**
@@ -116,9 +178,11 @@ export async function saveProfile(profile: UserProfile, ownerId: string): Promis
     young_startup_reduction_rate: profile.youngStartupReductionRate,
     noranusan_annual_contribution: profile.noranusanAnnualContribution,
     pension_annual_contribution: profile.pensionAnnualContribution,
+    personal_deduction_count: profile.personalDeductionCount ?? 1,
     tax_payer_type: profile.taxPayerType ?? 'general',
     tax_start_month: profile.taxStartMonth ?? null,
     tax_general_since_month: profile.taxGeneralSinceMonth ?? null,
+    annual_goals: profile.annualGoals ?? {},
     updated_at: new Date().toISOString(),
   }
 
@@ -136,7 +200,7 @@ export async function saveProfile(profile: UserProfile, ownerId: string): Promis
   ): Promise<void> => {
     const msg = error.message
     const missing: string[] = []
-    for (const col of ['workspace_name', 'role', 'business_phone', 'tax_payer_type', 'tax_start_month', 'tax_general_since_month']) {
+    for (const col of ['workspace_name', 'role', 'business_phone', 'personal_deduction_count', 'tax_payer_type', 'tax_start_month', 'tax_general_since_month', 'annual_goals']) {
       if (msg.includes(col)) missing.push(col)
     }
     if (missing.length === 0) throw new Error(`프로필 저장 실패: ${msg}`)

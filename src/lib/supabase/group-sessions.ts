@@ -166,6 +166,7 @@ export interface UpdateGroupSessionInput {
   instructorId?: number | null
   capacity?: number
   notes?: string | null
+  lessonDate?: string   // 드래그로 다른 날 이동 시 (예약자는 FK로 따라옴)
 }
 
 export async function updateGroupSession(id: number, patch: UpdateGroupSessionInput, ownerId: string): Promise<void> {
@@ -176,6 +177,7 @@ export async function updateGroupSession(id: number, patch: UpdateGroupSessionIn
   if (patch.instructorId !== undefined) dbPatch.instructor_id = patch.instructorId
   if (patch.capacity !== undefined) dbPatch.capacity = patch.capacity
   if (patch.notes !== undefined) dbPatch.notes = patch.notes
+  if (patch.lessonDate !== undefined) dbPatch.lesson_date = patch.lessonDate
   if (Object.keys(dbPatch).length === 0) return
 
   let q = supabase.from('group_sessions').update(dbPatch).eq('id', id)

@@ -60,6 +60,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       instructorId: body.instructorId,
       capacity: body.capacity,
       notes: body.notes,
+      lessonDate: body.lessonDate,   // 드래그 이동 시 날짜 변경 (예약자 FK로 따라옴)
     }, ownerId)
     return NextResponse.json({ ok: true })
   } catch (error) {

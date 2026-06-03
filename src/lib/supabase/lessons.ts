@@ -176,6 +176,7 @@ export interface UpdateLessonInput {
   lessonTime?: string | null
   instructorId?: number | null
   memo?: string | null
+  lessonDate?: string   // 드래그로 다른 날 이동 시
 }
 
 export async function updateLesson(id: number, patch: UpdateLessonInput, ownerId: string): Promise<void> {
@@ -185,6 +186,7 @@ export async function updateLesson(id: number, patch: UpdateLessonInput, ownerId
   if (patch.lessonTime !== undefined) dbPatch.lesson_time = patch.lessonTime
   if (patch.instructorId !== undefined) dbPatch.instructor_id = patch.instructorId
   if (patch.memo !== undefined) dbPatch.memo = patch.memo
+  if (patch.lessonDate !== undefined) dbPatch.lesson_date = patch.lessonDate
   if (Object.keys(dbPatch).length === 0) return
 
   let q = supabase.from('lessons').update(dbPatch).eq('id', id)

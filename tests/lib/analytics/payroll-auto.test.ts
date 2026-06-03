@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { passNameToPayrollCategory, bucketLessonCounts } from '@/lib/analytics/payroll-auto'
+import {
+  passNameToPayrollCategory,
+  bucketLessonCounts,
+  resolvePayrollWindow,
+  PAYROLL_COUNTED_STATUSES,
+} from '@/lib/analytics/payroll-auto'
 
 describe('passNameToPayrollCategory', () => {
   it('재활 → rehab', () => {
@@ -34,5 +39,35 @@ describe('bucketLessonCounts', () => {
   })
   it('빈 입력', () => {
     expect(bucketLessonCounts([], 0)).toEqual({ privateCount: 0, rehabCount: 0, duetCount: 0, groupCount: 0 })
+  })
+})
+
+describe('PAYROLL_COUNTED_STATUSES', () => {
+  it("'scheduled' 포함 (예약만 해도 급여 집계 — 기존 버그 수정)", () => {
+    expect(PAYROLL_COUNTED_STATUSES).toContain('scheduled')
+    expect(PAYROLL_COUNTED_STATUSES).toContain('completed')
+    expect(PAYROLL_COUNTED_STATUSES).toContain('cancelled_same_day')
+    expect(PAYROLL_COUNTED_STATUSES).toContain('noshow')
+  })
+  it("사전 취소(cancelled_advance)는 제외", () => {
+    expect(PAYROLL_COUNTED_STATUSES).not.toContain('cancelled_advance')
+  })
+})
+
+describe('resolvePayrollWindow', () => {
+  it("full: 그 달 1일 ~ 말일", () => {
+    expect(resolvePayrollWindow('2026-06', 'full', '2026-06-10')).toEqual({ start: '2026-06-01', end: '2026-06-30' })
+    // today 무관
+    expect(resolvePayrollWindow('2026-02', 'full', '2030-01-01')).toEqual({ start: '2026-02-01', end: '2026-02-28' })
+  })
+  it("todate: 그 달 1일 ~ min(today, 말일)", () => {
+    expect(resolvePayrollWindow('2026-06', 'todate', '2026-06-10')).toEqual({ start: '2026-06-01', end: '2026-06-10' })
+  })
+  it("todate: today가 그 달 말일 이후면 말일로 클램프 (지난 달 = 전체)", () => {
+    expect(resolvePayrollWindow('2026-06', 'todate', '2026-09-01')).toEqual({ start: '2026-06-01', end: '2026-06-30' })
+  })
+  it("todate: today가 그 달 이전이면 빈 창(end<start) → 0건", () => {
+    const w = resolvePayrollWindow('2026-06', 'todate', '2026-05-20')
+    expect(w.end < w.start).toBe(true)
   })
 })

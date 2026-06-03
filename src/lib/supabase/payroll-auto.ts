@@ -1,5 +1,11 @@
 import { getSupabaseClient } from './client'
-import { bucketLessonCounts, passNameToPayrollCategory } from '@/lib/analytics/payroll-auto'
+import {
+  bucketLessonCounts,
+  passNameToPayrollCategory,
+  resolvePayrollWindow,
+  PAYROLL_COUNTED_STATUSES,
+  type PayrollAggregateMode,
+} from '@/lib/analytics/payroll-auto'
 import type { MemberLessonBucket, PayrollCounts } from '@/lib/analytics/payroll'
 
 export interface AutoPayrollCounts {
@@ -19,16 +25,19 @@ export async function fetchAutoPayrollCounts(instructorId: number, yearMonth: st
  * - byMember: 회원별 개별 수업 카테고리 카운트 — 회원별 시급/인센티브 조정 계산용.
  *   (group_sessions는 회원 비귀속이라 byMember에 미포함, counts.groupCount엔 포함됨)
  */
-export async function fetchAutoPayrollBreakdown(instructorId: number, yearMonth: string, ownerId: string): Promise<{
+export async function fetchAutoPayrollBreakdown(
+  instructorId: number,
+  yearMonth: string,
+  ownerId: string,
+  mode: PayrollAggregateMode = 'full',
+  today: string = new Date().toISOString().slice(0, 10),
+): Promise<{
   counts: AutoPayrollCounts
   byMember: MemberLessonBucket[]
 }> {
   try {
     const supabase = getSupabaseClient()
-    const [y, m] = yearMonth.split('-').map(Number)
-    const lastDay = new Date(y, m, 0).getDate()
-    const start = `${yearMonth}-01`
-    const end = `${yearMonth}-${String(lastDay).padStart(2, '0')}`
+    const { start, end } = resolvePayrollWindow(yearMonth, mode, today)
 
     let lessonsQ = supabase
       .from('lessons')
@@ -36,7 +45,7 @@ export async function fetchAutoPayrollBreakdown(instructorId: number, yearMonth:
       .eq('instructor_id', instructorId)
       .gte('lesson_date', start)
       .lte('lesson_date', end)
-      .in('status', ['completed', 'cancelled_same_day', 'noshow'])
+      .in('status', [...PAYROLL_COUNTED_STATUSES])
     if (ownerId !== 'no-auth') lessonsQ = lessonsQ.eq('owner_id', ownerId)
     const { data: lessons } = await lessonsQ
 

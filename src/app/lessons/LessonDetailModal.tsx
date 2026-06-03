@@ -117,11 +117,17 @@ export function LessonDetailModal({
           </div>
           <div className="flex justify-between">
             <span className="text-neutral-500">{isGroup ? '세션' : '회원'}</span>
-            <span className="font-medium">
-              {isGroup
-                ? `${lesson.sessionName} (${lesson.reservedCount ?? 0}/${lesson.capacity ?? '—'})`
-                : (lesson.memberName ?? '—')}
-            </span>
+            {isGroup ? (
+              <span className="font-medium">
+                {lesson.sessionName} ({lesson.reservedCount ?? 0}/{lesson.capacity ?? '—'})
+              </span>
+            ) : lesson.memberId != null ? (
+              <a href={`/members/${lesson.memberId}`} className="font-medium text-blue-600 hover:underline">
+                {lesson.memberName ?? '—'} →
+              </a>
+            ) : (
+              <span className="font-medium">{lesson.memberName ?? '—'}</span>
+            )}
           </div>
           <div className="flex justify-between">
             <span className="text-neutral-500">강사</span>
@@ -161,12 +167,21 @@ export function LessonDetailModal({
           >
             삭제
           </button>
-          <a
-            href={isGroup ? `/lessons/groups/${lesson.id}` : `/lessons/individual`}
-            className="text-sm border border-neutral-300 rounded px-3 py-2 hover:bg-neutral-50"
-          >
-            {isGroup ? '명단' : '상세'}
-          </a>
+          {isGroup ? (
+            <a
+              href={`/lessons/groups/${lesson.id}`}
+              className="text-sm border border-neutral-300 rounded px-3 py-2 hover:bg-neutral-50"
+            >
+              명단
+            </a>
+          ) : lesson.memberId != null ? (
+            <a
+              href={`/members/${lesson.memberId}`}
+              className="text-sm border border-blue-200 text-blue-700 rounded px-3 py-2 hover:bg-blue-50"
+            >
+              회원 정보
+            </a>
+          ) : null}
           <div className="flex-1" />
           <button
             type="button"

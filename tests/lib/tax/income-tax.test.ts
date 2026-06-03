@@ -147,7 +147,7 @@ describe('simulateIncomeTax', () => {
     expect(r2.taxableBase).toBe(r1.taxableBase - 1_500_000)
   })
 
-  it('노란우산공제·연금저축 반영', () => {
+  it('노란우산은 소득공제, 연금저축은 세액공제 (과세표준 분리)', () => {
     const txs: Transaction[] = [
       tx('2026-06-15', '매출', 100_000_000),
       tx('2026-06-01', '임대료', -50_000_000, '계좌이체'),
@@ -157,8 +157,35 @@ describe('simulateIncomeTax', () => {
       noranusanContribution: 3_000_000,
       pensionSavings: 4_000_000,
     })
-    // 과세표준 = 4800만 - 150만(인적) - 300만(노란우산) - 400만(연금저축) = 3950만
-    expect(r.taxableBase).toBe(39_500_000)
+    // 사업소득 4800만 → 과세표준 = 4800만 - 150만(인적) - 300만(노란우산) = 4350만
+    //   (연금저축 400만은 과세표준이 아니라 세액공제로 빠진다)
+    expect(r.taxableBase).toBe(43_500_000)
+    // 연금저축 세액공제 = min(400만, 600만) × 12% (사업소득 4800만 > 4500만) = 48만
+    expect(r.pensionCredit).toBe(480_000)
+  })
+
+  it('노란우산 한도 cap: 사업소득 4천~1억 → 400만 한도', () => {
+    // 사업소득 4800만, 노란우산 600만 납입 → 한도 400만만 인정
+    const txs: Transaction[] = [
+      tx('2026-06-15', '매출', 100_000_000),
+      tx('2026-06-01', '임대료', -50_000_000, '계좌이체'),
+      tx('2026-06-15', '마케팅비', -2_000_000, '카드'),
+    ]
+    const r = simulateIncomeTax(txs, '2026-12-31', { noranusanContribution: 6_000_000 })
+    // 과세표준 = 4800만 - 150만 - 400만(한도) = 4250만
+    expect(r.taxableBase).toBe(42_500_000)
+  })
+
+  it('지방소득세 = 종소세(국세) × 10%, totalTax = 국세 + 지방세', () => {
+    const txs: Transaction[] = [
+      tx('2026-06-15', '매출', 100_000_000),
+      tx('2026-06-01', '임대료', -50_000_000, '계좌이체'),
+    ]
+    const r = simulateIncomeTax(txs, '2026-12-31')
+    expect(r.nationalTax).toBe(r.estimatedTax)
+    expect(r.localTax).toBe(Math.round(r.nationalTax * 0.10))
+    expect(r.totalTax).toBe(r.nationalTax + r.localTax)
+    expect(r.filingYear).toBe(2027)   // 귀속 2026 → 신고 2027
   })
 
   it('과세표준이 0 이하면 예상세액 0', () => {

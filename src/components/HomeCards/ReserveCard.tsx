@@ -12,7 +12,7 @@ export function ReserveCard({ recommendation }: { recommendation: ReserveRecomme
         연 예상 세금 {(recommendation.annualTaxEstimate / 10_000).toFixed(0)}만원
       </div>
       <div className="text-xs text-neutral-400 mt-1">
-        부가세 {(recommendation.breakdown.vatTotal / 10_000).toFixed(0)}만 + 종소세 {(recommendation.breakdown.incomeTaxTotal / 10_000).toFixed(0)}만
+        부가세 {(recommendation.breakdown.vatTotal / 10_000).toFixed(0)}만 + 종소세·지방세 {(recommendation.breakdown.incomeTaxTotal / 10_000).toFixed(0)}만
       </div>
     </Card>
   )

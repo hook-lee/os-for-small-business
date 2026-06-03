@@ -80,6 +80,7 @@ export function SignupForm() {
               youngStartupReductionRate: 0,
               noranusanAnnualContribution: 0,
               pensionAnnualContribution: 0,
+              personalDeductionCount: 1,
               taxPayerType: 'simplified',
               taxStartMonth: new Date().toISOString().slice(0, 7),
               taxGeneralSinceMonth: null,

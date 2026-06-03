@@ -138,6 +138,21 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
       )}
 
       <div>
+        <label className="block text-sm font-medium mb-1">인적공제 인원 (본인 포함)</label>
+        <input
+          type="number"
+          min="1"
+          step="1"
+          value={profile.personalDeductionCount}
+          onChange={e => setProfile({ ...profile, personalDeductionCount: Math.max(1, Math.floor(Number(e.target.value) || 1)) })}
+          className="border rounded px-2 py-1 w-full"
+        />
+        <p className="text-xs text-neutral-500 mt-1">
+          본인 + 부양가족(연 소득금액 100만원 이하) 수. 1인당 150만원 소득공제. 모르면 1(본인만)로 두세요.
+        </p>
+      </div>
+
+      <div>
         <label className="block text-sm font-medium mb-1">노란우산공제 연 납입액 (원)</label>
         <input
           type="number"

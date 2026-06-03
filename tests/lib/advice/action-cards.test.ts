@@ -1,8 +1,14 @@
 import { describe, it, expect } from 'vitest'
 import { getActionCards } from '@/lib/advice/action-cards'
-import type { Transaction, Category, PaymentMethod } from '@/types/domain'
+import type { Transaction, Category, PaymentMethod, TxClassification } from '@/types/domain'
 
-function tx(date: string, category: Category, amount: number, method: PaymentMethod = '카드'): Transaction {
+function tx(
+  date: string,
+  category: Category,
+  amount: number,
+  method: PaymentMethod = '카드',
+  classification: TxClassification = 'business',
+): Transaction {
   return {
     date,
     rawCategory: category,
@@ -11,7 +17,7 @@ function tx(date: string, category: Category, amount: number, method: PaymentMet
     method,
     counterparty: undefined,
     person: undefined,
-    classification: 'business',
+    classification,
     memo: undefined,
   }
 }
@@ -30,10 +36,57 @@ describe('getActionCards', () => {
     expect(card.triggered).toBe(false)
   })
 
-  it('business-card-priority는 항상 triggered', () => {
+  it('청년창업 미설정 + 종소세 예상 있으면 estimatedSavings = 예상 종소세', () => {
+    const cards = getActionCards([], '2026-03-01', { isYoungStartupSet: false, incomeTaxEstimate: 3_000_000 })
+    const card = cards.find(c => c.id === 'young-startup-uncfgd')!
+    expect(card.estimatedSavings).toBe(3_000_000)
+  })
+
+  it('사업비 카드 결제 비중 낮으면 business-card-priority trigger (데이터 기반)', () => {
+    const txs = [
+      tx('2026-06-01', '임대료' as Category, -1_000_000, '계좌이체'),  // 카드 외
+      tx('2026-06-02', '소모품' as Category, -200_000, '카드'),
+    ]
+    const cards = getActionCards(txs, '2026-06-15', {})
+    const card = cards.find(c => c.id === 'business-card-priority')!
+    // businessExpenseTotal=1,200,000, card=200,000, ratio≈0.17 < 0.7 → trigger
+    expect(card.triggered).toBe(true)
+    // 일반과세 기본: 카드 외 1,000,000 × 10% 매입세액 잠재
+    expect(card.estimatedSavings).toBe(100_000)
+  })
+
+  it('카드 결제 비중 높으면(100%) business-card-priority untriggered', () => {
+    const txs = [tx('2026-06-01', '소모품' as Category, -1_000_000, '카드')]
+    const cards = getActionCards(txs, '2026-06-15', {})
+    const card = cards.find(c => c.id === 'business-card-priority')!
+    expect(card.triggered).toBe(false)
+  })
+
+  it('비용 데이터 없으면 business-card-priority untriggered (제네릭 노출 X)', () => {
     const cards = getActionCards([], '2026-06-15', {})
     const card = cards.find(c => c.id === 'business-card-priority')!
+    expect(card.triggered).toBe(false)
+  })
+
+  it('예비비 권장액 대비 적립 부족하면 reserve-shortfall trigger', () => {
+    // 권장 월 50만 × 6월 경과 = 기대 300만, 적립 0 → 부족 300만 > 30만
+    const cards = getActionCards([], '2026-06-15', { recommendedMonthlyReserve: 500_000 })
+    const card = cards.find(c => c.id === 'reserve-shortfall')!
     expect(card.triggered).toBe(true)
+  })
+
+  it('예비비 충분히 적립했으면 reserve-shortfall untriggered', () => {
+    // 기대 300만, 이미 reserve로 300만 적립 → 부족 0
+    const txs = [tx('2026-04-01', '예비비' as Category, -3_000_000, '계좌이체', 'reserve')]
+    const cards = getActionCards(txs, '2026-06-15', { recommendedMonthlyReserve: 500_000 })
+    const card = cards.find(c => c.id === 'reserve-shortfall')!
+    expect(card.triggered).toBe(false)
+  })
+
+  it('권장 예비비 정보 없으면 reserve-shortfall untriggered', () => {
+    const cards = getActionCards([], '2026-06-15', {})
+    const card = cards.find(c => c.id === 'reserve-shortfall')!
+    expect(card.triggered).toBe(false)
   })
 
   it('최근 경조사비 결제 있으면 wedding-evidence trigger', () => {
@@ -81,15 +134,16 @@ describe('getActionCards', () => {
     expect(card.triggered).toBe(false)
   })
 
-  it('6개 카드 모두 결과에 포함 (trigger 여부와 무관)', () => {
+  it('7개 카드 모두 결과에 포함 (trigger 여부와 무관)', () => {
     const cards = getActionCards([], '2026-07-01', {})
-    expect(cards).toHaveLength(6)
+    expect(cards).toHaveLength(7)
     const ids = cards.map(c => c.id)
     expect(ids).toContain('young-startup-uncfgd')
+    expect(ids).toContain('reserve-shortfall')
     expect(ids).toContain('business-card-priority')
-    expect(ids).toContain('utility-business-acct')
     expect(ids).toContain('wedding-evidence')
     expect(ids).toContain('noranusan-room')
     expect(ids).toContain('vat-prep')
+    expect(ids).toContain('utility-business-acct')
   })
 })

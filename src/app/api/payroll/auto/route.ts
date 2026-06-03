@@ -13,6 +13,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url)
   const instructorIdRaw = url.searchParams.get('instructorId')
   const yearMonth = url.searchParams.get('yearMonth')
+  const mode = url.searchParams.get('mode') === 'todate' ? 'todate' : 'full'
   if (!instructorIdRaw || !yearMonth || !/^\d{4}-\d{2}$/.test(yearMonth)) {
     return NextResponse.json({ error: 'instructorId, yearMonth (YYYY-MM) 필수' }, { status: 400 })
   }
@@ -20,9 +21,10 @@ export async function GET(req: Request) {
   if (!Number.isFinite(instructorId) || instructorId <= 0) {
     return NextResponse.json({ error: '유효하지 않은 instructorId' }, { status: 400 })
   }
+  const today = new Date().toISOString().slice(0, 10)
   try {
     const [{ counts, byMember }, instructor, rateMap] = await Promise.all([
-      fetchAutoPayrollBreakdown(instructorId, yearMonth, ownerId),
+      fetchAutoPayrollBreakdown(instructorId, yearMonth, ownerId, mode, today),
       fetchInstructorById(instructorId, ownerId),
       fetchRateMapByInstructor(instructorId, ownerId),
     ])

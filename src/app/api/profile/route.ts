@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { loadProfile, saveProfile, type UserProfile } from '@/lib/profile/settings'
+import { loadProfile, saveProfile, sanitizeAnnualGoals, type UserProfile } from '@/lib/profile/settings'
 import { ensureDefaultRoom } from '@/lib/supabase/rooms'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
 
@@ -36,6 +36,10 @@ export async function POST(req: Request) {
     if (!['general', 'simplified'].includes(merged.taxPayerType)) {
       merged.taxPayerType = 'general'
     }
+    // 인적공제 인원: 최소 1 (본인), 정수
+    merged.personalDeductionCount = Math.max(1, Math.floor(Number(merged.personalDeductionCount) || 1))
+    // 연간 목표: sanitize (잘못된 값 null, 비율 0~1 정규화)
+    merged.annualGoals = sanitizeAnnualGoals(merged.annualGoals)
     await saveProfile(merged, auth.ownerId)
     // 신규 가입 직후 첫 profile 저장이면 기본 룸 1개 시드 (멱등 — 이미 있으면 noop)
     try { await ensureDefaultRoom(auth.ownerId) } catch { /* 실패해도 profile은 저장됨 */ }

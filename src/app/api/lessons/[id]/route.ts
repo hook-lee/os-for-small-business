@@ -55,6 +55,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       lessonTime: body.lessonTime,
       instructorId: body.instructorId,
       memo: body.memo,
+      lessonDate: body.lessonDate,   // 드래그 이동 시 날짜 변경
     }, ownerId)
     return NextResponse.json({ ok: true })
   } catch (error) {

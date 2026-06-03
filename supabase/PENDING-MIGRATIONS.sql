@@ -361,3 +361,31 @@ create policy owner_all_delete on member_instructor_rates for delete using (auth
 -- 월별 급여 정산에 "회원별 시급·인센티브 조정액"을 저장 (reload 시 gross 복원용).
 -- total_amount에는 이미 조정액이 반영돼 있고, adjustment는 그 내역 보존·재계산용.
 alter table payroll_records add column if not exists adjustment bigint not null default 0;
+
+-- ============================================================
+-- v3.10: 종소세 인적공제 인원 (원장 직접 입력)
+--
+-- 의도:
+--  - 인적공제는 본인 + 부양가족(소득금액 100만 이하 요건) 1인당 150만 소득공제.
+--    원장마다 부양가족 수가 다르므로 코드에 하드코딩할 수 없다 → 원장이 직접 설정.
+--  - 보수적 기본값 = 1 (본인만). 모르면 과소공제(세금 더 잡힘) 쪽으로 안전.
+--
+-- 멱등: add column if not exists. 여러 번 실행 OK.
+-- ============================================================
+
+alter table profile add column if not exists personal_deduction_count integer not null default 1;
+
+-- ============================================================
+-- v3.11: 연간 KPI 목표 (올해 목표 대시보드)
+--
+-- 의도:
+--  - 원장이 올해 목표(연 매출·순이익·활성회원·신규회원·전환율·재등록률)를 설정하고
+--    실적 대비 달성률을 /goals 대시보드에서 본다.
+--  - 연도별로 다른 목표를 가지므로 jsonb { "2026": {...}, "2027": {...} } 형태로 저장.
+--    각 항목 null = 미설정. 금액 원, 인원 명, 비율 0~1.
+--  - 컬럼 미존재 시 앱은 graceful fallback (목표 저장만 안 됨 — 다른 기능 영향 X).
+--
+-- 멱등: add column if not exists. 여러 번 실행 OK.
+-- ============================================================
+
+alter table profile add column if not exists annual_goals jsonb not null default '{}'::jsonb;

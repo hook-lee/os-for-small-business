@@ -9,12 +9,14 @@ import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
 import { findExpiringMembers, findDormantMembers } from '@/lib/analytics/member-segments'
 import { computePassesKPI, filterPassesByRange } from '@/lib/analytics/sales-report'
-import { simulateVAT, type Quarter } from '@/lib/tax/vat'
+import { simulateAnnualVAT } from '@/lib/tax/vat'
 import { recommendReserve } from '@/lib/tax/reserve'
 import { getUpcomingDueDates } from '@/lib/tax/due-dates'
 import { getActionCards } from '@/lib/advice/action-cards'
 import { computeOverallTrialConversion, groupPassesByMember } from '@/lib/analytics/instructor-kpi'
+import { computeAnnualKPIs } from '@/lib/analytics/annual-kpi'
 import { Card } from '@/components/ui/Card'
+import { GoalSummaryCard } from '@/components/Goals/KpiDashboard'
 import { DueDateBanner } from '@/components/HomeCards/DueDateBanner'
 import { VATForecastCard } from '@/components/HomeCards/VATForecastCard'
 import { ReserveCard } from '@/components/HomeCards/ReserveCard'
@@ -27,7 +29,6 @@ export default async function HomePage() {
   const today = new Date().toISOString().slice(0, 10)
   const year = parseInt(today.slice(0, 4), 10)
   const month = parseInt(today.slice(5, 7), 10)
-  const quarter = Math.ceil(month / 3) as Quarter
   const yearMonth = today.slice(0, 7)
   const monthStart = `${yearMonth}-01`
   const monthEndDay = new Date(year, month, 0).getDate()
@@ -60,12 +61,10 @@ export default async function HomePage() {
 
   const profile = await loadProfile(ownerId).catch(() => null)
 
-  // KPIs
-  const activeMemberIds = new Set<number>()
-  for (const p of passes) {
-    if (p.status === '이용중' && (p.remainingCount ?? 0) > 0) activeMemberIds.add(p.memberId)
-  }
-  const activeMemberCount = activeMemberIds.size
+  // 연간 KPI (활성 회원 등) — 올해 목표 대시보드와 동일 소스로 계산해 페이지 내 숫자 일치 보장
+  const annualKpis = computeAnnualKPIs(year, today, { transactions, members, passes })
+  const annualGoal = profile?.annualGoals?.[String(year)] ?? null
+  const activeMemberCount = annualKpis.activeMembers
 
   const expiring = findExpiringMembers(members, passes, today, 7)
   const dormant = findDormantMembers(members, today, 60)
@@ -77,19 +76,24 @@ export default async function HomePage() {
   const paidInstructorIds = new Set(payrollRecords.filter(r => r.paid).map(r => r.instructorId))
   const unpaidInstructors = instructors.filter(i => i.role !== 'owner' && !paidInstructorIds.has(i.id))
 
-  // Tax data (기존)
-  const vatResult = simulateVAT(transactions, year, quarter, { taxPayerType: profile?.taxPayerType ?? 'general' })
+  // Tax data — 부가세는 연 단위 단일 소스(simulateAnnualVAT). 분기 함수 직접 노출 X.
+  const taxPayerType = profile?.taxPayerType ?? 'general'
+  const vatResult = simulateAnnualVAT(transactions, year, today, { taxPayerType })
   const reserveResult = recommendReserve(transactions, today, {
+    personalDeductionCount: profile?.personalDeductionCount ?? 1,
     noranusanContribution: profile?.noranusanAnnualContribution ?? 0,
     pensionSavings: profile?.pensionAnnualContribution ?? 0,
     youngStartupReduction: (profile?.isYoungStartupEligible ? profile.youngStartupReductionRate : 0),
-    taxPayerType: profile?.taxPayerType ?? 'general',
+    taxPayerType,
   })
-  const dueDates = getUpcomingDueDates(today)
+  const dueDates = getUpcomingDueDates(today, taxPayerType)
   const nextDue = dueDates[0]
   const actionCards = getActionCards(transactions, today, {
     noranusanContribution: profile?.noranusanAnnualContribution ?? 0,
     isYoungStartupSet: profile?.isYoungStartupEligible ?? false,
+    recommendedMonthlyReserve: reserveResult.monthly,
+    incomeTaxEstimate: reserveResult.breakdown.incomeTaxTotal,
+    taxPayerType,
   }).filter(c => c.triggered)
   const byMember = groupPassesByMember(passes)
   const conversion = computeOverallTrialConversion(byMember)
@@ -152,6 +156,9 @@ export default async function HomePage() {
           </div>
         </Card>
       )}
+
+      {/* 올해 목표 달성 현황 */}
+      <GoalSummaryCard kpis={annualKpis} goal={annualGoal} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* 오늘 일정 */}

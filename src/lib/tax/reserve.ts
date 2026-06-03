@@ -1,18 +1,21 @@
 import type { Transaction, ReserveRecommendation } from '@/types/domain'
-import { simulateVAT, type Quarter, type VATOptions } from './vat'
+import { simulateAnnualVAT, type VATOptions } from './vat'
 import { simulateIncomeTax, type IncomeTaxOptions } from './income-tax'
 
 export interface ReserveOptions extends IncomeTaxOptions {
   taxPayerType?: 'general' | 'simplified'
+  /** 간이과세자 납부의무 면제 기준 (연 공급대가). simulateAnnualVAT로 전달. */
+  simplifiedExemptionThreshold?: number
+  /** 간이과세자 부가율. simulateAnnualVAT로 전달. */
+  simplifiedAddedValueRate?: number
 }
 
 /**
- * 권장 월 예비비.
+ * 권장 월 예비비. — 부가세·종소세 엔진의 '단일 소스'를 그대로 합산한다.
  *
- * 부가세: 연초~현재 분기의 estimatedVAT 합 × 4 / (경과 분기 수) → 연환산.
- *         (각 분기 estimatedVAT < 0이면 0으로 처리. 환급은 별도 KPI.)
- * 종소세: simulateIncomeTax 결과의 estimatedTax (이미 연환산 + 감면 반영).
- * 월 권장 = (vat연 + 소득세연) / 12, Math.round.
+ * 부가세: simulateAnnualVAT (일반=분기기준 연환산 / 간이=연환산 공급대가 + 면제 판정).
+ * 종소세: simulateIncomeTax의 totalTax (국세 + 지방세, 연환산 + 감면 반영).
+ * 월 권장 = (부가세연 + 종소세연) / 12, Math.round.
  */
 export function recommendReserve(
   transactions: Transaction[],
@@ -20,20 +23,17 @@ export function recommendReserve(
   options: ReserveOptions = {},
 ): ReserveRecommendation {
   const year = parseInt(asOfDate.slice(0, 4), 10)
-  const month = parseInt(asOfDate.slice(5, 7), 10)
-  const currentQuarter = Math.ceil(month / 3) as Quarter
 
-  const vatOptions: VATOptions = { taxPayerType: options.taxPayerType ?? 'general' }
-
-  let vatSoFar = 0
-  for (let q = 1; q <= currentQuarter; q++) {
-    const result = simulateVAT(transactions, year, q as Quarter, vatOptions)
-    vatSoFar += Math.max(0, result.estimatedVAT)
+  const vatOptions: VATOptions = {
+    taxPayerType: options.taxPayerType ?? 'general',
+    simplifiedExemptionThreshold: options.simplifiedExemptionThreshold,
+    simplifiedAddedValueRate: options.simplifiedAddedValueRate,
   }
-  const vatTotal = Math.round((vatSoFar * 4) / currentQuarter)
+  const vatResult = simulateAnnualVAT(transactions, year, asOfDate, vatOptions)
+  const vatTotal = Math.max(0, vatResult.estimatedAnnualVAT)
 
   const incomeTaxResult = simulateIncomeTax(transactions, asOfDate, options)
-  const incomeTaxTotal = incomeTaxResult.estimatedTax
+  const incomeTaxTotal = incomeTaxResult.totalTax   // 국세 + 지방세
 
   const annualTaxEstimate = vatTotal + incomeTaxTotal
   const monthly = Math.round(annualTaxEstimate / 12)

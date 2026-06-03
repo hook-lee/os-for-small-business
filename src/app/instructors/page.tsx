@@ -1,21 +1,29 @@
 import { fetchAllInstructors, countMembersByInstructor } from '@/lib/supabase/instructors'
 import { fetchAllPasses } from '@/lib/supabase/passes'
 import { fetchPayrollByMonth } from '@/lib/supabase/payroll'
+import { fetchAllRates } from '@/lib/supabase/member-instructor-rates'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { InstructorsTabs } from './InstructorsTabs'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
+import { groupPassesByMember } from '@/lib/analytics/instructor-kpi'
+import { computeInstructorScorecards, type InstructorScorecardRow, type IncentiveSetting } from '@/lib/analytics/instructor-scorecard'
+import { resolvePeriod, isPeriodKey, type PeriodKey } from '@/lib/analytics/period'
 
 export const dynamic = 'force-dynamic'
 
-export default async function InstructorsPage({ searchParams }: { searchParams: Promise<{ tab?: string; ym?: string }> }) {
+type Tab = 'list' | 'payroll' | 'scorecard'
+
+export default async function InstructorsPage({ searchParams }: { searchParams: Promise<{ tab?: string; ym?: string; period?: string }> }) {
   const params = await searchParams
-  const tab = params.tab === 'payroll' ? 'payroll' : 'list'
+  const tab: Tab = params.tab === 'payroll' ? 'payroll' : params.tab === 'scorecard' ? 'scorecard' : 'list'
   const yearMonth = params.ym || new Date().toISOString().slice(0, 7)
+  const periodKey: PeriodKey = isPeriodKey(params.period) ? params.period : 'month'
 
   let instructors: Awaited<ReturnType<typeof fetchAllInstructors>> = []
   let payrollRecords: Awaited<ReturnType<typeof fetchPayrollByMonth>> = []
   const memberCounts: Record<number, number> = {}
   const revenueByInstructor: Record<number, number> = {}
+  let scorecards: InstructorScorecardRow[] = []
   const ownerId = await requireOwnerId().catch(() => 'no-auth')
 
   if (hasSupabaseConfig()) {
@@ -31,6 +39,23 @@ export default async function InstructorsPage({ searchParams }: { searchParams: 
           revenueByInstructor[p.instructorId] = (revenueByInstructor[p.instructorId] ?? 0) + (p.paymentAmount ?? 0)
         }
       } catch {/* fallback */}
+    } else if (tab === 'scorecard') {
+      try {
+        const today = new Date().toISOString().slice(0, 10)
+        const [allPasses, rates] = await Promise.all([
+          fetchAllPasses(ownerId),
+          fetchAllRates(ownerId),
+        ])
+        const allByMember = groupPassesByMember(allPasses)
+        const ratesByInstructor = new Map<number, IncentiveSetting[]>()
+        for (const r of rates) {
+          const arr = ratesByInstructor.get(r.instructorId) ?? []
+          arr.push({ incentivePerSession: r.incentivePerSession })
+          ratesByInstructor.set(r.instructorId, arr)
+        }
+        const period = resolvePeriod(periodKey, today)
+        scorecards = computeInstructorScorecards(instructors, allPasses, allByMember, period, ratesByInstructor)
+      } catch {/* fallback: 빈 scorecards */}
     } else {
       payrollRecords = await fetchPayrollByMonth(yearMonth, ownerId)
     }
@@ -50,6 +75,8 @@ export default async function InstructorsPage({ searchParams }: { searchParams: 
         revenueByInstructor={revenueByInstructor}
         payrollMonth={yearMonth}
         payrollRecords={payrollRecords}
+        scorecards={scorecards}
+        periodKey={periodKey}
       />
     </div>
   )

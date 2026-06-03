@@ -6,6 +6,7 @@ import type { UnifiedLesson } from '@/lib/supabase/lessons-combined'
 import { instructorColor } from '@/lib/analytics/instructor-sort'
 import { buildMonthGrid, groupByDate } from '@/lib/analytics/lessons-view'
 import { LessonCard } from './DailyByInstructor'
+import { DraggableLesson, DroppableDay } from './dnd'
 
 /**
  * 월별 — 시간+이름 압축 카드 리스트.
@@ -59,8 +60,9 @@ export function MonthlyCardList({
           const dayNum = parseInt(cell.date.slice(8), 10)
 
           return (
-            <div
+            <DroppableDay
               key={cell.date}
+              date={cell.date}
               className={`border border-neutral-100 rounded p-1 flex flex-col min-h-[120px] ${
                 isToday ? 'bg-blue-50/40 border-blue-300' : 'bg-white'
               }`}
@@ -82,11 +84,12 @@ export function MonthlyCardList({
 
               <div className="flex-1 space-y-0.5">
                 {visible.map(l => (
-                  <CompactCard
-                    key={`${l.type}-${l.id}`}
-                    lesson={l}
-                    onClick={() => onSelectLesson(l)}
-                  />
+                  <DraggableLesson key={`${l.type}-${l.id}`} lesson={l}>
+                    <CompactCard
+                      lesson={l}
+                      onClick={() => onSelectLesson(l)}
+                    />
+                  </DraggableLesson>
                 ))}
                 {remaining > 0 && (
                   <button
@@ -98,7 +101,7 @@ export function MonthlyCardList({
                   </button>
                 )}
               </div>
-            </div>
+            </DroppableDay>
           )
         })}
       </div>
