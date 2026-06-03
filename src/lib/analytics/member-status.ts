@@ -34,14 +34,29 @@ export interface PassLike {
 }
 
 /**
+ * 명백히 '사용 불가'로 못박힌 수강권 상태 키워드.
+ * 기간·잔여가 멀쩡해도 이 상태면 active 아님 (환불/정지/양도/해지/만료/종료 등).
+ */
+const INACTIVE_STATUS_KEYWORDS = ['만료', '환불', '정지', '양도', '취소', '해지', '종료']
+
+export function isInactivePassStatus(status: string | null | undefined): boolean {
+  if (!status) return false
+  return INACTIVE_STATUS_KEYWORDS.some(k => status.includes(k))
+}
+
+/**
  * 회원에 대한 active 패스(현재 사용 가능) 추출.
- *  - status === '이용중'
- *  - remaining_count > 0
- *  - 종료일이 today 이상
+ *
+ * 판정 기준 = 잔여 횟수 > 0  &&  이용기간(종료일) 미도래  &&  상태가 명시적 종료/무효가 아님.
+ *
+ * status === '이용중' 같은 '정확한 문자열'에는 의존하지 않는다 —
+ * 과거 임포트 데이터는 status 표기가 제각각(빈값/'유효'/'활성' 등)이라
+ * 기간·잔여가 멀쩡한데도 만료로 잘못 잡히던 버그가 있었음. 이제 출처(앱/임포트/시드)
+ * 무관하게 '잔여+기간'을 중심으로 판정하고, 환불·정지 등 명시적 종료 상태만 배제한다.
  */
 export function findActivePasses(passes: PassLike[], today: string): PassLike[] {
   return passes.filter(p =>
-    p.status === '이용중' &&
+    !isInactivePassStatus(p.status) &&
     (p.remainingCount ?? 0) > 0 &&
     (p.endDate === null || p.endDate >= today),
   )

@@ -53,4 +53,28 @@ describe('evaluatePassGuard', () => {
     const g = evaluatePassGuard([pass({ remainingCount: 0 }), pass({ remainingCount: 3 })], today)
     expect(g.usable).toBe(true)
   })
+
+  // ── 과거 임포트 데이터 버그 수정: status 문자열에 의존하지 않고 잔여+기간으로 판정 ──
+  it('status가 빈값/null이어도 잔여>0 & 기간 유효면 usable (임포트 데이터)', () => {
+    expect(evaluatePassGuard([pass({ status: null })], today).usable).toBe(true)
+    expect(evaluatePassGuard([pass({ status: '' })], today).usable).toBe(true)
+  })
+
+  it("status '유효'·'활성' 같은 다른 표기도 잔여+기간 멀쩡하면 usable", () => {
+    expect(evaluatePassGuard([pass({ status: '유효' })], today).usable).toBe(true)
+    expect(evaluatePassGuard([pass({ status: '활성' })], today).usable).toBe(true)
+    expect(evaluatePassGuard([pass({ status: '사용중' })], today).usable).toBe(true)
+  })
+
+  it('명시적 종료/무효 상태(환불·정지·양도·해지)는 기간·잔여 멀쩡해도 차단', () => {
+    expect(evaluatePassGuard([pass({ status: '환불' })], today).usable).toBe(false)
+    expect(evaluatePassGuard([pass({ status: '정지' })], today).usable).toBe(false)
+    expect(evaluatePassGuard([pass({ status: '양도' })], today).usable).toBe(false)
+    expect(evaluatePassGuard([pass({ status: '해지' })], today).usable).toBe(false)
+  })
+
+  it("그래도 '이용기간 지남'·'잔여 0'은 status 무관하게 만료", () => {
+    expect(evaluatePassGuard([pass({ status: '유효', endDate: '2026-05-31' })], today).usable).toBe(false)
+    expect(evaluatePassGuard([pass({ status: '유효', remainingCount: 0 })], today).usable).toBe(false)
+  })
 })
