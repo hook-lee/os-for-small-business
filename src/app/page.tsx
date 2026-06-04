@@ -7,7 +7,7 @@ import { loadTransactions } from '@/lib/data/loader'
 import { loadProfile } from '@/lib/profile/settings'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
-import { findExpiringMembers, findDormantMembers } from '@/lib/analytics/member-segments'
+import { findExpiringMembers, findDormantMembers, findLowRemainingMembers } from '@/lib/analytics/member-segments'
 import { computePassesKPI, filterPassesByRange } from '@/lib/analytics/sales-report'
 import { simulateAnnualVAT } from '@/lib/tax/vat'
 import { recommendReserve } from '@/lib/tax/reserve'
@@ -68,6 +68,8 @@ export default async function HomePage() {
 
   const expiring = findExpiringMembers(members, passes, today, 7)
   const dormant = findDormantMembers(members, today, 60)
+  const lowRemainingThreshold = profile?.lowRemainingThreshold ?? 3
+  const lowRemaining = findLowRemainingMembers(members, passes, today, lowRemainingThreshold)
 
   const passesThisMonth = filterPassesByRange(passes, monthStart, monthEnd)
   const monthlySalesKPI = computePassesKPI(passesThisMonth)
@@ -131,10 +133,16 @@ export default async function HomePage() {
       </div>
 
       {/* 알림 / 액션 필요 */}
-      {(expiring.length > 0 || dormant.length > 0 || unpaidInstructors.length > 0) && (
+      {(expiring.length > 0 || dormant.length > 0 || unpaidInstructors.length > 0 || lowRemaining.length > 0) && (
         <Card className="border-amber-200 bg-amber-50">
           <div className="text-sm font-semibold text-amber-900 mb-2">⚠️ 처리 필요</div>
           <div className="space-y-1.5">
+            {lowRemaining.length > 0 && (
+              <a href="/members?filter=low" className="block text-sm hover:underline">
+                <span className="text-orange-700 font-medium">잔여 {lowRemainingThreshold}회 이하 {lowRemaining.length}명</span>
+                <span className="text-neutral-500 text-xs ml-2">재등록 안내 필요 (설정에서 기준 변경)</span>
+              </a>
+            )}
             {expiring.length > 0 && (
               <a href="/members?filter=expiring" className="block text-sm hover:underline">
                 <span className="text-amber-700 font-medium">만료 임박 {expiring.length}명</span>

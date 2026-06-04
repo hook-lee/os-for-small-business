@@ -93,6 +93,23 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
         />
       </div>
 
+      <div>
+        <label className="block text-sm font-medium mb-1">잔여횟수 알림 기준</label>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-neutral-500">잔여</span>
+          <input
+            type="number"
+            min="0"
+            max="99"
+            value={profile.lowRemainingThreshold}
+            onChange={e => setProfile({ ...profile, lowRemainingThreshold: Math.min(99, Math.max(0, Math.floor(Number(e.target.value) || 0))) })}
+            className="border rounded px-2 py-1 w-20 text-right tabular-nums"
+          />
+          <span className="text-sm text-neutral-500">회 이하면 홈에서 알림</span>
+        </div>
+        <p className="text-xs text-neutral-400 mt-1">이 횟수 이하로 남은 회원을 홈 &lsquo;처리 필요&rsquo;에 띄워 재등록 안내를 놓치지 않게. 0이면 끔.</p>
+      </div>
+
       <div className="pt-3 border-t border-neutral-200">
         <h3 className="text-sm font-semibold text-neutral-700 mb-2">개인 정보 (세금 시뮬레이터용)</h3>
       </div>

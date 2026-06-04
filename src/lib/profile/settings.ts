@@ -63,6 +63,7 @@ export interface UserProfile {
   taxStartMonth: string | null         // 사업 개시 연월 'YYYY-MM' (과세 타임라인 시작점)
   taxGeneralSinceMonth: string | null  // 일반과세 전환 연월 'YYYY-MM'. null이면 전환 없음
   annualGoals: Record<string, AnnualGoal>  // 연도(YYYY) → 연간 KPI 목표. 기본 {} = 미설정
+  lowRemainingThreshold: number        // 잔여 N회 이하면 홈에서 알림. 기본 3. 0이면 끔
 }
 
 export const DEFAULT_PROFILE: UserProfile = {
@@ -80,6 +81,7 @@ export const DEFAULT_PROFILE: UserProfile = {
   taxStartMonth: null,
   taxGeneralSinceMonth: null,
   annualGoals: {},
+  lowRemainingThreshold: 3,
 }
 
 interface ProfileRow {
@@ -98,6 +100,7 @@ interface ProfileRow {
   tax_start_month?: string | null
   tax_general_since_month?: string | null
   annual_goals?: Record<string, unknown> | string | null
+  low_remaining_threshold?: string | number | null
 }
 
 function rowToProfile(row: ProfileRow): UserProfile {
@@ -121,6 +124,9 @@ function rowToProfile(row: ProfileRow): UserProfile {
     annualGoals: sanitizeAnnualGoals(
       typeof row.annual_goals === 'string' ? safeJsonParse(row.annual_goals) : row.annual_goals,
     ),
+    lowRemainingThreshold: row.low_remaining_threshold == null
+      ? 3
+      : Math.max(0, Math.floor(Number(row.low_remaining_threshold)) || 0),
   }
 }
 
@@ -183,6 +189,7 @@ export async function saveProfile(profile: UserProfile, ownerId: string): Promis
     tax_start_month: profile.taxStartMonth ?? null,
     tax_general_since_month: profile.taxGeneralSinceMonth ?? null,
     annual_goals: profile.annualGoals ?? {},
+    low_remaining_threshold: profile.lowRemainingThreshold ?? 3,
     updated_at: new Date().toISOString(),
   }
 
@@ -200,7 +207,7 @@ export async function saveProfile(profile: UserProfile, ownerId: string): Promis
   ): Promise<void> => {
     const msg = error.message
     const missing: string[] = []
-    for (const col of ['workspace_name', 'role', 'business_phone', 'personal_deduction_count', 'tax_payer_type', 'tax_start_month', 'tax_general_since_month', 'annual_goals']) {
+    for (const col of ['workspace_name', 'role', 'business_phone', 'personal_deduction_count', 'tax_payer_type', 'tax_start_month', 'tax_general_since_month', 'annual_goals', 'low_remaining_threshold']) {
       if (msg.includes(col)) missing.push(col)
     }
     if (missing.length === 0) throw new Error(`프로필 저장 실패: ${msg}`)

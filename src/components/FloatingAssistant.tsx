@@ -248,7 +248,7 @@ export function FloatingAssistant() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-5 right-5 z-50 group flex items-center gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all px-4 py-3"
+          className="fixed bottom-20 md:bottom-5 right-5 z-50 group flex items-center gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all px-4 py-3"
           aria-label="AI 비서 열기"
         >
           <span className="text-lg">💬</span>

@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { Nav } from './Nav'
+import { MobileTabBar } from './MobileTabBar'
 import { FloatingAssistant } from './FloatingAssistant'
 import { UserMenu } from './UserMenu'
 
@@ -39,14 +40,16 @@ export function AppShell({
               <span className="text-neutral-400 text-sm font-normal"> · {workspaceName}</span>
             )}
           </h1>
-          <div className="flex items-center gap-4">
+          {/* 데스크탑: 상단 가로 메뉴. 모바일에선 숨기고 하단 탭바가 담당 */}
+          <div className="hidden md:flex items-center gap-4">
             <Nav />
             <UserMenu email={userEmail} />
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 py-6 pb-24 md:pb-6">{children}</main>
       {userEmail && <FloatingAssistant />}
+      {userEmail && <MobileTabBar userEmail={userEmail} />}
     </>
   )
 }

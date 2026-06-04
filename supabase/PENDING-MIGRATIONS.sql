@@ -403,3 +403,11 @@ alter table profile add column if not exists annual_goals jsonb not null default
 -- ============================================================
 
 alter table group_sessions add column if not exists category text not null default '그룹';
+
+-- ============================================================
+-- v3.13: 잔여횟수 알림 기준 (원장 설정)
+--  - 잔여 N회 이하 회원을 홈 '처리 필요'에 알림. 기본 3. 0이면 끔.
+-- 멱등: add column if not exists.
+-- ============================================================
+
+alter table profile add column if not exists low_remaining_threshold integer not null default 3;

@@ -49,6 +49,41 @@ export function findExpiringMembers(
   return result.sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry)
 }
 
+export interface LowRemainingMemberInfo {
+  member: Member
+  remainingCount: number
+  passName: string
+}
+
+/**
+ * 잔여 N회 이하 회원 (활성 수강권 기준). 회원당 1개(잔여 가장 적은 active pass).
+ *  - 명시적 종료(환불·정지·만료) 상태 제외, 잔여 1~threshold, 이용기간 미만료.
+ *  - threshold <= 0이면 알림 끔(빈 배열).
+ */
+export function findLowRemainingMembers(
+  members: Member[],
+  passes: Pass[],
+  today: string,
+  threshold: number,
+): LowRemainingMemberInfo[] {
+  if (threshold <= 0) return []
+  const memberMap = new Map(members.map(m => [m.id, m]))
+  const best = new Map<number, LowRemainingMemberInfo>()
+  for (const p of passes) {
+    if (isInactivePassStatus(p.status)) continue
+    const remaining = p.remainingCount ?? 0
+    if (remaining <= 0 || remaining > threshold) continue
+    if (p.endDate && p.endDate < today) continue  // 이용기간 만료 제외
+    const member = memberMap.get(p.memberId)
+    if (!member) continue
+    const prev = best.get(p.memberId)
+    if (!prev || remaining < prev.remainingCount) {
+      best.set(p.memberId, { member, remainingCount: remaining, passName: p.passName })
+    }
+  }
+  return Array.from(best.values()).sort((a, b) => a.remainingCount - b.remainingCount)
+}
+
 export interface DormantMemberInfo {
   member: Member
   lastAttendedAt: string | null
