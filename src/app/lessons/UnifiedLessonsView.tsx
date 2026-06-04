@@ -521,7 +521,7 @@ function WeekCard({ lesson, slotIndex, slotTotal, onClick }: {
       </button>
 
       {hoverPos && (
-        <div className="fixed z-50" style={{ left: hoverPos.x, top: hoverPos.y }}>
+        <div className="hidden md:block fixed z-50" style={{ left: hoverPos.x, top: hoverPos.y }}>
           <LessonHoverCard lesson={lesson} />
         </div>
       )}

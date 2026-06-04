@@ -217,7 +217,59 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
         </Card>
       )}
 
-      <Card className="p-0 overflow-hidden">
+      {/* 모바일: 카드 레이아웃 (가로로 긴 표 대신) */}
+      <div className="md:hidden space-y-2">
+        {sortedInstructors.map(inst => (
+          <Card key={inst.id} className="space-y-2">
+            {editingId === inst.id ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  {inst.color && <span className="inline-block w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: inst.color }} />}
+                  <input type="text" value={editDraft.name} onChange={e => setEditDraft(d => ({ ...d, name: e.target.value }))} className="flex-1 border border-neutral-300 rounded px-2 py-1 text-sm" placeholder="이름" />
+                </div>
+                <input type="text" value={editDraft.phone} onChange={e => setEditDraft(d => ({ ...d, phone: e.target.value }))} className="w-full border border-neutral-300 rounded px-2 py-1 text-sm" placeholder="전화번호" />
+                <div className="grid grid-cols-2 gap-2">
+                  {(['ratePrivate', 'rateRehab', 'rateDuet', 'rateGroup'] as const).map((key, i) => (
+                    <label key={key} className="text-xs text-neutral-500">{['개인', '재활', '듀엣', '그룹'][i]} 시급
+                      <input type="number" value={editDraft[key]} onChange={e => setEditDraft(d => ({ ...d, [key]: e.target.value }))} className="block w-full mt-0.5 border border-neutral-300 rounded px-2 py-1 text-right text-sm" min="0" step="1000" />
+                    </label>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => saveEdit(inst.id)} disabled={savingId === inst.id} className="flex-1 bg-blue-600 text-white px-3 py-1.5 rounded text-sm disabled:bg-blue-300">{savingId === inst.id ? '저장 중...' : '저장'}</button>
+                  <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-sm text-neutral-500">취소</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {inst.color && <span className="inline-block w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: inst.color }} />}
+                    <a href={`/instructors/${inst.id}`} className="font-semibold text-blue-600 truncate">{inst.name}</a>
+                    <span className="text-[10px] text-neutral-500 shrink-0">{inst.role === 'owner' ? '👑 오너' : roleLabel(inst.role)}</span>
+                  </div>
+                  <div className="flex gap-3 shrink-0">
+                    <button onClick={() => startEdit(inst)} className="text-xs text-blue-600">수정</button>
+                    <button onClick={() => handleDelete(inst)} disabled={inst.role === 'owner'} className="text-xs text-red-600 disabled:text-neutral-300">삭제</button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-neutral-600">
+                  <div className="tabular-nums">📞 {inst.phone ?? '—'}</div>
+                  <div><a href={`/instructors/${inst.id}`} className="text-blue-600">담당 {memberCounts[inst.id] ?? 0}명</a></div>
+                  <div className="col-span-2 tabular-nums">💰 매출기여 {(revenueByInstructor[inst.id] ?? 0).toLocaleString()}원</div>
+                  <div className="col-span-2 text-neutral-500 leading-relaxed">시급 · {ratesSummary(inst)}</div>
+                </div>
+              </>
+            )}
+          </Card>
+        ))}
+        {sortedInstructors.length === 0 && (
+          <Card><div className="text-sm text-neutral-400 text-center py-4">강사가 아직 없습니다.</div></Card>
+        )}
+      </div>
+
+      {/* 데스크탑: 표 */}
+      <Card className="hidden md:block p-0 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-neutral-50 text-xs text-neutral-500 uppercase">
