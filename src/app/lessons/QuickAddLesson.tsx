@@ -35,9 +35,18 @@ export function QuickAddLesson({
   const [selectedInstructorId, setSelectedInstructorId] = useState<number | null>(null)
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null)
 
-  // 그룹 전용
+  // 그룹/예약형 전용
   const [sessionName, setSessionName] = useState('')
   const [capacity, setCapacity] = useState(4)
+  const [category, setCategory] = useState('그룹')
+
+  // 종류 선택 시 정원 기본값 자동 (개인=1, 듀엣=2, 그룹=4) — 사용자가 바꿀 수 있음
+  function changeCategory(c: string) {
+    setCategory(c)
+    if (c === '개인') setCapacity(1)
+    else if (c === '듀엣') setCapacity(2)
+    else if (c === '그룹') setCapacity(4)
+  }
 
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -121,6 +130,7 @@ export function QuickAddLesson({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             sessionName: sessionName.trim(),
+            category,
             instructorId: selectedInstructorId,
             roomId: selectedRoomId,
             lessonDate: date,
@@ -139,6 +149,8 @@ export function QuickAddLesson({
       setSelectedMemberId(null)
       setPassGuard(null)
       setSessionName('')
+      setCategory('그룹')
+      setCapacity(4)
       onClose()
     } catch (e) {
       setError((e as Error).message)
@@ -237,9 +249,27 @@ export function QuickAddLesson({
             </div>
           )}
 
-          {/* 그룹 — 세션 이름 + 정원 */}
+          {/* 그룹/예약형 — 종류 + 세션 이름 + 정원 */}
           {type === 'group' && (
             <>
+              <div>
+                <label className="block text-xs text-neutral-500 mb-1">수업 종류 (예약형)</label>
+                <div className="flex gap-1">
+                  {['개인', '재활', '듀엣', '그룹'].map(c => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => changeCategory(c)}
+                      className={`flex-1 py-1.5 text-sm rounded-md border ${
+                        category === c ? 'bg-purple-600 text-white border-purple-600 font-medium' : 'bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50'
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-neutral-400 mt-1">개인=정원 1 · 듀엣=2 · 그룹=정원만큼. 회원이 직접 예약하는 수업이에요. (급여도 종류대로 집계)</p>
+              </div>
               <div>
                 <label className="block text-xs text-neutral-500 mb-1">세션 이름 *</label>
                 <input

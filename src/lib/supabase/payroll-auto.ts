@@ -49,9 +49,11 @@ export async function fetchAutoPayrollBreakdown(
     if (ownerId !== 'no-auth') lessonsQ = lessonsQ.eq('owner_id', ownerId)
     const { data: lessons } = await lessonsQ
 
+    // select('*')로 받아 category 컬럼이 아직 없는 배포 DB(마이그레이션 전)에서도 에러 없이
+    // category=undefined → '그룹'으로 폴백 (기존 동작 유지).
     let groupQ = supabase
       .from('group_sessions')
-      .select('id')
+      .select('*')
       .eq('instructor_id', instructorId)
       .eq('active', true)
       .gte('lesson_date', start)
@@ -71,8 +73,10 @@ export async function fetchAutoPayrollBreakdown(
       return p?.pass_name ?? null
     })
 
-    const groupSessionsCount = (groupSessions ?? []).length
-    const counts = bucketLessonCounts(passNames, groupSessionsCount)
+    const groupRows = (groupSessions ?? []) as Array<{ id: number; category?: string | null }>
+    const groupSessionsCount = groupRows.length
+    // 예약형 수업을 종류별로 버킷팅 (개인 정원1 = 개인 시급, 그룹 = 그룹 시급 등)
+    const counts = bucketLessonCounts(passNames, groupRows.map(g => g.category ?? null))
 
     // 회원별 분해
     const memberMap = new Map<number, MemberLessonBucket>()

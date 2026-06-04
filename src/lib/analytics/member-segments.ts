@@ -1,5 +1,6 @@
 import type { Member } from '@/lib/supabase/members'
 import type { Pass } from '@/lib/supabase/passes'
+import { isInactivePassStatus } from './member-status'
 
 export interface ExpiringMemberInfo {
   member: Member
@@ -26,7 +27,10 @@ export function findExpiringMembers(
 
   const result: ExpiringMemberInfo[] = []
   for (const p of passes) {
-    if (p.status !== '이용중') continue
+    // status 정확 문자열('이용중')에 의존하지 않음 — 임포트 데이터는 표기가 제각각.
+    // 명시적 종료(환불·정지·만료 등)만 제외하고, 잔여>0 + 기간 임박으로 판정.
+    if (isInactivePassStatus(p.status)) continue
+    if ((p.remainingCount ?? 0) <= 0) continue
     if (!p.endDate) continue
     if (p.endDate > cutoffStr) continue
     if (p.endDate < today) continue  // 이미 만료된 건 제외 (별도 휴면으로 잡힘)

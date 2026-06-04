@@ -46,6 +46,7 @@ export async function POST(req: Request) {
     }
     const id = await createGroupSession({
       sessionName: body.sessionName,
+      category: body.category,
       lessonDate: body.lessonDate,
       lessonTime: body.lessonTime,
       instructorId: body.instructorId ?? null,

@@ -44,18 +44,38 @@ export function passNameToPayrollCategory(passName: string | null | undefined): 
   return 'private'
 }
 
+/**
+ * 예약형 수업(group_sessions)의 '수업 종류' → 급여 카테고리.
+ * group_sessions는 개인(정원1)·듀엣(정원2)·그룹(정원N)을 모두 담는 통합 모델이므로,
+ * 종류를 보고 정확한 급여 버킷에 넣어야 한다. (기본 = group)
+ */
+export function sessionCategoryToPayrollCategory(category: string | null | undefined): PayrollCategory {
+  if (!category) return 'group'
+  if (category.includes('재활')) return 'rehab'
+  if (category.includes('듀엣')) return 'duet'
+  if (category.includes('개인') || category.includes('1:1')) return 'private'
+  return 'group'   // 그룹/소그룹/기타
+}
+
+interface PayrollBucket { privateCount: number; rehabCount: number; duetCount: number; groupCount: number }
+
+function addToBucket(counts: PayrollBucket, cat: PayrollCategory): void {
+  if (cat === 'private') counts.privateCount++
+  else if (cat === 'rehab') counts.rehabCount++
+  else if (cat === 'duet') counts.duetCount++
+  else counts.groupCount++
+}
+
+/**
+ * 개별 수업(passName) + 예약형 수업(category)을 각각 급여 카테고리로 분류해 합산.
+ * (기존엔 group_sessions를 무조건 group으로 셌으나, 정원1=개인 등을 위해 종류별로 버킷팅.)
+ */
 export function bucketLessonCounts(
   individualPassNames: Array<string | null>,
-  groupSessionCount: number,
-): { privateCount: number; rehabCount: number; duetCount: number; groupCount: number } {
-  const counts = { privateCount: 0, rehabCount: 0, duetCount: 0, groupCount: 0 }
-  for (const name of individualPassNames) {
-    const cat = passNameToPayrollCategory(name)
-    if (cat === 'private') counts.privateCount++
-    else if (cat === 'rehab') counts.rehabCount++
-    else if (cat === 'duet') counts.duetCount++
-    else if (cat === 'group') counts.groupCount++
-  }
-  counts.groupCount += groupSessionCount
+  groupSessionCategories: Array<string | null>,
+): PayrollBucket {
+  const counts: PayrollBucket = { privateCount: 0, rehabCount: 0, duetCount: 0, groupCount: 0 }
+  for (const name of individualPassNames) addToBucket(counts, passNameToPayrollCategory(name))
+  for (const cat of groupSessionCategories) addToBucket(counts, sessionCategoryToPayrollCategory(cat))
   return counts
 }

@@ -7,6 +7,7 @@ export interface GroupSession {
   roomId: number | null
   roomName: string | null
   sessionName: string
+  category: string          // 수업 종류: 개인/재활/듀엣/그룹 (예약형 수업 통합 모델, 급여 종류별 집계)
   lessonDate: string
   lessonTime: string
   durationMinutes: number
@@ -22,6 +23,7 @@ interface GroupSessionRow {
   instructor_id: number | null
   room_id: number | null
   session_name: string
+  category: string | null
   lesson_date: string
   lesson_time: string
   duration_minutes: number
@@ -41,6 +43,7 @@ function rowToSession(row: GroupSessionRow, reservedCount = 0, attendedCount = 0
     roomId: row.room_id,
     roomName: row.rooms?.name ?? null,
     sessionName: row.session_name,
+    category: row.category ?? '그룹',
     lessonDate: row.lesson_date,
     lessonTime: row.lesson_time,
     durationMinutes: row.duration_minutes,
@@ -130,6 +133,7 @@ export interface CreateGroupSessionInput {
   instructorId?: number | null
   roomId?: number | null
   sessionName: string
+  category?: string
   lessonDate: string
   lessonTime: string
   durationMinutes?: number
@@ -143,6 +147,7 @@ export async function createGroupSession(input: CreateGroupSessionInput, ownerId
     instructor_id: input.instructorId ?? null,
     room_id: input.roomId ?? null,
     session_name: input.sessionName,
+    category: input.category ?? '그룹',
     lesson_date: input.lessonDate,
     lesson_time: input.lessonTime,
     duration_minutes: input.durationMinutes ?? 50,
@@ -166,6 +171,7 @@ export interface UpdateGroupSessionInput {
   instructorId?: number | null
   capacity?: number
   notes?: string | null
+  category?: string
   lessonDate?: string   // 드래그로 다른 날 이동 시 (예약자는 FK로 따라옴)
 }
 
@@ -177,6 +183,7 @@ export async function updateGroupSession(id: number, patch: UpdateGroupSessionIn
   if (patch.instructorId !== undefined) dbPatch.instructor_id = patch.instructorId
   if (patch.capacity !== undefined) dbPatch.capacity = patch.capacity
   if (patch.notes !== undefined) dbPatch.notes = patch.notes
+  if (patch.category !== undefined) dbPatch.category = patch.category
   if (patch.lessonDate !== undefined) dbPatch.lesson_date = patch.lessonDate
   if (Object.keys(dbPatch).length === 0) return
 

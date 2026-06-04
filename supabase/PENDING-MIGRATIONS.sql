@@ -389,3 +389,17 @@ alter table profile add column if not exists personal_deduction_count integer no
 -- ============================================================
 
 alter table profile add column if not exists annual_goals jsonb not null default '{}'::jsonb;
+
+-- ============================================================
+-- v3.12: 예약형 수업 종류 (회원 자율예약 Phase 1)
+--
+-- 의도:
+--  - group_sessions를 "예약형 수업" 통합 모델로 확장 (개인=정원1·듀엣=정원2·그룹=정원N).
+--  - 종류(category)를 붙여 ① 회원 예약 UI 구분 ② 급여 자동집계를 종류별로(개인/재활/듀엣/그룹) 정확히.
+--    (기존엔 group_sessions를 무조건 '그룹' 시급으로 집계 → 정원1 개인수업을 그룹시급으로 잘못 지급.)
+--  - 기존 그룹 세션은 default '그룹'이라 동작 변화 없음.
+--
+-- 멱등: add column if not exists. 여러 번 실행 OK.
+-- ============================================================
+
+alter table group_sessions add column if not exists category text not null default '그룹';
