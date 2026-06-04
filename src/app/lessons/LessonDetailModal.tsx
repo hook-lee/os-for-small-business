@@ -26,6 +26,7 @@ export function LessonDetailModal({
   const router = useRouter()
   const [rooms, setRooms] = useState<Room[]>([])
   const [roomId, setRoomId] = useState<number | null>(null)
+  const [date, setDate] = useState<string>('')
   const [time, setTime] = useState<string>('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -33,6 +34,7 @@ export function LessonDetailModal({
   useEffect(() => {
     if (!open || !lesson) return
     setRoomId(lesson.roomId)
+    setDate(lesson.date)
     setTime(lesson.time ?? '')
     setError('')
     fetch('/api/rooms').then(r => r.json()).then((j: { rooms?: Room[] }) => setRooms(j.rooms ?? []))
@@ -52,7 +54,7 @@ export function LessonDetailModal({
       const body = {
         roomId,
         lessonTime: time || lesson.time,
-        lessonDate: lesson.date,   // cross-table 충돌 검사용
+        lessonDate: date || lesson.date,   // 날짜 변경 + cross-table 충돌 검사
       }
       const res = await fetch(`${apiBase}/${lesson.id}`, {
         method: 'PATCH',
@@ -102,9 +104,14 @@ export function LessonDetailModal({
         </div>
 
         <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-neutral-500">날짜</span>
-            <span className="font-medium">{lesson.date}</span>
+            <input
+              type="date"
+              value={date}
+              onChange={e => setDate(e.target.value)}
+              className="border border-neutral-300 rounded px-2 py-1 text-sm tabular-nums"
+            />
           </div>
           <div className="flex justify-between items-center">
             <span className="text-neutral-500">시간</span>

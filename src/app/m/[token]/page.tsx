@@ -102,6 +102,27 @@ export default async function MemberHome({ params }: { params: Promise<{ token: 
         <div className="text-sm text-neutral-500">등록일: {member.registeredAt ?? '—'}</div>
       </div>
 
+      {/* 시설 정보 카드 */}
+      <div className="bg-white rounded-xl p-4 space-y-1.5">
+        <div className="text-xs text-neutral-500">시설 정보</div>
+        <div className="text-sm font-semibold">{studioName}</div>
+        {ownerProfile.businessAddress && (
+          <div className="text-sm text-neutral-600">📍 {ownerProfile.businessAddress}</div>
+        )}
+        {ownerProfile.businessPhone ? (
+          <a
+            href={`tel:${ownerProfile.businessPhone}`}
+            className="inline-flex items-center gap-1 text-sm text-teal-600 font-medium hover:underline"
+          >
+            📞 {ownerProfile.businessPhone} <span className="text-xs text-neutral-400">(전화 문의)</span>
+          </a>
+        ) : (
+          !ownerProfile.businessAddress && (
+            <div className="text-xs text-neutral-400">시설 정보가 아직 등록되지 않았어요. (운영자 설정에서 입력)</div>
+          )
+        )}
+      </div>
+
       <div className="text-xs text-center text-neutral-400 pt-2 pb-4">
         {studioName} · 정보 수정은 운영자에게 문의
       </div>
