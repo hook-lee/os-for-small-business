@@ -161,7 +161,17 @@ export async function createGroupSession(input: CreateGroupSessionInput, ownerId
     .insert(row)
     .select('id')
     .single()
-  if (error) throw new Error(`Create group session failed: ${error.message}`)
+  if (error) {
+    // category 컬럼이 아직 없는 배포 DB(마이그레이션 v3.12 전) 폴백: category 빼고 재시도
+    if (/category/i.test(error.message)) {
+      const rest: Record<string, unknown> = { ...row }
+      delete rest.category
+      const retry = await supabase.from('group_sessions').insert(rest).select('id').single()
+      if (retry.error) throw new Error(`Create group session failed: ${retry.error.message}`)
+      return (retry.data as { id: number }).id
+    }
+    throw new Error(`Create group session failed: ${error.message}`)
+  }
   return (data as { id: number }).id
 }
 
