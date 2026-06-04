@@ -12,7 +12,7 @@ const TABS = [
 export function MembersTabBar() {
   const pathname = usePathname()
   return (
-    <div className="flex gap-1 border-b border-neutral-200 mb-4">
+    <div className="flex gap-1 border-b border-neutral-200 mb-4 overflow-x-auto">
       {TABS.map(t => {
         const active = t.href === '/members'
           ? (pathname === '/members' || pathname.startsWith('/members/'))
@@ -21,7 +21,7 @@ export function MembersTabBar() {
           <a
             key={t.href}
             href={t.href}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               active ? 'border-blue-600 text-blue-600' : 'border-transparent text-neutral-500 hover:text-neutral-700'
             }`}
           >

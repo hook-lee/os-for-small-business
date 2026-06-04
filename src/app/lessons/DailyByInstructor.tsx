@@ -61,7 +61,7 @@ export function DailyByInstructor({
 
   return (
     <div className="bg-white rounded-xl overflow-x-auto border border-neutral-200">
-      <div className="grid auto-cols-fr grid-flow-col min-w-fit">
+      <div className="grid grid-flow-col auto-cols-[minmax(150px,1fr)] min-w-fit">
         {sortedInstructors.map(ins => (
           <InstructorColumn
             key={ins.id}

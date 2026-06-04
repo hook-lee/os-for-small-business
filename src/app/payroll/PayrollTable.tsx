@@ -201,9 +201,9 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">강사 급여 정산</h2>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        <h2 className="text-lg md:text-xl font-semibold shrink-0">강사 급여 정산</h2>
+        <div className="flex items-center gap-2 flex-wrap">
           <label className="text-sm text-neutral-600">정산월</label>
           <input
             type="month"
@@ -214,22 +214,22 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
           <button
             onClick={() => applyAutoAll('full')}
             title="그 달에 예약된 모든 수업 기준 (완료 표시 안 해도 포함)"
-            className="text-sm bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded hover:bg-blue-100"
+            className="whitespace-nowrap text-sm bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded hover:bg-blue-100"
           >
-            ✨ 전체 자동 집계
+            ✨ 전체 집계
           </button>
           <button
             onClick={() => applyAutoAll('todate')}
             title="오늘까지 진행된 수업만 기준"
-            className="text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded hover:bg-emerald-100"
+            className="whitespace-nowrap text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded hover:bg-emerald-100"
           >
-            📅 현 시점 집계
+            📅 현 시점
           </button>
           <button
             onClick={resetAll}
-            className="text-sm border border-neutral-300 px-3 py-1 rounded hover:bg-neutral-100"
+            className="whitespace-nowrap text-sm border border-neutral-300 px-3 py-1 rounded hover:bg-neutral-100"
           >
-            전체 초기화
+            초기화
           </button>
         </div>
       </div>
@@ -254,7 +254,7 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
         const isSaving = saving[inst.id] ?? false
         return (
           <Card key={inst.id} className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2">
                 {inst.color && <span className="inline-block w-3 h-3 rounded" style={{ backgroundColor: inst.color }} />}
                 <span className="font-semibold">{inst.name}</span>
@@ -262,7 +262,7 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
                   {inst.role === 'owner' ? '오너' : inst.role === 'admin' ? '관리자' : '강사'}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <label className="text-xs flex items-center gap-1">
                   <input
                     type="checkbox"

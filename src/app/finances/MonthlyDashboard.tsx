@@ -131,7 +131,7 @@ export function MonthlyDashboard({
           </div>
           <div className="mt-4 bg-emerald-50 border border-emerald-200 rounded p-3">
             <div className="text-xs text-emerald-700 font-bold uppercase tracking-wider">영업이익 (사업소득)</div>
-            <div className="text-2xl font-bold text-emerald-900 tabular-nums mt-1">
+            <div className="text-lg sm:text-2xl font-bold text-emerald-900 tabular-nums mt-1 break-keep">
               {summary.operatingProfit.toLocaleString()}원
             </div>
             <div className="text-[10px] text-emerald-600 mt-0.5">매출 - 사업 비용</div>
@@ -155,7 +155,7 @@ export function MonthlyDashboard({
           </div>
           <div className="mt-4 bg-violet-50 border border-violet-200 rounded p-3">
             <div className="text-xs text-violet-700 font-bold uppercase tracking-wider">순수익 (잔고 변화)</div>
-            <div className="text-2xl font-bold text-violet-900 tabular-nums mt-1">
+            <div className="text-lg sm:text-2xl font-bold text-violet-900 tabular-nums mt-1 break-keep">
               {summary.netProfit.toLocaleString()}원
             </div>
             <div className="text-[10px] text-violet-600 mt-0.5">영업이익 - 개인 비용</div>
@@ -233,7 +233,7 @@ function Stat({ label, value, sub, highlight, color, suffix = '원' }: {
   return (
     <Card className={highlight ? 'border-2' : ''}>
       <div className="text-xs text-neutral-500">{label}</div>
-      <div className={`text-2xl font-bold tabular-nums mt-1 ${colorClass}`}>
+      <div className={`text-lg sm:text-xl md:text-2xl font-bold tabular-nums mt-1 break-keep ${colorClass}`}>
         {value.toLocaleString()}{suffix}
       </div>
       {sub && <div className="text-[10px] text-neutral-400 mt-0.5">{sub}</div>}

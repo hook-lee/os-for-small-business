@@ -62,7 +62,6 @@ export function MemberEditor({ member }: { member: Member }) {
           <Row label="회원등급" value={member.tier} />
           <Row label="등록일" value={member.registeredAt} />
           <Row label="최근 출석" value={member.lastAttendedAt} />
-          <Row label="앱 연결" value={member.appConnected ? '연결' : '미연결'} />
           {member.memo && <Row label="메모" value={member.memo} />}
         </Card>
         <button

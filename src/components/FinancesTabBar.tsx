@@ -14,7 +14,7 @@ const TABS = [
 export function FinancesTabBar() {
   const pathname = usePathname()
   return (
-    <div className="flex gap-1 border-b border-neutral-200 mb-4">
+    <div className="flex gap-1 border-b border-neutral-200 mb-4 overflow-x-auto">
       {TABS.map(t => {
         // /finances는 exact match만 (categories와 충돌 방지)
         const active = t.href === '/finances'
@@ -24,7 +24,7 @@ export function FinancesTabBar() {
           <a
             key={t.href}
             href={t.href}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               active ? 'border-blue-600 text-blue-600' : 'border-transparent text-neutral-500 hover:text-neutral-700'
             }`}
           >

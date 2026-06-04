@@ -269,7 +269,6 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
                 <th className="text-left px-4 py-2 font-medium whitespace-nowrap w-56">기간</th>
                 <th className="text-right px-4 py-2 font-medium whitespace-nowrap w-24">잔여</th>
                 <th className="text-left px-4 py-2 font-medium whitespace-nowrap w-28">최근 출석</th>
-                <th className="text-left px-4 py-2 font-medium whitespace-nowrap w-16">앱</th>
                 <th className="px-4 py-2 whitespace-nowrap w-16"></th>
               </tr>
             </thead>
@@ -310,13 +309,6 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
                     </td>
                     <td className="px-4 py-2 text-neutral-600 text-xs tabular-nums whitespace-nowrap">
                       {m.lastAttendedAt ?? '—'}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      {m.appConnected ? (
-                        <span className="text-xs px-2 py-0.5 rounded bg-blue-50 text-blue-700">연결</span>
-                      ) : (
-                        <span className="text-xs px-2 py-0.5 rounded bg-neutral-100 text-neutral-500">미연결</span>
-                      )}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
                       <button onClick={() => handleDelete(m)} className="text-xs px-2 py-0.5 rounded text-red-600 hover:bg-red-50">삭제</button>
