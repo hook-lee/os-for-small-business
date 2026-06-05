@@ -273,7 +273,7 @@ export function AddForm() {
                 placeholder="0"
                 value={amountStr}
                 onChange={e => setAmountStr(e.target.value)}
-                className="w-full border border-neutral-300 rounded-lg px-4 py-4 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-neutral-300 rounded-lg px-4 py-3 sm:py-4 text-xl sm:text-2xl font-bold tabular-nums focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
