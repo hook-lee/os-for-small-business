@@ -6,11 +6,6 @@ import type { AnnualGoal } from '@/lib/profile/settings'
 function won(n: number): string {
   return `${Math.round(n).toLocaleString()}원`
 }
-function manwon(n: number): string {
-  // 큰 금액은 만원 단위로 압축 표기
-  if (Math.abs(n) >= 10_000) return `${Math.round(n / 10_000).toLocaleString()}만원`
-  return won(n)
-}
 function count(n: number): string {
   return `${n.toLocaleString()}명`
 }
@@ -30,8 +25,8 @@ interface MetricDef {
 function buildMetrics(kpis: AnnualKPIs, goal: AnnualGoal | null): MetricDef[] {
   const g = goal ?? null
   return [
-    { key: 'revenue', label: '연 매출', actual: kpis.revenue, goal: g?.revenue ?? null, fmt: manwon },
-    { key: 'netProfit', label: '순이익', actual: kpis.netProfit, goal: g?.netProfit ?? null, fmt: manwon },
+    { key: 'revenue', label: '연 매출', actual: kpis.revenue, goal: g?.revenue ?? null, fmt: won },
+    { key: 'netProfit', label: '순이익', actual: kpis.netProfit, goal: g?.netProfit ?? null, fmt: won },
     { key: 'activeMembers', label: '활성 회원', actual: kpis.activeMembers, goal: g?.activeMembers ?? null, fmt: count },
     { key: 'newMembers', label: '신규 회원 (올해)', actual: kpis.newMembers, goal: g?.newMembers ?? null, fmt: count },
     {
@@ -59,9 +54,9 @@ function MetricRow({ m }: { m: MetricDef }) {
   const widthPct = rate === null ? 0 : Math.max(0, Math.min(rate, 1)) * 100
   return (
     <div className="py-2.5">
-      <div className="flex items-baseline justify-between gap-2">
-        <div className="text-sm font-medium text-neutral-700">{m.label}</div>
-        <div className="text-sm tabular-nums">
+      <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-0.5 sm:gap-2">
+        <div className="text-sm font-medium text-neutral-700 shrink-0">{m.label}</div>
+        <div className="text-sm tabular-nums break-keep sm:text-right">
           <span className="font-bold">{m.fmt(m.actual)}</span>
           {m.goal != null
             ? <span className="text-neutral-400"> / {m.fmt(m.goal)}</span>

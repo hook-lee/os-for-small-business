@@ -411,3 +411,13 @@ alter table group_sessions add column if not exists category text not null defau
 -- ============================================================
 
 alter table profile add column if not exists low_remaining_threshold integer not null default 3;
+
+-- ============================================================
+-- v3.14: 알림(종) 커스텀 설정 + 강사 월급 지급일
+--  - notification_settings: 받을 알림 종류 ON/OFF (jsonb)
+--  - payroll_day: 강사 월급 지급일(매월 1~31). D-1/D-day 알림용. null=미설정
+-- 멱등: add column if not exists.
+-- ============================================================
+
+alter table profile add column if not exists notification_settings jsonb not null default '{}'::jsonb;
+alter table profile add column if not exists payroll_day integer;

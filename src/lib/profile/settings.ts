@@ -48,6 +48,35 @@ export function sanitizeAnnualGoals(raw: unknown): Record<string, AnnualGoal> {
   return out
 }
 
+/** 원장이 종(알림)에서 받을 알림 종류 ON/OFF. */
+export interface NotificationSettings {
+  lowRemaining: boolean       // 잔여 N회 이하
+  expiring: boolean           // 만료 임박
+  dormant: boolean            // 휴면 회원
+  unpaidInstructors: boolean  // 미정산 강사
+  payrollDday: boolean        // 강사 월급 지급일 D-1/D-day
+}
+
+export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
+  lowRemaining: true,
+  expiring: true,
+  dormant: true,
+  unpaidInstructors: true,
+  payrollDday: false,   // 지급일 설정 전엔 기본 꺼둠
+}
+
+export function sanitizeNotificationSettings(raw: unknown): NotificationSettings {
+  const r = (raw && typeof raw === 'object') ? raw as Record<string, unknown> : {}
+  const b = (v: unknown, def: boolean) => (typeof v === 'boolean' ? v : def)
+  return {
+    lowRemaining: b(r.lowRemaining, true),
+    expiring: b(r.expiring, true),
+    dormant: b(r.dormant, true),
+    unpaidInstructors: b(r.unpaidInstructors, true),
+    payrollDday: b(r.payrollDday, false),
+  }
+}
+
 export interface UserProfile {
   workspaceName: string | null   // 센터명 (가입 시 필수, 예: '라파 필라테스')
   role: string | null            // 직급 (가입 시 필수: '원장' / '매니저' / '강사' / 기타)
@@ -64,6 +93,8 @@ export interface UserProfile {
   taxGeneralSinceMonth: string | null  // 일반과세 전환 연월 'YYYY-MM'. null이면 전환 없음
   annualGoals: Record<string, AnnualGoal>  // 연도(YYYY) → 연간 KPI 목표. 기본 {} = 미설정
   lowRemainingThreshold: number        // 잔여 N회 이하면 홈에서 알림. 기본 3. 0이면 끔
+  notificationSettings: NotificationSettings  // 종(알림)에서 받을 알림 종류
+  payrollDay: number | null            // 강사 월급 지급일 (매월 1~31). null이면 미설정
 }
 
 export const DEFAULT_PROFILE: UserProfile = {
@@ -82,6 +113,8 @@ export const DEFAULT_PROFILE: UserProfile = {
   taxGeneralSinceMonth: null,
   annualGoals: {},
   lowRemainingThreshold: 3,
+  notificationSettings: DEFAULT_NOTIFICATION_SETTINGS,
+  payrollDay: null,
 }
 
 interface ProfileRow {
@@ -101,6 +134,8 @@ interface ProfileRow {
   tax_general_since_month?: string | null
   annual_goals?: Record<string, unknown> | string | null
   low_remaining_threshold?: string | number | null
+  notification_settings?: Record<string, unknown> | string | null
+  payroll_day?: string | number | null
 }
 
 function rowToProfile(row: ProfileRow): UserProfile {
@@ -127,6 +162,10 @@ function rowToProfile(row: ProfileRow): UserProfile {
     lowRemainingThreshold: row.low_remaining_threshold == null
       ? 3
       : Math.max(0, Math.floor(Number(row.low_remaining_threshold)) || 0),
+    notificationSettings: sanitizeNotificationSettings(
+      typeof row.notification_settings === 'string' ? safeJsonParse(row.notification_settings) : row.notification_settings,
+    ),
+    payrollDay: row.payroll_day == null ? null : Math.min(31, Math.max(1, Math.floor(Number(row.payroll_day)) || 1)),
   }
 }
 
@@ -190,6 +229,8 @@ export async function saveProfile(profile: UserProfile, ownerId: string): Promis
     tax_general_since_month: profile.taxGeneralSinceMonth ?? null,
     annual_goals: profile.annualGoals ?? {},
     low_remaining_threshold: profile.lowRemainingThreshold ?? 3,
+    notification_settings: profile.notificationSettings ?? DEFAULT_NOTIFICATION_SETTINGS,
+    payroll_day: profile.payrollDay ?? null,
     updated_at: new Date().toISOString(),
   }
 
@@ -207,7 +248,7 @@ export async function saveProfile(profile: UserProfile, ownerId: string): Promis
   ): Promise<void> => {
     const msg = error.message
     const missing: string[] = []
-    for (const col of ['workspace_name', 'role', 'business_phone', 'personal_deduction_count', 'tax_payer_type', 'tax_start_month', 'tax_general_since_month', 'annual_goals', 'low_remaining_threshold']) {
+    for (const col of ['workspace_name', 'role', 'business_phone', 'personal_deduction_count', 'tax_payer_type', 'tax_start_month', 'tax_general_since_month', 'annual_goals', 'low_remaining_threshold', 'notification_settings', 'payroll_day']) {
       if (msg.includes(col)) missing.push(col)
     }
     if (missing.length === 0) throw new Error(`프로필 저장 실패: ${msg}`)
