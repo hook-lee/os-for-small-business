@@ -229,7 +229,7 @@ function HeroKpi({ label, value, link, accent }: {
     <a href={link.href} className="block">
       <Card className={`border-l-4 ${accentClass} hover:shadow-md transition-shadow`}>
         <div className="text-xs text-neutral-500">{label}</div>
-        <div className="text-xl font-bold mt-1 tabular-nums">{value}</div>
+        <div className="text-base sm:text-xl font-bold mt-1 tabular-nums break-keep">{value}</div>
         <div className="text-xs text-blue-600 mt-1">{link.text}</div>
       </Card>
     </a>

@@ -11,7 +11,7 @@ export function VATForecastCard({ result }: { result: AnnualVATResult }) {
           {isSimplified ? '간이과세' : '일반과세'}
         </span>
       </div>
-      <div className="text-3xl font-bold mt-2">
+      <div className="text-2xl sm:text-3xl font-bold mt-2 tabular-nums break-keep">
         {result.estimatedAnnualVAT.toLocaleString()}<span className="text-base font-normal ml-1">원</span>
       </div>
       {result.exempt ? (

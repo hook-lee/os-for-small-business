@@ -139,7 +139,7 @@ export default async function TaxPage() {
           <div className="flex items-baseline justify-between mb-2">
             <div>
               <div className="text-xs text-neutral-500">직전 1년({eligibility.asOfMonth} 기준) 매출</div>
-              <div className="text-3xl font-bold tabular-nums text-neutral-800 mt-1">
+              <div className="text-2xl sm:text-3xl font-bold tabular-nums text-neutral-800 mt-1 break-keep">
                 {eligibility.rollingRevenue.toLocaleString()}원
               </div>
             </div>

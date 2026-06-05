@@ -443,7 +443,7 @@ function Stat({ label, value, highlight }: { label: string; value: string; highl
   return (
     <Card>
       <div className="text-xs text-neutral-500">{label}</div>
-      <div className={`text-xl font-bold mt-1 tabular-nums ${highlight ? 'text-blue-600' : ''}`}>{value}</div>
+      <div className={`text-base sm:text-xl font-bold mt-1 tabular-nums break-keep ${highlight ? 'text-blue-600' : ''}`}>{value}</div>
     </Card>
   )
 }

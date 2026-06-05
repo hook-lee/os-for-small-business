@@ -5,7 +5,7 @@ export function ReserveCard({ recommendation }: { recommendation: ReserveRecomme
   return (
     <Card>
       <div className="text-xs text-neutral-500">권장 월 예비비</div>
-      <div className="text-3xl font-bold mt-2 text-blue-600">
+      <div className="text-2xl sm:text-3xl font-bold mt-2 text-blue-600 tabular-nums break-keep">
         {recommendation.monthly.toLocaleString()}<span className="text-base font-normal ml-1">원</span>
       </div>
       <div className="text-xs text-neutral-500 mt-2">

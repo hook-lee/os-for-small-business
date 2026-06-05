@@ -143,7 +143,7 @@ function KpiBox({ title, value, sub }: { title: string; value: string; sub: stri
   return (
     <div className="rounded-lg border border-neutral-200 bg-white p-3 shadow-sm">
       <div className="text-xs text-neutral-500">{title}</div>
-      <div className="text-xl font-bold mt-1 tabular-nums">{value}</div>
+      <div className="text-base sm:text-xl font-bold mt-1 tabular-nums break-keep">{value}</div>
       <div className="text-xs text-neutral-400 mt-1">{sub}</div>
     </div>
   )

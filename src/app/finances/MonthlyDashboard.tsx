@@ -270,12 +270,12 @@ function MethodCard({ icon, label, amount, count, pct, color }: {
     : color === 'emerald' ? 'bg-emerald-500'
     : 'bg-amber-500'
   return (
-    <div className={`rounded-lg border p-3 ${bgClass}`}>
-      <div className="flex items-baseline justify-between">
-        <span className="text-sm font-semibold">{icon} {label}</span>
+    <div className={`rounded-lg border p-2.5 sm:p-3 ${bgClass}`}>
+      <div className="flex items-baseline justify-between gap-1 flex-wrap">
+        <span className="text-xs sm:text-sm font-semibold break-keep">{icon} {label}</span>
         <span className={`text-xs font-bold ${textClass}`}>{pct}%</span>
       </div>
-      <div className="text-lg font-bold tabular-nums mt-1 text-neutral-800">
+      <div className="text-sm sm:text-lg font-bold tabular-nums mt-1 text-neutral-800 break-keep">
         {amount.toLocaleString()}원
       </div>
       <div className="text-[10px] text-neutral-500">{count}건</div>

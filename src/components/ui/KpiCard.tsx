@@ -12,7 +12,7 @@ export function KpiCard({ title, amount, subtitle, unit = '원' }: KpiCardProps)
   return (
     <Card>
       <div className="text-xs text-neutral-500">{title}</div>
-      <div className={`text-2xl font-bold mt-1 ${isNegative ? 'text-red-600' : 'text-neutral-900'}`}>
+      <div className={`text-lg sm:text-2xl font-bold mt-1 tabular-nums break-keep ${isNegative ? 'text-red-600' : 'text-neutral-900'}`}>
         {amount.toLocaleString()}
         <span className="text-sm font-normal ml-1">{unit}</span>
       </div>
