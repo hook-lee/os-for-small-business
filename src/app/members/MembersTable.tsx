@@ -257,7 +257,45 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
       <div className="text-xs text-neutral-500">
         결과 <strong className="text-neutral-700">{filtered.length}명</strong> / 전체 {total}명
       </div>
-      <Card className="p-0 overflow-hidden">
+
+      {/* 모바일: 카드 레이아웃 (가로로 긴 표 대신) */}
+      <div className="md:hidden space-y-2">
+        {filtered.map(m => {
+          const ap = activePassMap[m.id]
+          const isLowRemaining = (m._remainingCount ?? -1) >= 0 && (m._remainingCount ?? 0) <= 1
+          const isExpiringSoon = m._daysToExpire !== null && m._daysToExpire <= 7 && m._daysToExpire >= 0
+          return (
+            <Card key={m.id} className="space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <a href={`/members/${m.id}`} className="font-semibold text-blue-600 truncate">{m.name}</a>
+                  <StatusBadge status={m._status} />
+                </div>
+                <button onClick={() => handleDelete(m)} className="text-xs text-red-600 shrink-0">삭제</button>
+              </div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-neutral-600">
+                <div className="tabular-nums">📞 {m.phone ?? '—'}</div>
+                <div className={`tabular-nums text-right ${isLowRemaining ? 'text-red-600 font-semibold' : ''}`}>
+                  잔여 {m._remainingCount !== null ? `${m._remainingCount}/${ap?.totalCount ?? '—'}` : '—'}
+                </div>
+                <div className="col-span-2 truncate">🎟 {ap?.passName ?? '수강권 없음'}{ap?.passType ? ` · ${ap.passType}` : ''}</div>
+                {ap?.startDate && ap?.endDate && (
+                  <div className="col-span-2 tabular-nums text-neutral-500">
+                    {ap.startDate}~{ap.endDate}{isExpiringSoon && <span className="ml-1 text-amber-600 font-semibold">D-{m._daysToExpire}</span>}
+                  </div>
+                )}
+                <div className="col-span-2 text-neutral-400">최근 출석 {m.lastAttendedAt ?? '—'}</div>
+              </div>
+            </Card>
+          )
+        })}
+        {filtered.length === 0 && (
+          <Card><div className="text-sm text-neutral-400 text-center py-4">조건에 맞는 회원이 없습니다.</div></Card>
+        )}
+      </div>
+
+      {/* 데스크탑: 표 */}
+      <Card className="hidden md:block p-0 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-neutral-50 text-xs text-neutral-500 uppercase">
