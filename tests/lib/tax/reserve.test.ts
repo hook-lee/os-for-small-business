@@ -13,7 +13,7 @@ function tx(date: string, category: Category, amount: number, method: PaymentMet
     person: undefined,
     classification: amount > 0
       ? 'business'
-      : (category === '유진 급여' ? 'owner_draw'
+      : (category === '대표자급여' ? 'owner_draw'
         : category === '예비비' ? 'reserve'
         : (['자산', '보통예금', '사무용품'] as Category[]).includes(category) ? 'capital'
         : (['식비', '품위유지비', '교통비', '의류비', '의료비', '소품', '도서인쇄비', '소모품', '기타'] as Category[]).includes(category) ? 'living'

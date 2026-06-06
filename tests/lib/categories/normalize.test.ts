@@ -16,8 +16,8 @@ describe('normalizeCategory', () => {
     expect(normalizeCategory('경좃비')).toBe('경조사비')
   })
 
-  it('앞 공백 정규화: " 유진 급여" → "유진 급여"', () => {
-    expect(normalizeCategory(' 유진 급여')).toBe('유진 급여')
+  it('앞 공백 정규화: " 대표자급여" → "대표자급여"', () => {
+    expect(normalizeCategory(' 대표자급여')).toBe('대표자급여')
   })
 
   it('의미 매핑: 약 → 의료비, 간식 → 식비, 정기 → 정기결제', () => {
@@ -48,8 +48,8 @@ describe('normalizeCategory', () => {
 })
 
 describe('classify', () => {
-  it('유진 급여 → owner_draw', () => {
-    expect(classify('유진 급여')).toBe('owner_draw')
+  it('대표자급여 → owner_draw', () => {
+    expect(classify('대표자급여')).toBe('owner_draw')
   })
 
   it('예비비 → reserve', () => {

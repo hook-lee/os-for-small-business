@@ -115,11 +115,11 @@ describe('simulateVAT', () => {
     expect(r.inputVAT).toBe(0)
   })
 
-  it('유진 급여(owner_draw)는 매입세액 공제 불가', () => {
+  it('대표자급여(owner_draw)는 매입세액 공제 불가', () => {
     const r = simulateVAT(
       [
         tx('2026-01-15', '매출', 11_000_000),
-        { ...tx('2026-01-31', '유진 급여', -3_000_000, '계좌이체'), classification: 'owner_draw' },
+        { ...tx('2026-01-31', '대표자급여', -3_000_000, '계좌이체'), classification: 'owner_draw' },
       ],
       2026, 1,
     )

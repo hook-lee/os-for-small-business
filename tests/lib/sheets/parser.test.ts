@@ -26,9 +26,9 @@ describe('parseSheetRows', () => {
     expect(r[0].classification).toBe('business')
   })
 
-  it('owner_draw 분류: 유진 급여', () => {
+  it('owner_draw 분류: 대표자급여', () => {
     const r = parseSheetRows([
-      ['1', '2024-09', '45901', '유진 급여', '-1218420', '계좌이체', '', '', ''],
+      ['1', '2024-09', '45901', '대표자급여', '-1218420', '계좌이체', '', '', ''],
     ])
     expect(r[0].classification).toBe('owner_draw')
   })

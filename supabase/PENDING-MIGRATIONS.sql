@@ -421,3 +421,28 @@ alter table profile add column if not exists low_remaining_threshold integer not
 
 alter table profile add column if not exists notification_settings jsonb not null default '{}'::jsonb;
 alter table profile add column if not exists payroll_day integer;
+
+-- ============================================================
+-- v3.15: 운영자 본명 카테고리 '유진 급여' → 표준 '대표자급여'
+--
+-- 의도:
+--  - 분류 코드(Category union·classify·세무 매핑)에 운영자 본명 '유진 급여'가
+--    하드코딩돼 있던 것을 generic '대표자급여'(신규 가입자 기본값과 동일)로 통일.
+--    PII 제거 + 멀티테넌트 일관성.
+--  - 거래 집계는 transactions.classification(이미 owner_draw) 기준이라 세무 영향 없음.
+--    이 마이그는 화면에 보이는 '카테고리 이름'만 통일한다.
+--  - 코드엔 '유진 급여'→'대표자급여' 입력 정규화 안전망이 있어, 이 SQL을 안 돌려도
+--    세무는 안 틀어진다. 다만 기존 데이터의 표시 이름을 깔끔히 하려면 실행 권장.
+--
+-- 멱등: 같은 이름 중복 시 noop. 여러 번 실행 OK.
+-- ============================================================
+
+update transactions      set category     = '대표자급여' where category     = '유진 급여';
+update transactions      set raw_category = '대표자급여' where raw_category = '유진 급여';
+update expense_categories set name        = '대표자급여'
+  where name = '유진 급여'
+    and not exists (
+      select 1 from expense_categories e2
+      where e2.owner_id is not distinct from expense_categories.owner_id
+        and e2.name = '대표자급여'
+    );

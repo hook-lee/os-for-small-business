@@ -47,7 +47,7 @@ describe('백테스트: aggregateMonthly vs Looker PDF KPI', () => {
     expect(withinPercent(total, target, 0.25)).toBe(true)
   })
 
-  it('2024년 owner_draw (유진 급여) ±5%', () => {
+  it('2024년 owner_draw (대표자급여) ±5%', () => {
     const total = monthly.filter(m => m.month.startsWith('2024'))
       .reduce((s, m) => s + m.ownerDraw, 0)
     const target = GROUND_TRUTH_KPI[2024].ownerDraw
@@ -73,7 +73,7 @@ describe('백테스트: aggregateMonthly vs Looker PDF KPI', () => {
     expect(withinPercent(total, target, 0.25)).toBe(true)
   })
 
-  // NOTE: 2025 ownerDraw — 픽스처에서 '유진 급여' 35M 집계, PDF 31M.
+  // NOTE: 2025 ownerDraw — 픽스처에서 '대표자급여' 35M 집계, PDF 31M.
   // 차액 4M은 pixel이 아닌 실 데이터일 수 있음. ±15% 허용.
   it('2025년 owner_draw ±15%', () => {
     const total = monthly.filter(m => m.month.startsWith('2025'))

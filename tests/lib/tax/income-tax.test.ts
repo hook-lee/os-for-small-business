@@ -14,7 +14,7 @@ function tx(date: string, category: Category, amount: number, method: PaymentMet
     person: undefined,
     classification: amount > 0
       ? 'business'
-      : (category === '유진 급여' ? 'owner_draw'
+      : (category === '대표자급여' ? 'owner_draw'
         : category === '예비비' ? 'reserve'
         : (['자산', '보통예금', '사무용품'] as Category[]).includes(category) ? 'capital'
         : (['식비', '품위유지비', '교통비', '의류비', '의료비', '소품', '도서인쇄비', '소모품', '기타'] as Category[]).includes(category) ? 'living'
@@ -68,10 +68,10 @@ describe('simulateIncomeTax', () => {
     expect(r.estimatedTax).toBeGreaterThan(0)
   })
 
-  it('owner_draw(유진 급여)는 사업비용에 안 들어감', () => {
+  it('owner_draw(대표자급여)는 사업비용에 안 들어감', () => {
     const txs: Transaction[] = [
       tx('2026-06-15', '매출', 100_000_000),
-      tx('2026-06-30', '유진 급여', -36_000_000, '계좌이체'),
+      tx('2026-06-30', '대표자급여', -36_000_000, '계좌이체'),
     ]
     const r = simulateIncomeTax(txs, '2026-12-31')
     expect(r.annualizedExpense).toBe(0)

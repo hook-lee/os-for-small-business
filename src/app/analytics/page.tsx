@@ -1,7 +1,7 @@
 import { loadTransactions } from '@/lib/data/loader'
 import { aggregateMonthly } from '@/lib/analytics/monthly'
 import { KpiCard } from '@/components/ui/KpiCard'
-import { MonthlyBarChart } from '@/components/Charts/MonthlyBarChart'
+import { MonthlyBarChart } from '@/components/Charts/MonthlyBarChartLazy'
 import { FinancesTabBar } from '@/components/FinancesTabBar'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
 

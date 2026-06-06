@@ -7,7 +7,7 @@ export interface MonthlyDatum {
   amount: number
 }
 
-interface MonthlyBarChartProps {
+export interface MonthlyBarChartProps {
   data: MonthlyDatum[]
   title: string
   color?: string

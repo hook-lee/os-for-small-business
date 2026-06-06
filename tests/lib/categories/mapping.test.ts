@@ -40,8 +40,8 @@ describe('카테고리 → TaxAttributes 매핑', () => {
     expect(a.incomeTaxDeductible).toBe(true)
   })
 
-  it('유진 급여(owner draw): isBusinessExpense=false (사업비 아님, 사업소득의 일부)', () => {
-    const a = getTaxAttributes('유진 급여')
+  it('대표자급여(owner draw): isBusinessExpense=false (사업비 아님, 사업소득의 일부)', () => {
+    const a = getTaxAttributes('대표자급여')
     expect(a.isBusinessExpense).toBe(false)
     expect(a.incomeTaxDeductible).toBe(false)
   })
@@ -77,7 +77,7 @@ describe('카테고리 → TaxAttributes 매핑', () => {
       '매출', '임대료', '식비', '마케팅비', '교육비', '정기결제', '세금',
       '소모품', '보험료', '품위유지비', '교통비', '의류비', '의료비',
       '소품', '도서인쇄비', '경조사비', '수수료', '공과금', '관리비',
-      '급여', '유진 급여', '예비비', '사무용품', '자산', '보통예금',
+      '급여', '대표자급여', '예비비', '사무용품', '자산', '보통예금',
       '복리후생비', '지급수수료', '세탁비', '연금', '적금', '기타',
     ] as const
     for (const c of allCategories) {

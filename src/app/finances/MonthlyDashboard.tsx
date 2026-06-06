@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import type { MonthlySummary } from '@/lib/analytics/monthly-summary'
 import { collectCostCategories } from '@/lib/analytics/monthly-summary'
-import { MonthlyBarChart } from '@/components/Charts/MonthlyBarChart'
+import { MonthlyBarChart } from '@/components/Charts/MonthlyBarChartLazy'
 
 export function MonthlyDashboard({
   allSummaries,

@@ -29,7 +29,7 @@ const CATEGORY_MAP: Record<Category, TaxAttributes> = {
   '공과금':     { isBusinessExpense: true,  vatDeductibleByCategory: true,  incomeTaxDeductible: true },
   '관리비':     { isBusinessExpense: true,  vatDeductibleByCategory: true,  incomeTaxDeductible: true },
   '급여':       { isBusinessExpense: true,  vatDeductibleByCategory: false, incomeTaxDeductible: true },
-  '유진 급여':  { isBusinessExpense: false, vatDeductibleByCategory: false, incomeTaxDeductible: false },  // owner draw
+  '대표자급여': { isBusinessExpense: false, vatDeductibleByCategory: false, incomeTaxDeductible: false },  // owner draw
   '예비비':     { isBusinessExpense: false, vatDeductibleByCategory: false, incomeTaxDeductible: false },  // 적립용
   '사무용품':   { isBusinessExpense: false, vatDeductibleByCategory: false, incomeTaxDeductible: false },  // capital
   '자산':       { isBusinessExpense: false, vatDeductibleByCategory: false, incomeTaxDeductible: false },  // capital

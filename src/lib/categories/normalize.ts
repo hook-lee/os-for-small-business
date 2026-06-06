@@ -21,6 +21,7 @@ const NORMALIZATION_MAP: Record<string, Category> = {
   '운송비': '수수료',
   '정기': '정기결제',
   '복지': '복리후생비',
+  '유진 급여': '대표자급여',   // 레거시 카테고리명 → 표준 대표자급여(owner_draw)로 정규화. 세무 분류 유지.
 }
 
 /**
@@ -31,7 +32,7 @@ const STANDARD_CATEGORIES: ReadonlySet<Category> = new Set<Category>([
   '매출', '임대료', '식비', '마케팅비', '교육비', '정기결제', '세금',
   '소모품', '보험료', '품위유지비', '교통비', '의류비', '의료비',
   '소품', '도서인쇄비', '경조사비', '수수료', '공과금', '관리비',
-  '급여', '유진 급여', '예비비', '사무용품', '자산', '보통예금',
+  '급여', '대표자급여', '예비비', '사무용품', '자산', '보통예금',
   '복리후생비', '지급수수료', '세탁비', '연금', '적금',
 ])
 
@@ -61,7 +62,7 @@ export function normalizeCategory(raw: string | null | undefined): Category | nu
   return '기타'
 }
 
-const OWNER_DRAW_CATEGORIES: ReadonlySet<Category> = new Set(['유진 급여'] as Category[])
+const OWNER_DRAW_CATEGORIES: ReadonlySet<Category> = new Set(['대표자급여'] as Category[])
 const RESERVE_CATEGORIES: ReadonlySet<Category> = new Set(['예비비'] as Category[])
 const CAPITAL_CATEGORIES: ReadonlySet<Category> = new Set([
   '자산', '보통예금', '사무용품',

@@ -27,7 +27,7 @@ describe('aggregateMonthly', () => {
   it('owner_draw, reserve 별도 집계', () => {
     const r = aggregateMonthly([
       tx('2026-01-15', '매출', 10_000_000),
-      tx('2026-01-31', '유진 급여', -3_000_000, 'owner_draw'),
+      tx('2026-01-31', '대표자급여', -3_000_000, 'owner_draw'),
       tx('2026-01-31', '예비비', -1_800_000, 'reserve'),
     ])
     const jan = r.find(m => m.month === '2026-01')!
@@ -42,7 +42,7 @@ describe('aggregateMonthly', () => {
       tx('2026-01-15', '매출', 10_000_000),
       tx('2026-01-20', '임대료', -1_400_000),           // business
       tx('2026-01-25', '식비', -500_000, 'living'),     // living — expense에 포함
-      tx('2026-01-31', '유진 급여', -3_000_000, 'owner_draw'),
+      tx('2026-01-31', '대표자급여', -3_000_000, 'owner_draw'),
       tx('2026-01-31', '예비비', -1_800_000, 'reserve'),
     ])
     const jan = r.find(m => m.month === '2026-01')!

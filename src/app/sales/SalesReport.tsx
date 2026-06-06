@@ -10,7 +10,7 @@ import {
   computePassesKPI, computeTransactionsKPI, revenueByProduct, revenueByInstructor,
   revenueByMethod, revenueByMonth, filterPassesByRange, filterTransactionsByRange,
 } from '@/lib/analytics/sales-report'
-import { MonthlyBarChart } from '@/components/Charts/MonthlyBarChart'
+import { MonthlyBarChart } from '@/components/Charts/MonthlyBarChartLazy'
 
 type Range = '월' | '연' | '전체'
 

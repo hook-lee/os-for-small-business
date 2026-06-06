@@ -28,8 +28,8 @@ describe('isVATDeductible', () => {
     expect(isVATDeductible(tx({ category: '식비', classification: 'living', amount: -10_000, method: '카드' }))).toBe(false)
   })
 
-  it('classification이 owner_draw면 공제 불가 (유진 급여)', () => {
-    expect(isVATDeductible(tx({ category: '유진 급여', classification: 'owner_draw', amount: -3_000_000, method: '계좌이체' }))).toBe(false)
+  it('classification이 owner_draw면 공제 불가 (대표자급여)', () => {
+    expect(isVATDeductible(tx({ category: '대표자급여', classification: 'owner_draw', amount: -3_000_000, method: '계좌이체' }))).toBe(false)
   })
 
   it('classification이 reserve면 공제 불가 (예비비)', () => {
