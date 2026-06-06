@@ -94,62 +94,6 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
       </div>
 
       <div className="pt-3 border-t border-neutral-200">
-        <h3 className="text-sm font-semibold text-neutral-700 mb-1">🔔 알림 설정</h3>
-        <p className="text-xs text-neutral-400 mb-2">받고 싶은 알림만 켜세요. 종(상단 알림)과 홈 &lsquo;처리 필요&rsquo;에 표시됩니다.</p>
-        <div className="space-y-2">
-          {/* 잔여 N회 이하 + 기준 */}
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={profile.notificationSettings.lowRemaining}
-                onChange={e => setProfile({ ...profile, notificationSettings: { ...profile.notificationSettings, lowRemaining: e.target.checked } })}
-              />
-              잔여
-            </label>
-            <input
-              type="number"
-              min="0"
-              max="99"
-              value={profile.lowRemainingThreshold}
-              onChange={e => setProfile({ ...profile, lowRemainingThreshold: Math.min(99, Math.max(0, Math.floor(Number(e.target.value) || 0))) })}
-              className="border rounded px-2 py-1 w-16 text-right tabular-nums text-sm"
-            />
-            <span className="text-sm text-neutral-500">회 이하 회원 알림</span>
-          </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={profile.notificationSettings.expiring} onChange={e => setProfile({ ...profile, notificationSettings: { ...profile.notificationSettings, expiring: e.target.checked } })} />
-            만료 임박 (7일 내)
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={profile.notificationSettings.dormant} onChange={e => setProfile({ ...profile, notificationSettings: { ...profile.notificationSettings, dormant: e.target.checked } })} />
-            휴면 회원 (60일+ 미출석)
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={profile.notificationSettings.unpaidInstructors} onChange={e => setProfile({ ...profile, notificationSettings: { ...profile.notificationSettings, unpaidInstructors: e.target.checked } })} />
-            미정산 강사
-          </label>
-          {/* 강사 월급 D-day + 지급일 */}
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={profile.notificationSettings.payrollDday} onChange={e => setProfile({ ...profile, notificationSettings: { ...profile.notificationSettings, payrollDday: e.target.checked } })} />
-              강사 월급 D-1/D-day · 매월
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="31"
-              value={profile.payrollDay ?? ''}
-              onChange={e => { const v = e.target.value; setProfile({ ...profile, payrollDay: v === '' ? null : Math.min(31, Math.max(1, Math.floor(Number(v) || 1))) }) }}
-              placeholder="일"
-              className="border rounded px-2 py-1 w-16 text-right tabular-nums text-sm"
-            />
-            <span className="text-sm text-neutral-500">일 지급</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="pt-3 border-t border-neutral-200">
         <h3 className="text-sm font-semibold text-neutral-700 mb-2">개인 정보 (세금 시뮬레이터용)</h3>
       </div>
 

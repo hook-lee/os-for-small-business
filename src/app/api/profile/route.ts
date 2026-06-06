@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { loadProfile, saveProfile, sanitizeAnnualGoals, type UserProfile } from '@/lib/profile/settings'
+import { loadProfile, saveProfile, sanitizeAnnualGoals, sanitizeNotificationSettings, type UserProfile } from '@/lib/profile/settings'
 import { ensureDefaultRoom } from '@/lib/supabase/rooms'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
 
@@ -40,6 +40,9 @@ export async function POST(req: Request) {
     merged.personalDeductionCount = Math.max(1, Math.floor(Number(merged.personalDeductionCount) || 1))
     // 잔여횟수 알림 기준: 0~99 정수 (0 = 끔)
     merged.lowRemainingThreshold = Math.min(99, Math.max(0, Math.floor(Number(merged.lowRemainingThreshold) || 0)))
+    // 알림 설정 ON/OFF + 강사 월급 지급일(1~30 또는 31=말일, null=미설정)
+    merged.notificationSettings = sanitizeNotificationSettings(merged.notificationSettings)
+    merged.payrollDay = merged.payrollDay == null ? null : Math.min(31, Math.max(1, Math.floor(Number(merged.payrollDay)) || 1))
     // 연간 목표: sanitize (잘못된 값 null, 비율 0~1 정규화)
     merged.annualGoals = sanitizeAnnualGoals(merged.annualGoals)
     await saveProfile(merged, auth.ownerId)

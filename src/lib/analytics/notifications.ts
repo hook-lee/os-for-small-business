@@ -13,14 +13,17 @@ export interface NotificationItem {
 }
 
 /**
- * 강사 월급 지급일 D-day 계산. payrollDay = 매월 며칠.
+ * 강사 월급 지급일 D-day 계산. payrollDay = 매월 며칠(1~30) 또는 31=말일.
+ *  - 31(말일)이면 그 달 실제 말일(28/29/30/31)로 환산.
+ *  - 1~30이라도 그 달에 없는 날(예: 2월 30일)이면 말일로 클램프.
  * 오늘이 지급일이면 D-day, 하루 전이면 D-1일 때만 active.
- * (말일 경계는 단순화 — 같은 달 일(day) 차이로 계산.)
  */
 export function computePayrollDday(payrollDay: number | null | undefined, today: string): { active: boolean; label: string } | null {
   if (!payrollDay) return null
-  const day = parseInt(today.slice(8, 10), 10)
-  const diff = payrollDay - day
+  const [y, m, d] = today.split('-').map(Number)
+  const lastDay = new Date(y, m, 0).getDate()   // 그 달 말일
+  const target = Math.min(payrollDay, lastDay)   // 31(말일)·없는 날 → 말일로 클램프
+  const diff = target - d
   if (diff === 0) return { active: true, label: 'D-day' }
   if (diff === 1) return { active: true, label: 'D-1' }
   return null

@@ -32,6 +32,13 @@ describe('computePayrollDday', () => {
   it('그 외 날은 null (알림 안 함)', () => {
     expect(computePayrollDday(25, '2026-06-20')).toBeNull()
   })
+  it('말일(31) → 그 달 실제 말일로 환산 (6월=30일)', () => {
+    expect(computePayrollDday(31, '2026-06-30')).toEqual({ active: true, label: 'D-day' })
+    expect(computePayrollDday(31, '2026-06-29')).toEqual({ active: true, label: 'D-1' })
+  })
+  it('말일(31) → 2월은 28일 (2026)', () => {
+    expect(computePayrollDday(31, '2026-02-28')).toEqual({ active: true, label: 'D-day' })
+  })
 })
 
 describe('buildNotifications', () => {

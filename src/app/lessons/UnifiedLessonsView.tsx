@@ -28,6 +28,7 @@ import { LessonDetailModal } from './LessonDetailModal'
 import { LessonsFilterBar } from './LessonsFilterBar'
 import { DailyByInstructor } from './DailyByInstructor'
 import { MonthlyCardList } from './MonthlyCardList'
+import { MobileLessonCalendar } from './MobileLessonCalendar'
 import { LessonHoverCard } from './LessonHoverCard'
 
 type DailyLayout = '강사별' | '시간순'
@@ -208,10 +209,25 @@ export function UnifiedLessonsView({
       />
 
       {(mode === '주별' || mode === '월별') && (
-        <div className="text-[11px] text-neutral-400">💡 카드를 다른 날로 <b>드래그</b>하면 그날로 이동합니다 (시간·룸 유지). 모바일은 카드를 살짝 길게 누른 뒤 드래그. 시간 변경은 카드 클릭.</div>
+        <div className="hidden md:block text-[11px] text-neutral-400">💡 카드를 다른 날로 <b>드래그</b>하면 그날로 이동합니다 (시간·룸 유지). 시간 변경은 카드 클릭.</div>
+      )}
+      {(mode === '주별' || mode === '월별') && (
+        <div className="md:hidden text-[11px] text-neutral-400">💡 점이 있는 날을 탭하면 아래에 그날 수업이 펼쳐집니다. 수업을 탭하면 수정·삭제.</div>
       )}
 
-      {/* 뷰 본체 */}
+      {/* 모바일 전용 — 주별/월별 점 캘린더 (PC 그리드가 좁은 화면에서 깨지는 문제 우회) */}
+      {(mode === '주별' || mode === '월별') && (
+        <div className="md:hidden">
+          <MobileLessonCalendar
+            lessons={filtered}
+            mode={mode}
+            anchor={anchor}
+            onSelectLesson={setDetailLesson}
+          />
+        </div>
+      )}
+
+      {/* 뷰 본체 — 일별은 공통, 주별/월별 그리드는 PC 전용(md:block) */}
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         {mode === '일별' && (
           dailyLayout === '강사별'
@@ -224,19 +240,23 @@ export function UnifiedLessonsView({
             : <DailyTimeline lessons={filtered} date={anchor} onSelectLesson={setDetailLesson} />
         )}
         {mode === '주별' && (
-          <WeeklyView
-            lessons={filtered}
-            weekStart={getWeekStart(anchor)}
-            onSelectLesson={setDetailLesson}
-          />
+          <div className="hidden md:block">
+            <WeeklyView
+              lessons={filtered}
+              weekStart={getWeekStart(anchor)}
+              onSelectLesson={setDetailLesson}
+            />
+          </div>
         )}
         {mode === '월별' && (
-          <MonthlyCardList
-            lessons={filtered}
-            yearMonth={anchor.slice(0, 7)}
-            onSelectDate={d => { changeMode('일별'); changeAnchor(d) }}
-            onSelectLesson={setDetailLesson}
-          />
+          <div className="hidden md:block">
+            <MonthlyCardList
+              lessons={filtered}
+              yearMonth={anchor.slice(0, 7)}
+              onSelectDate={d => { changeMode('일별'); changeAnchor(d) }}
+              onSelectLesson={setDetailLesson}
+            />
+          </div>
         )}
       </DndContext>
     </div>

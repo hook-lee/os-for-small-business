@@ -1,14 +1,19 @@
 import { requireOwnerId } from '@/lib/supabase/auth-server'
 import { loadStudioSettings } from '@/lib/supabase/studio-settings'
+import { loadProfile } from '@/lib/profile/settings'
 import { SettingsTabs } from '../SettingsTabs'
 import { OperationsForm } from './OperationsForm'
 import { RoomsManager } from './RoomsManager'
+import { NotificationSettingsForm } from './NotificationSettingsForm'
 
 export const dynamic = 'force-dynamic'
 
 export default async function OperationsSettingsPage() {
   const ownerId = await requireOwnerId().catch(() => 'no-auth')
-  const initial = await loadStudioSettings(ownerId)
+  const [initial, profile] = await Promise.all([
+    loadStudioSettings(ownerId),
+    loadProfile(ownerId),
+  ])
 
   return (
     <div className="space-y-4">
@@ -21,6 +26,13 @@ export default async function OperationsSettingsPage() {
         </p>
       </div>
       <OperationsForm initial={initial} />
+      <NotificationSettingsForm
+        initial={{
+          notificationSettings: profile.notificationSettings,
+          lowRemainingThreshold: profile.lowRemainingThreshold,
+          payrollDay: profile.payrollDay,
+        }}
+      />
       <RoomsManager />
     </div>
   )
