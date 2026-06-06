@@ -9,6 +9,7 @@ import { requireOwnerId } from '@/lib/supabase/auth-server'
 export const dynamic = 'force-dynamic'
 
 export default async function SalesPage({ searchParams }: { searchParams: Promise<{ ym?: string }> }) {
+  await import('@/lib/supabase/guard').then(m => m.guardManagerPage())
   const params = await searchParams
   const yearMonth = params.ym || new Date().toISOString().slice(0, 7)
 

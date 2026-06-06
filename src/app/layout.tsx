@@ -1,7 +1,8 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { AppShell } from '@/components/AppShell'
-import { getCurrentUser } from '@/lib/supabase/auth-server'
+import { getCurrentUser, type StudioRole } from '@/lib/supabase/auth-server'
+import { getRoleSafe } from '@/lib/supabase/guard'
 import { loadProfile } from '@/lib/profile/settings'
 
 export const metadata: Metadata = {
@@ -13,16 +14,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const user = await getCurrentUser()
   // 로그인된 경우에만 workspace_name 조회
   let workspaceName: string | null = null
+  let role: StudioRole = 'owner'
   if (user) {
     try {
       const profile = await loadProfile(user.id)
       workspaceName = profile.workspaceName
     } catch { /* graceful */ }
+    role = await getRoleSafe()
   }
   return (
     <html lang="ko">
       <body className="min-h-screen bg-neutral-50 text-neutral-900">
-        <AppShell userEmail={user?.email ?? null} workspaceName={workspaceName}>{children}</AppShell>
+        <AppShell userEmail={user?.email ?? null} workspaceName={workspaceName} role={role}>{children}</AppShell>
       </body>
     </html>
   )

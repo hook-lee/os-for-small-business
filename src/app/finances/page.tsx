@@ -7,6 +7,7 @@ import { MonthlyDashboard } from './MonthlyDashboard'
 export const dynamic = 'force-dynamic'
 
 export default async function FinancesPage({ searchParams }: { searchParams: Promise<{ ym?: string }> }) {
+  await import('@/lib/supabase/guard').then(m => m.guardManagerPage())
   const ownerId = await requireOwnerId().catch(() => 'no-auth')
   const txs = await loadTransactions(ownerId)
   const allSummaries = computeAllMonthsSummary(txs)

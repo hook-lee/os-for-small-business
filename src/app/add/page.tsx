@@ -3,7 +3,8 @@ import { FinancesTabBar } from '@/components/FinancesTabBar'
 
 export const dynamic = 'force-dynamic'
 
-export default function AddPage() {
+export default async function AddPage() {
+  await import('@/lib/supabase/guard').then(m => m.guardManagerPage())
   return (
     <div className="space-y-4">
       <FinancesTabBar />

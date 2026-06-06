@@ -14,6 +14,7 @@ export const dynamic = 'force-dynamic'
 type Tab = 'list' | 'payroll' | 'scorecard'
 
 export default async function InstructorsPage({ searchParams }: { searchParams: Promise<{ tab?: string; ym?: string; period?: string }> }) {
+  await import('@/lib/supabase/guard').then(m => m.guardManagerPage())
   const params = await searchParams
   const tab: Tab = params.tab === 'payroll' ? 'payroll' : params.tab === 'scorecard' ? 'scorecard' : 'list'
   const yearMonth = params.ym || new Date().toISOString().slice(0, 7)

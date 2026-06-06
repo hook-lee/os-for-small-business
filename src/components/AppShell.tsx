@@ -7,15 +7,18 @@ import { NotificationBell } from './NotificationBell'
 import { FloatingAssistant } from './FloatingAssistant'
 import { UserMenu } from './UserMenu'
 import { ToastContainer } from './ui/toast'
+import type { StudioRole } from '@/lib/supabase/auth-server'
 
 export function AppShell({
   children,
   userEmail,
   workspaceName,
+  role = 'owner',
 }: {
   children: React.ReactNode
   userEmail: string | null
   workspaceName: string | null
+  role?: StudioRole
 }) {
   const pathname = usePathname()
   const isMember = pathname?.startsWith('/m/')
@@ -46,7 +49,7 @@ export function AppShell({
             {userEmail && <NotificationBell />}
             {/* 데스크탑: 상단 가로 메뉴. 모바일에선 숨기고 하단 탭바가 담당 */}
             <div className="hidden md:flex items-center gap-4">
-              <Nav />
+              <Nav role={role} />
               <UserMenu email={userEmail} />
             </div>
           </div>
@@ -54,7 +57,7 @@ export function AppShell({
       </header>
       <main className="mx-auto max-w-5xl px-4 py-6 pb-24 md:pb-6">{children}</main>
       {userEmail && <FloatingAssistant />}
-      {userEmail && <MobileTabBar userEmail={userEmail} />}
+      {userEmail && <MobileTabBar userEmail={userEmail} role={role} />}
       <ToastContainer />
     </>
   )

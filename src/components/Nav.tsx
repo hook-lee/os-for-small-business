@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import type { StudioRole } from '@/lib/supabase/auth-server'
 
 const ITEMS: Array<{ href: string; label: string; matchPrefixes?: string[]; accent?: boolean }> = [
   { href: '/', label: '홈', matchPrefixes: ['/'] },
@@ -11,11 +12,16 @@ const ITEMS: Array<{ href: string; label: string; matchPrefixes?: string[]; acce
   { href: '/goals', label: '목표', matchPrefixes: ['/goals'], accent: true },
 ]
 
-export function Nav() {
+// 강사(instructor)는 운영(수업·회원·운동일지)만. 재무·강사관리·목표·설정 X.
+const INSTRUCTOR_HREFS = new Set(['/lessons', '/members'])
+
+export function Nav({ role = 'owner' }: { role?: StudioRole }) {
   const pathname = usePathname()
+  const isInstructor = role === 'instructor'
+  const items = isInstructor ? ITEMS.filter(i => INSTRUCTOR_HREFS.has(i.href)) : ITEMS
   return (
     <nav className="flex items-center gap-4 text-sm">
-      {ITEMS.map(({ href, label, matchPrefixes, accent }) => {
+      {items.map(({ href, label, matchPrefixes, accent }) => {
         const active = matchPrefixes
           ? matchPrefixes.some(p => p === '/' ? pathname === '/' : pathname.startsWith(p))
           : pathname === href
@@ -32,18 +38,20 @@ export function Nav() {
           </a>
         )
       })}
-      <a
-        href="/settings"
-        aria-label="설정"
-        className={
-          (typeof pathname === 'string' && pathname.startsWith('/settings'))
-            ? 'text-blue-600'
-            : 'text-neutral-500 hover:text-neutral-800'
-        }
-        title="설정"
-      >
-        ⚙️
-      </a>
+      {!isInstructor && (
+        <a
+          href="/settings"
+          aria-label="설정"
+          className={
+            (typeof pathname === 'string' && pathname.startsWith('/settings'))
+              ? 'text-blue-600'
+              : 'text-neutral-500 hover:text-neutral-800'
+          }
+          title="설정"
+        >
+          ⚙️
+        </a>
+      )}
     </nav>
   )
 }

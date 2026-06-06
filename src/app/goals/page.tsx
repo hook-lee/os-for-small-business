@@ -13,6 +13,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 300
 
 export default async function GoalsPage() {
+  await import('@/lib/supabase/guard').then(m => m.guardManagerPage())
   const today = new Date().toISOString().slice(0, 10)
   const year = parseInt(today.slice(0, 4), 10)
 

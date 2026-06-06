@@ -19,6 +19,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 300
 
 export default async function TaxPage() {
+  await import('@/lib/supabase/guard').then(m => m.guardManagerPage())
   const ownerId = await requireOwnerId().catch(() => 'no-auth')
   const [transactions, profile] = await Promise.all([loadTransactions(ownerId), loadProfile(ownerId)])
   const today = new Date().toISOString().slice(0, 10)

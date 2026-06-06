@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 300
 
 export default async function AnalyticsPage() {
+  await import('@/lib/supabase/guard').then(m => m.guardManagerPage())
   const ownerId = await requireOwnerId().catch(() => 'no-auth')
   const transactions = await loadTransactions(ownerId)
   const monthly = aggregateMonthly(transactions)

@@ -9,6 +9,7 @@ import { NotificationSettingsForm } from './NotificationSettingsForm'
 export const dynamic = 'force-dynamic'
 
 export default async function OperationsSettingsPage() {
+  await import('@/lib/supabase/guard').then(m => m.guardManagerPage())
   const ownerId = await requireOwnerId().catch(() => 'no-auth')
   const [initial, profile] = await Promise.all([
     loadStudioSettings(ownerId),

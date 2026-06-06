@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { getSupabaseAuthBrowser } from '@/lib/supabase/auth-browser'
+import type { StudioRole } from '@/lib/supabase/auth-server'
 
 const TABS = [
   { href: '/', label: '홈', icon: '🏠', match: ['/'] },
@@ -25,13 +26,17 @@ function isActive(pathname: string, match: string[]): boolean {
  * 모바일 전용 하단 탭바 (앱 느낌). 데스크탑(md+)에선 숨김 — 상단 Nav가 담당.
  * 주메뉴 4개 + '더보기'(강사·목표·설정·계정·로그아웃) 바텀시트.
  */
-export function MobileTabBar({ userEmail }: { userEmail: string | null }) {
+export function MobileTabBar({ userEmail, role = 'owner' }: { userEmail: string | null; role?: StudioRole }) {
   const pathname = usePathname() ?? '/'
   const router = useRouter()
   const [moreOpen, setMoreOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
 
-  const moreActive = MORE.some(m => isActive(pathname, m.match))
+  // 강사는 수업·회원만. 재무/홈(재무대시보드)·강사관리·목표·설정 X.
+  const isInstructor = role === 'instructor'
+  const tabs = isInstructor ? TABS.filter(t => t.href === '/lessons' || t.href === '/members') : TABS
+  const more = isInstructor ? [] : MORE
+  const moreActive = more.some(m => isActive(pathname, m.match))
 
   async function signOut() {
     setSigningOut(true)
@@ -43,7 +48,7 @@ export function MobileTabBar({ userEmail }: { userEmail: string | null }) {
   return (
     <>
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-neutral-200 flex pb-[env(safe-area-inset-bottom)]">
-        {TABS.map(t => {
+        {tabs.map(t => {
           const active = isActive(pathname, t.match)
           return (
             <a
@@ -74,7 +79,7 @@ export function MobileTabBar({ userEmail }: { userEmail: string | null }) {
             onClick={e => e.stopPropagation()}
           >
             <div className="w-10 h-1 bg-neutral-200 rounded-full mx-auto mb-3" />
-            {MORE.map(m => {
+            {more.map(m => {
               const active = isActive(pathname, m.match)
               return (
                 <a

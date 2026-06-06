@@ -7,6 +7,7 @@ import { requireOwnerId } from '@/lib/supabase/auth-server'
 export const dynamic = 'force-dynamic'
 
 export default async function CategoriesPage() {
+  await import('@/lib/supabase/guard').then(m => m.guardManagerPage())
   let categories: Awaited<ReturnType<typeof fetchAllCategories>> = []
   const ownerId = await requireOwnerId().catch(() => 'no-auth')
 

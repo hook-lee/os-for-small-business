@@ -6,6 +6,7 @@ import { requireOwnerId } from '@/lib/supabase/auth-server'
 export const dynamic = 'force-dynamic'
 
 export default async function SettingsPage() {
+  await import('@/lib/supabase/guard').then(m => m.guardManagerPage())
   const ownerId = await requireOwnerId().catch(() => 'no-auth')
   const profile = await loadProfile(ownerId)
   return (

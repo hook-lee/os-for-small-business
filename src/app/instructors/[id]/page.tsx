@@ -15,6 +15,7 @@ export default async function InstructorDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  await import('@/lib/supabase/guard').then(m => m.guardManagerPage())
   if (!hasSupabaseConfig()) notFound()
   const { id: idRaw } = await params
   const id = parseInt(idRaw, 10)
