@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import type { UnifiedLesson } from '@/lib/supabase/lessons-combined'
+import { toast } from '@/components/ui/toast'
 
 interface Room { id: number; name: string; isActive: boolean }
 
@@ -30,6 +31,10 @@ export function LessonDetailModal({
   const [time, setTime] = useState<string>('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  // 개인수업 운동일지 빠른 입력
+  const [noteOpen, setNoteOpen] = useState(false)
+  const [noteContent, setNoteContent] = useState('')
+  const [noteSaving, setNoteSaving] = useState(false)
 
   useEffect(() => {
     if (!open || !lesson) return
@@ -37,6 +42,7 @@ export function LessonDetailModal({
     setDate(lesson.date)
     setTime(lesson.time ?? '')
     setError('')
+    setNoteOpen(false); setNoteContent('')
     fetch('/api/rooms').then(r => r.json()).then((j: { rooms?: Room[] }) => setRooms(j.rooms ?? []))
   }, [open, lesson])
 
@@ -90,6 +96,34 @@ export function LessonDetailModal({
       setError((e as Error).message)
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function saveNote() {
+    if (!lesson || !lesson.memberId || !noteContent.trim()) return
+    setNoteSaving(true)
+    try {
+      const res = await fetch('/api/member-notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          memberId: lesson.memberId,
+          noteDate: lesson.date,
+          content: noteContent.trim(),
+          tags: ['운동기록'],
+          authorInstructorId: lesson.instructorId ?? null,
+          lessonId: lesson.id,
+        }),
+      })
+      const json = await res.json() as { ok?: boolean; error?: string }
+      if (!res.ok) { toast(`일지 저장 실패: ${json.error ?? ''}`, 'error'); return }
+      toast('운동 일지 저장됨 ✓', 'success')
+      setNoteContent(''); setNoteOpen(false)
+      router.refresh()
+    } catch {
+      toast('일지 저장 실패: 네트워크 오류', 'error')
+    } finally {
+      setNoteSaving(false)
     }
   }
 
@@ -158,6 +192,53 @@ export function LessonDetailModal({
         </div>
 
         {error && <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded p-2">⚠ {error}</div>}
+
+        {/* 개인수업 — 오늘 운동 일지 빠른 기록 */}
+        {!isGroup && lesson.memberId != null && (
+          <div className="border-t border-neutral-100 pt-3">
+            {!noteOpen ? (
+              <button
+                type="button"
+                onClick={() => setNoteOpen(true)}
+                className="w-full text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded px-3 py-2 font-medium"
+              >
+                📝 이 수업 운동 일지 쓰기
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <label className="block text-xs text-neutral-500">
+                  오늘 운동 기록 · <b>{lesson.memberName ?? '회원'}</b>
+                </label>
+                <textarea
+                  value={noteContent}
+                  onChange={e => setNoteContent(e.target.value)}
+                  rows={3}
+                  placeholder="예: 코어+롤러, 어깨 가동 개선. 다음엔 하체 강도 ↑"
+                  className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={saveNote}
+                    disabled={noteSaving}
+                    className="text-sm bg-neutral-900 text-white rounded px-3 py-1.5 disabled:opacity-50"
+                  >
+                    {noteSaving ? '저장 중…' : '일지 저장'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setNoteOpen(false); setNoteContent('') }}
+                    className="text-sm border border-neutral-300 rounded px-3 py-1.5 hover:bg-neutral-50"
+                  >
+                    취소
+                  </button>
+                </div>
+                <p className="text-[11px] text-neutral-400">태그·지난 기록은 회원 상세 → 운동 일지에서 볼 수 있어요.</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {isGroup && (lesson.reservedCount ?? 0) > 0 && (
           <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">

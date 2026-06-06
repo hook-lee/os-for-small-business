@@ -446,3 +446,59 @@ update expense_categories set name        = '대표자급여'
       where e2.owner_id is not distinct from expense_categories.owner_id
         and e2.name = '대표자급여'
     );
+
+-- ============================================================
+-- v3.16: 회원 운동 일지 (member_notes)
+--
+-- 의도:
+--  - 회원별로 "그날 어떤 운동을 했는지 / 등록 시 문제점 / 개선 과정 / 목표"를
+--    날짜순으로 누적 기록 → 다음 수업 루틴 참고. (기존 internal_memo=현재상태 한 줄과 별도)
+--  - tags: 운동기록/특이사항/목표/등록시문제/개선 (다중). 자유 메모 + 태그.
+--  - author_instructor_id: 작성/담당 강사. 지금은 입력 시 선택, v3.17 강사 로그인 후 자동.
+--  - lesson_id: (선택) 어느 개인수업에서 기록했는지 연결.
+--
+-- 멱등: if not exists / drop policy if exists. 여러 번 실행 OK.
+-- ============================================================
+
+create table if not exists member_notes (
+  id bigint generated always as identity primary key,
+  owner_id uuid references auth.users(id) on delete cascade,
+  member_id bigint not null references members(id) on delete cascade,
+  note_date date not null,
+  content text not null,
+  tags text[] not null default '{}',
+  author_instructor_id bigint references instructors(id) on delete set null,
+  lesson_id bigint references lessons(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists member_notes_owner_idx  on member_notes (owner_id);
+create index if not exists member_notes_member_idx on member_notes (member_id, note_date desc);
+create index if not exists member_notes_author_idx on member_notes (author_instructor_id);
+
+alter table member_notes enable row level security;
+drop policy if exists owner_all_select on member_notes;
+drop policy if exists owner_all_insert on member_notes;
+drop policy if exists owner_all_update on member_notes;
+drop policy if exists owner_all_delete on member_notes;
+create policy owner_all_select on member_notes for select using (auth.uid() = owner_id);
+create policy owner_all_insert on member_notes for insert with check (auth.uid() = owner_id);
+create policy owner_all_update on member_notes for update using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+create policy owner_all_delete on member_notes for delete using (auth.uid() = owner_id);
+
+-- ============================================================
+-- v3.17: 강사 로그인 — instructors ↔ auth 계정 연결
+--
+-- 의도:
+--  - 강사가 본인 계정으로 로그인해서 회원·수업·운동일지를 직접 다룰 수 있게.
+--  - instructors.auth_user_id 로 auth.users 와 연결. 강사가 로그인하면 이 매핑으로
+--    소속 스튜디오(owner_id)와 role(instructor/admin/owner)을 판별한다.
+--    (앱은 service_role로 데이터 접근 — getStudioContext가 ownerId/role 결정. RLS는 백업.)
+--  - 권한: owner/admin = 전체. instructor = 회원·수업·운동일지·본인급여만,
+--    매출·세금·설정·전체급여는 차단(앱 레벨 가드).
+--
+-- 멱등: add column if not exists.
+-- ============================================================
+
+alter table instructors add column if not exists auth_user_id uuid references auth.users(id) on delete set null;
+create unique index if not exists instructors_auth_user_uniq on instructors (auth_user_id) where auth_user_id is not null;

@@ -14,7 +14,9 @@ import { MemberAccessLink } from './MemberAccessLink'
 import { MemberConsultations } from './MemberConsultations'
 import { MemberPassEvents } from './MemberPassEvents'
 import { MemberInstructorRates } from './MemberInstructorRates'
-import { requireOwnerId } from '@/lib/supabase/auth-server'
+import { MemberNotesTimeline } from './MemberNotesTimeline'
+import { getStudioContext } from '@/lib/supabase/auth-server'
+import { fetchNotesByMember } from '@/lib/supabase/member-notes'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,15 +25,17 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
   const { id: idRaw } = await params
   const id = parseInt(idRaw, 10)
   if (!Number.isFinite(id)) notFound()
-  const ownerId = await requireOwnerId().catch(() => 'no-auth')
+  const ctx = await getStudioContext().catch(() => ({ ownerId: 'no-auth', role: 'owner' as const, instructorId: null, userId: null }))
+  const ownerId = ctx.ownerId
 
   const today = new Date().toISOString().slice(0, 10)
-  const [m, passes, lessons, instructors, memberRates] = await Promise.all([
+  const [m, passes, lessons, instructors, memberRates, notes] = await Promise.all([
     fetchMemberById(id, ownerId),
     fetchPassesByMember(id, ownerId),
     fetchLessonsByMember(id, ownerId),
     fetchAllInstructors(ownerId).catch(() => []),
     fetchRatesByMember(id, ownerId).catch(() => []),
+    fetchNotesByMember(id, ownerId).catch(() => []),
   ])
   if (!m) notFound()
 
@@ -117,6 +121,15 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
       </div>
 
       <MemberMemoEditor memberId={m.id} initialInternalMemo={m.internalMemo} />
+
+      <MemberNotesTimeline
+        memberId={m.id}
+        initial={notes}
+        instructors={instructors.map(i => ({ id: i.id, name: i.name, color: i.color }))}
+        currentRole={ctx.role}
+        currentInstructorId={ctx.instructorId}
+        today={today}
+      />
 
       <MemberAccessLink memberId={m.id} initialToken={m.accessToken ?? null} />
 
