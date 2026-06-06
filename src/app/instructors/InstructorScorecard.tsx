@@ -111,7 +111,85 @@ export function InstructorScorecard({ rows, periodKey }: { rows: InstructorScore
         </div>
       </div>
 
-      <Card className="p-0 overflow-hidden">
+      {/* 모바일 — 정렬 컨트롤 + 카드 (가로 스크롤 없이) */}
+      <div className="md:hidden space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-neutral-500 shrink-0">정렬</span>
+          <select
+            value={sortKey}
+            onChange={e => setSortKey(e.target.value as SortKey)}
+            className="flex-1 min-w-0 border border-neutral-300 rounded px-2 py-1.5 text-sm bg-white"
+          >
+            {COLS.map(col => (
+              <option key={col.key} value={col.key}>{col.label} ({col.scope})</option>
+            ))}
+          </select>
+          <button
+            onClick={() => setSortDir(d => (d === 'desc' ? 'asc' : 'desc'))}
+            className="shrink-0 border border-neutral-300 rounded px-3 py-1.5 text-sm tabular-nums"
+            title="정렬 방향"
+          >
+            {sortDir === 'desc' ? '높은순 ↓' : '낮은순 ↑'}
+          </button>
+        </div>
+
+        {sorted.length === 0 && (
+          <Card className="p-6 text-center text-sm text-neutral-400">표시할 강사 데이터가 없습니다.</Card>
+        )}
+        {sorted.map(r => {
+          const sortVal = sortedCol.value(r)
+          const accent = highlightActive && sortVal === hi
+            ? 'border-green-300 bg-green-50/40'
+            : highlightActive && sortVal === lo
+              ? 'border-amber-300 bg-amber-50/30'
+              : 'border-neutral-200'
+          const rl = roleLabel(r.role)
+          return (
+            <Card key={r.instructorId} className={`p-3 border ${accent}`}>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  {r.color && <span className="inline-block w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: r.color }} />}
+                  <a href={`/instructors/${r.instructorId}`} className="font-semibold text-blue-600 hover:underline truncate">{r.instructorName}</a>
+                  {rl && <span className="text-[10px] text-neutral-400 border border-neutral-200 rounded px-1 shrink-0">{rl}</span>}
+                </div>
+                <a
+                  href={`/instructors/${r.instructorId}`}
+                  className="text-[11px] shrink-0 hover:underline"
+                  title="회원별 인센티브 설정"
+                >
+                  {r.incentive.hasAny
+                    ? <span className="text-neutral-500">{incentiveText(r.incentive)}</span>
+                    : <span className="text-amber-600">⚠ 인센티브 설정 →</span>}
+                </a>
+              </div>
+              <div className="grid grid-cols-3 gap-x-2 gap-y-2.5">
+                {COLS.map(col => {
+                  const isSorted = col.key === sortKey
+                  const v = col.value(r)
+                  const cellAccent = isSorted && highlightActive
+                    ? (v === hi ? 'text-green-700' : v === lo ? 'text-amber-700' : 'text-neutral-800')
+                    : 'text-neutral-800'
+                  const sub = col.key === 'trialConversionRate' && r.trialMemberCount > 0
+                    ? `체험 ${r.trialMemberCount}→${r.convertedMemberCount}`
+                    : null
+                  return (
+                    <div key={col.key} className={`min-w-0 ${isSorted ? 'rounded-md bg-blue-50/60 -mx-0.5 px-1.5 py-0.5' : ''}`}>
+                      <div className="text-[10px] text-neutral-400 leading-tight">
+                        {col.label} <span className="text-neutral-300">{col.scope}</span>
+                      </div>
+                      <div className={`text-sm font-semibold tabular-nums break-keep ${cellAccent}`}>{col.render(r)}</div>
+                      {sub && <div className="text-[9px] text-neutral-400 leading-tight">{sub}</div>}
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+          )
+        })}
+      </div>
+
+      {/* PC — 정렬 가능한 표 */}
+      <Card className="hidden md:block p-0 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-neutral-50 text-xs text-neutral-500">

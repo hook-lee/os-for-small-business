@@ -102,6 +102,7 @@ export interface IssuePassInput {
   installment?: string
   paymentType?: '신규결제' | '재결제'  // default '신규결제'
   paidAt?: string            // 결제일(yyyy-mm-dd). 미입력 시 오늘. 매출 인식일·발급일로 사용 (소급 등록 지원)
+  bonusCount?: number        // 회차 추가(+)/감소(-) — 서비스 1회 등. 기본 회차에 가감. 결제금액/매출엔 영향 X
 }
 
 export async function issuePass(
@@ -118,6 +119,10 @@ export async function issuePass(
   const today = new Date().toISOString().slice(0, 10)
   const paidAt = input.paidAt ?? today   // 결제일(소급 가능). 매출 인식일·발급일 기준
 
+  // 회차 추가/감소(서비스 등): 기본 회차에 가감, 0 미만은 0으로 클램프. 결제금액·매출엔 영향 없음.
+  const bonus = Math.floor(input.bonusCount ?? 0)
+  const effectiveCount = Math.max(0, product.totalCount + bonus)
+
   const row: Record<string, unknown> = {
     member_id: input.memberId,
     instructor_id: input.instructorId,
@@ -125,10 +130,10 @@ export async function issuePass(
     pass_type: product.passType,
     start_date: input.startDate,
     end_date: endDate,
-    total_count: product.totalCount,
-    remaining_count: product.totalCount,
-    available_count: product.totalCount,
-    cancellable_count: product.totalCount,
+    total_count: effectiveCount,
+    remaining_count: effectiveCount,
+    available_count: effectiveCount,
+    cancellable_count: effectiveCount,
     status: '이용중',
     payment_type: input.paymentType ?? '신규결제',
     payment_amount: input.paymentAmount ?? product.price,

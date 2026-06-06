@@ -19,11 +19,12 @@ export interface PassPaymentDraft {
   date: string
   paymentType: '신규결제' | '재결제'
   paymentMethod: '카드' | '계좌이체' | '현금'
-  amount: string   // 실결제금액 (빈값=정가)
+  amount: string       // 실결제금액 (빈값=정가)
+  bonusCount: string   // 회차 추가(+)/감소(-) — 서비스 1회 등. 빈값/0 = 조정 없음
 }
 
 export function emptyPassPayment(today: string): PassPaymentDraft {
-  return { enabled: false, productId: '', instructorId: '', date: today, paymentType: '신규결제', paymentMethod: '카드', amount: '' }
+  return { enabled: false, productId: '', instructorId: '', date: today, paymentType: '신규결제', paymentMethod: '카드', amount: '', bonusCount: '' }
 }
 
 /**
@@ -70,6 +71,31 @@ export function PassPaymentSection({ value, onChange }: {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-xs text-neutral-500 mb-1">회차 추가/감소 (서비스 등 · 선택)</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                step="1"
+                value={value.bonusCount}
+                onChange={e => set({ bonusCount: e.target.value })}
+                placeholder="예: 1 (1회 서비스), -2 (차감)"
+                className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm tabular-nums"
+              />
+              {selected && (() => {
+                const bonus = Math.floor(Number(value.bonusCount) || 0)
+                const total = Math.max(0, selected.totalCount + bonus)
+                return (
+                  <span className="text-xs text-neutral-600 whitespace-nowrap">
+                    → 최종 <b className="text-blue-700 tabular-nums">{total}</b>회
+                    {bonus !== 0 && <span className="text-neutral-400"> ({selected.totalCount}{bonus > 0 ? '+' : ''}{bonus})</span>}
+                  </span>
+                )
+              })()}
+            </div>
+            <p className="text-[11px] text-neutral-400 mt-1">수강권 기본 회차에 더하거나(+) 뺍니다(−). 결제 금액·매출에는 영향 없어요.</p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

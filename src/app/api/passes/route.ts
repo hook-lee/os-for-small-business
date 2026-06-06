@@ -20,6 +20,7 @@ export async function POST(req: Request) {
       installment?: string
       paymentType?: string
       paidAt?: string
+      bonusCount?: number
     }
     if (!body.memberId || !body.productId || !body.startDate) {
       return NextResponse.json({ error: 'memberId, productId, startDate 필수' }, { status: 400 })
@@ -37,6 +38,7 @@ export async function POST(req: Request) {
         installment: body.installment,
         paymentType: body.paymentType as '신규결제' | '재결제' | undefined,
         paidAt: body.paidAt,
+        bonusCount: typeof body.bonusCount === 'number' ? Math.floor(body.bonusCount) : undefined,
       },
       product,
       ownerId,

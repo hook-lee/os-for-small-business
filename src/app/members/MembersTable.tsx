@@ -115,6 +115,7 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
             paymentAmount: payment.amount ? parseInt(payment.amount, 10) : undefined,
             paymentMethod: payment.paymentMethod,
             paymentType: payment.paymentType,
+            bonusCount: payment.bonusCount ? parseInt(payment.bonusCount, 10) : undefined,
           }),
         })
         const payJson = await payRes.json() as { ok?: boolean; error?: string }
