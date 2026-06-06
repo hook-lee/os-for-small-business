@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/ui/toast'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -58,11 +59,11 @@ export function MemberInstructorRates({
     const d = drafts[inst.id]
     const customRate = d.customRate.trim() === '' ? null : parseInt(d.customRate, 10)
     if (customRate != null && (!Number.isFinite(customRate) || customRate < 0)) {
-      alert('시급은 0 이상의 정수로 입력하세요')
+      toast('시급은 0 이상의 정수로 입력하세요')
       return
     }
     const incentive = parseInt(d.incentive, 10) || 0
-    if (incentive < 0) { alert('인센티브는 0 이상'); return }
+    if (incentive < 0) { toast('인센티브는 0 이상'); return }
     update(inst.id, { saving: true })
     try {
       const res = await fetch('/api/member-instructor-rates', {
@@ -77,11 +78,11 @@ export function MemberInstructorRates({
         }),
       })
       const json = await res.json() as { ok?: boolean; error?: string }
-      if (!res.ok) { alert(`저장 실패: ${json.error ?? 'unknown'}`); return }
+      if (!res.ok) { toast(`저장 실패: ${json.error ?? 'unknown'}`); return }
       setDrafts(prev => ({ ...prev, [inst.id]: { ...prev[inst.id], saving: false, saved: true } }))
       router.refresh()
     } catch {
-      alert('저장 실패: 네트워크 오류')
+      toast('저장 실패: 네트워크 오류')
       update(inst.id, { saving: false })
     }
   }
@@ -92,11 +93,11 @@ export function MemberInstructorRates({
     try {
       const res = await fetch(`/api/member-instructor-rates?memberId=${memberId}&instructorId=${inst.id}`, { method: 'DELETE' })
       const json = await res.json() as { ok?: boolean; error?: string }
-      if (!res.ok) { alert(`삭제 실패: ${json.error ?? 'unknown'}`); return }
+      if (!res.ok) { toast(`삭제 실패: ${json.error ?? 'unknown'}`); return }
       setDrafts(prev => ({ ...prev, [inst.id]: { customRate: '', incentive: '0', memo: '', saving: false, saved: false } }))
       router.refresh()
     } catch {
-      alert('삭제 실패: 네트워크 오류')
+      toast('삭제 실패: 네트워크 오류')
       update(inst.id, { saving: false })
     }
   }

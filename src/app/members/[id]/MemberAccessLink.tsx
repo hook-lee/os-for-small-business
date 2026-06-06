@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/ui/toast'
 
 import { useState } from 'react'
 import { Card } from '@/components/ui/Card'
@@ -17,9 +18,9 @@ export function MemberAccessLink({ memberId, initialToken }: { memberId: number;
     try {
       const res = await fetch(`/api/members/${memberId}/access-token`, { method: 'POST' })
       const json = await res.json() as { ok?: boolean; token?: string; error?: string }
-      if (!res.ok) { alert(`발급 실패: ${json.error}`); return }
+      if (!res.ok) { toast(`발급 실패: ${json.error}`); return }
       setToken(json.token ?? null)
-    } catch { alert('네트워크 오류') }
+    } catch { toast('네트워크 오류') }
     finally { setBusy(false) }
   }
 
@@ -46,7 +47,7 @@ export function MemberAccessLink({ memberId, initialToken }: { memberId: number;
               onClick={e => (e.target as HTMLInputElement).select()}
             />
             <button
-              onClick={() => { navigator.clipboard.writeText(url); alert('복사됨') }}
+              onClick={() => { navigator.clipboard.writeText(url); toast('복사됨') }}
               className="text-xs bg-neutral-100 hover:bg-neutral-200 px-2 py-1 rounded"
             >
               복사

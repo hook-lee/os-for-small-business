@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/ui/toast'
 
 import { useState, useMemo, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
@@ -132,11 +133,11 @@ export function ConsultationsManager({
         body: JSON.stringify({ action: 'convert' }),
       })
       const j = await res.json() as { ok?: boolean; error?: string; memberId?: number; created?: boolean }
-      if (!res.ok) { alert(j.error ?? '전환 실패'); return }
-      alert(j.created ? '새 회원으로 등록됨' : '기존 회원과 연결됨')
+      if (!res.ok) { toast(j.error ?? '전환 실패'); return }
+      toast(j.created ? '새 회원으로 등록됨' : '기존 회원과 연결됨')
       await reloadList()
     } catch (e) {
-      alert((e as Error).message)
+      toast((e as Error).message)
     }
   }
 
@@ -145,10 +146,10 @@ export function ConsultationsManager({
     try {
       const res = await fetch(`/api/consultations/${id}`, { method: 'DELETE' })
       const j = await res.json() as { ok?: boolean; error?: string }
-      if (!res.ok) { alert(j.error ?? '삭제 실패'); return }
+      if (!res.ok) { toast(j.error ?? '삭제 실패'); return }
       await reloadList()
     } catch (e) {
-      alert((e as Error).message)
+      toast((e as Error).message)
     }
   }
 

@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/ui/toast'
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
@@ -81,9 +82,9 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
   }
 
   async function handleAdd() {
-    if (!form.name.trim()) { alert('이름을 입력해주세요.'); return }
+    if (!form.name.trim()) { toast('이름을 입력해주세요.'); return }
     // 수강권 함께 등록 켰는데 상품 미선택이면 막기
-    if (payment.enabled && !payment.productId) { alert('수강권 등록을 켜셨어요. 수강권 상품을 선택하거나 꺼주세요.'); return }
+    if (payment.enabled && !payment.productId) { toast('수강권 등록을 켜셨어요. 수강권 상품을 선택하거나 꺼주세요.'); return }
     setSaving(true)
     try {
       const res = await fetch('/api/members', {
@@ -99,7 +100,7 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
         }),
       })
       const json = await res.json() as { ok?: boolean; error?: string; id?: number }
-      if (!res.ok) { alert(`추가 실패: ${json.error ?? 'unknown'}`); return }
+      if (!res.ok) { toast(`추가 실패: ${json.error ?? 'unknown'}`); return }
 
       // 첫 결제 함께 등록 → 수강권 발급(매출 자동). 회원은 이미 생성됐으므로 결제 실패해도 회원은 유지.
       if (payment.enabled && payment.productId && json.id) {
@@ -120,13 +121,13 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
         })
         const payJson = await payRes.json() as { ok?: boolean; error?: string }
         if (!payRes.ok) {
-          alert(`회원은 등록됐지만 수강권 발급 실패: ${payJson.error ?? 'unknown'}\n회원 상세에서 다시 발급해주세요.`)
+          toast(`회원은 등록됐지만 수강권 발급 실패: ${payJson.error ?? 'unknown'}\n회원 상세에서 다시 발급해주세요.`)
         }
       }
       resetForm()
       router.refresh()
     } catch {
-      alert('추가 실패: 네트워크 오류')
+      toast('추가 실패: 네트워크 오류')
     } finally {
       setSaving(false)
     }
@@ -137,10 +138,10 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
     try {
       const res = await fetch(`/api/members/${m.id}`, { method: 'DELETE' })
       const json = await res.json() as { ok?: boolean; error?: string }
-      if (!res.ok) { alert(`삭제 실패: ${json.error ?? 'unknown'}`); return }
+      if (!res.ok) { toast(`삭제 실패: ${json.error ?? 'unknown'}`); return }
       router.refresh()
     } catch {
-      alert('삭제 실패: 네트워크 오류')
+      toast('삭제 실패: 네트워크 오류')
     }
   }
 

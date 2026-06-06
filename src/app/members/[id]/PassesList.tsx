@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/ui/toast'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -33,7 +34,7 @@ export function PassesList({ initial }: { initial: Pass[] }) {
   async function saveEdit(id: number) {
     const remaining = editRemaining ? parseInt(editRemaining, 10) : undefined
     if (remaining !== undefined && (!Number.isFinite(remaining) || remaining < 0)) {
-      alert('잔여 횟수는 0 이상')
+      toast('잔여 횟수는 0 이상')
       return
     }
     try {
@@ -48,7 +49,7 @@ export function PassesList({ initial }: { initial: Pass[] }) {
         }),
       })
       const json = await res.json() as { ok?: boolean; error?: string }
-      if (!res.ok) { alert(`저장 실패: ${json.error ?? 'unknown'}`); return }
+      if (!res.ok) { toast(`저장 실패: ${json.error ?? 'unknown'}`); return }
       // optimistic update
       setPasses(prev => prev.map(p =>
         p.id === id
@@ -64,7 +65,7 @@ export function PassesList({ initial }: { initial: Pass[] }) {
       setEditingId(null)
       router.refresh()
     } catch {
-      alert('저장 실패: 네트워크 오류')
+      toast('저장 실패: 네트워크 오류')
     }
   }
 
@@ -75,13 +76,13 @@ export function PassesList({ initial }: { initial: Pass[] }) {
       const res = await fetch(`/api/passes/${id}`, { method: 'DELETE' })
       const json = await res.json() as { ok?: boolean; error?: string }
       if (!res.ok) {
-        alert(`삭제 실패: ${json.error ?? 'unknown'}`)
+        toast(`삭제 실패: ${json.error ?? 'unknown'}`)
         return
       }
       setPasses(prev => prev.filter(p => p.id !== id))
       router.refresh()
     } catch {
-      alert('삭제 실패: 네트워크 오류')
+      toast('삭제 실패: 네트워크 오류')
     } finally {
       setDeletingId(null)
     }
@@ -91,9 +92,9 @@ export function PassesList({ initial }: { initial: Pass[] }) {
     const deltaStr = prompt(`${p.passName} 보너스 회차 추가\n\n+회차 입력 (예: 1, 2)\n차감하려면 -1, -2 등 음수`, '1')
     if (deltaStr === null) return
     const delta = parseInt(deltaStr, 10)
-    if (!Number.isFinite(delta) || delta === 0) { alert('0 아닌 정수 입력 필요'); return }
+    if (!Number.isFinite(delta) || delta === 0) { toast('0 아닌 정수 입력 필요'); return }
     const reason = prompt('사유 입력 (예: 신규 10회 결제 서비스, 강사 노쇼 보상)')
-    if (!reason || !reason.trim()) { alert('사유는 필수입니다'); return }
+    if (!reason || !reason.trim()) { toast('사유는 필수입니다'); return }
     try {
       const res = await fetch(`/api/passes/${p.id}/bonus`, {
         method: 'POST',
@@ -101,7 +102,7 @@ export function PassesList({ initial }: { initial: Pass[] }) {
         body: JSON.stringify({ delta, reason: reason.trim() }),
       })
       const json = await res.json() as { ok?: boolean; error?: string }
-      if (!res.ok) { alert(`실패: ${json.error ?? 'unknown'}`); return }
+      if (!res.ok) { toast(`실패: ${json.error ?? 'unknown'}`); return }
       // optimistic
       setPasses(prev => prev.map(pp =>
         pp.id === p.id
@@ -115,7 +116,7 @@ export function PassesList({ initial }: { initial: Pass[] }) {
       ))
       router.refresh()
     } catch {
-      alert('실패: 네트워크 오류')
+      toast('실패: 네트워크 오류')
     }
   }
 

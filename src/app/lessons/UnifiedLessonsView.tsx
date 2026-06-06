@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/ui/toast'
 
 import { useState, useMemo, useEffect, type MouseEvent } from 'react'
 import { useRouter } from 'next/navigation'
@@ -95,7 +96,7 @@ export function UnifiedLessonsView({
     } catch (e) {
       // 롤백
       setLocalLessons(prev => prev.map(l => (sameKey(l) ? { ...l, date: lesson.date } : l)))
-      alert(`수업 이동 실패: ${(e as Error).message}`)
+      toast(`수업 이동 실패: ${(e as Error).message}`)
     }
   }
 

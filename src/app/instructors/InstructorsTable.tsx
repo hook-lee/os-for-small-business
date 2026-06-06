@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/ui/toast'
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
@@ -71,7 +72,7 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
   async function saveEdit(id: number) {
     const name = editDraft.name.trim()
     if (!name) {
-      alert('이름은 비울 수 없습니다')
+      toast('이름은 비울 수 없습니다')
       return
     }
     const ratePrivate = parseInt(editDraft.ratePrivate, 10)
@@ -79,7 +80,7 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
     const rateDuet = parseInt(editDraft.rateDuet, 10)
     const rateGroup = parseInt(editDraft.rateGroup, 10)
     if ([ratePrivate, rateRehab, rateDuet, rateGroup].some(r => !Number.isFinite(r) || r < 0)) {
-      alert('시급은 0 이상 숫자만 입력 가능')
+      toast('시급은 0 이상 숫자만 입력 가능')
       return
     }
     const phone = editDraft.phone.trim() || null
@@ -92,7 +93,7 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
       })
       const json = await res.json() as { ok?: boolean; error?: string }
       if (!res.ok) {
-        alert(`저장 실패: ${json.error ?? 'unknown'}`)
+        toast(`저장 실패: ${json.error ?? 'unknown'}`)
         return
       }
       setInstructors(prev => prev.map(i =>
@@ -100,7 +101,7 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
       ))
       setEditingId(null)
     } catch {
-      alert('저장 실패: 네트워크 오류')
+      toast('저장 실패: 네트워크 오류')
     } finally {
       setSavingId(null)
     }
@@ -113,19 +114,19 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
       const res = await fetch(`/api/instructors/${inst.id}`, { method: 'DELETE' })
       const json = await res.json() as { ok?: boolean; error?: string }
       if (!res.ok) {
-        alert(`삭제 실패: ${json.error ?? 'unknown'}`)
+        toast(`삭제 실패: ${json.error ?? 'unknown'}`)
         return
       }
       setInstructors(prev => prev.filter(i => i.id !== inst.id))
       router.refresh()
     } catch {
-      alert('삭제 실패: 네트워크 오류')
+      toast('삭제 실패: 네트워크 오류')
     }
   }
 
   async function handleAdd() {
     if (!addForm.name.trim()) {
-      alert('이름을 입력해주세요.')
+      toast('이름을 입력해주세요.')
       return
     }
     setAddSaving(true)
@@ -142,14 +143,14 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
       })
       const json = await res.json() as { ok?: boolean; error?: string }
       if (!res.ok) {
-        alert(`추가 실패: ${json.error ?? 'unknown'}`)
+        toast(`추가 실패: ${json.error ?? 'unknown'}`)
         return
       }
       setAddForm({ name: '', phone: '', color: '' })
       setShowAddForm(false)
       router.refresh()
     } catch {
-      alert('추가 실패: 네트워크 오류')
+      toast('추가 실패: 네트워크 오류')
     } finally {
       setAddSaving(false)
     }

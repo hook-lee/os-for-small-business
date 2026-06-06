@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/ui/toast'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -23,7 +24,7 @@ export function MemberIncentiveInput({ memberId, instructorId, initialIncentive,
   const dirty = current !== (initialIncentive || 0)
 
   async function save() {
-    if (current < 0) { alert('인센티브는 0 이상으로 입력하세요'); return }
+    if (current < 0) { toast('인센티브는 0 이상으로 입력하세요'); return }
     setSaving(true); setSaved(false)
     try {
       const res = await fetch('/api/member-instructor-rates', {
@@ -32,11 +33,11 @@ export function MemberIncentiveInput({ memberId, instructorId, initialIncentive,
         body: JSON.stringify({ memberId, instructorId, customRate, incentivePerSession: current, memo }),
       })
       const json = await res.json() as { ok?: boolean; error?: string }
-      if (!res.ok) { alert(`저장 실패: ${json.error ?? 'unknown'}`); return }
+      if (!res.ok) { toast(`저장 실패: ${json.error ?? 'unknown'}`); return }
       setSaved(true)
       router.refresh()
     } catch {
-      alert('저장 실패: 네트워크 오류')
+      toast('저장 실패: 네트워크 오류')
     } finally {
       setSaving(false)
     }

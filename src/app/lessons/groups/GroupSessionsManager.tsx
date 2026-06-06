@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/ui/toast'
 
 import { useState, useMemo } from 'react'
 import type { GroupSession } from '@/lib/supabase/group-sessions'
@@ -75,7 +76,7 @@ export function GroupSessionsManager({ initialSessions, instructors }: Props) {
         })
         const json = await res.json()
         if (!res.ok) throw new Error(json.error ?? '생성 실패')
-        alert(`✓ ${json.count}개의 그룹 세션이 생성되었습니다`)
+        toast(`✓ ${json.count}개의 그룹 세션이 생성되었습니다`)
       } else {
         const res = await fetch('/api/group-sessions', {
           method: 'POST',
@@ -117,7 +118,7 @@ export function GroupSessionsManager({ initialSessions, instructors }: Props) {
       }
       setSessions(s => s.filter(x => x.id !== id))
     } catch (err) {
-      alert((err as Error).message)
+      toast((err as Error).message)
     }
   }
 

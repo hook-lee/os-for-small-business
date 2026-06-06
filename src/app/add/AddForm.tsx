@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/ui/toast'
 
 import { useState, useEffect, useMemo, type FormEvent } from 'react'
 import { Card } from '@/components/ui/Card'
@@ -90,12 +91,12 @@ export function AddForm() {
       const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' })
       const json = await res.json() as { ok?: boolean; error?: string }
       if (!res.ok) {
-        alert(`삭제 실패: ${json.error ?? 'unknown'}`)
+        toast(`삭제 실패: ${json.error ?? 'unknown'}`)
         return
       }
       await fetchRecent()
     } catch {
-      alert('삭제 실패: 네트워크 오류')
+      toast('삭제 실패: 네트워크 오류')
     } finally {
       setDeletingId(null)
     }

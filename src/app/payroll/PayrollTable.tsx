@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/ui/toast'
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
@@ -156,7 +157,7 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
         error?: string
       }
       if (!res.ok || !json.counts) {
-        if (!silent) alert(`자동 집계 실패: ${json.error ?? 'unknown'}`)
+        if (!silent) toast(`자동 집계 실패: ${json.error ?? 'unknown'}`)
         return
       }
       const c = json.counts
@@ -173,7 +174,7 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
       }))
       setAutoLines(prev => ({ ...prev, [instructorId]: json.lines ?? [] }))
     } catch {
-      if (!silent) alert('네트워크 오류')
+      if (!silent) toast('네트워크 오류')
     }
   }
 

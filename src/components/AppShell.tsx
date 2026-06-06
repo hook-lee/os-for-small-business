@@ -6,6 +6,7 @@ import { MobileTabBar } from './MobileTabBar'
 import { NotificationBell } from './NotificationBell'
 import { FloatingAssistant } from './FloatingAssistant'
 import { UserMenu } from './UserMenu'
+import { ToastContainer } from './ui/toast'
 
 export function AppShell({
   children,
@@ -26,7 +27,7 @@ export function AppShell({
   }
 
   if (isMember) {
-    return <div className="min-h-screen bg-neutral-50">{children}</div>
+    return <div className="min-h-screen bg-neutral-50">{children}<ToastContainer /></div>
   }
 
   return (
@@ -54,6 +55,7 @@ export function AppShell({
       <main className="mx-auto max-w-5xl px-4 py-6 pb-24 md:pb-6">{children}</main>
       {userEmail && <FloatingAssistant />}
       {userEmail && <MobileTabBar userEmail={userEmail} />}
+      <ToastContainer />
     </>
   )
 }

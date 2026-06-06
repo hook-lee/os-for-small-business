@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/ui/toast'
 
 import { useState, useEffect, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
@@ -65,7 +66,7 @@ export function SessionRoster({ session, initialReservations }: Props) {
       )
       router.refresh()
     } catch (err) {
-      alert((err as Error).message)
+      toast((err as Error).message)
     } finally {
       setUpdating(null)
     }

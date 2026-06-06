@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/ui/toast'
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
@@ -57,7 +58,7 @@ export function MessagesComposer({
       })
       const json = await res.json() as { ok?: boolean; error?: string }
       if (!res.ok) { setError(json.error ?? '저장 실패'); return }
-      if (status === 'sent') alert('보냄 기록 저장됨. 전화번호 리스트 복사해서 외부 채널로 발송하세요.')
+      if (status === 'sent') toast('보냄 기록 저장됨. 전화번호 리스트 복사해서 외부 채널로 발송하세요.')
       setBody(''); setSubject('')
       router.refresh()
     } catch {
@@ -181,7 +182,7 @@ export function MessagesComposer({
                 className="w-full border border-neutral-200 bg-neutral-50 rounded px-2 py-1 text-xs font-mono"
               />
               <button
-                onClick={() => { navigator.clipboard.writeText(phoneList); alert('복사됨') }}
+                onClick={() => { navigator.clipboard.writeText(phoneList); toast('복사됨') }}
                 className="mt-1 text-xs text-blue-600 hover:underline"
               >
                 전체 복사

@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/ui/toast'
 
 import { useState, useRef, useEffect, type KeyboardEvent } from 'react'
 import { usePathname } from 'next/navigation'
@@ -224,7 +225,7 @@ export function FloatingAssistant() {
       const res = await fetch(`/api/chat/sessions/${id}`, { method: 'DELETE' })
       if (!res.ok) {
         const json = await res.json() as { error?: string }
-        alert(`삭제 실패: ${json.error ?? 'unknown'}`)
+        toast(`삭제 실패: ${json.error ?? 'unknown'}`)
         return
       }
       setSessions(prev => prev.filter(s => s.id !== id))
@@ -233,7 +234,7 @@ export function FloatingAssistant() {
         setMessages([])
       }
     } catch (err) {
-      alert(`삭제 실패: ${(err as Error).message}`)
+      toast(`삭제 실패: ${(err as Error).message}`)
     }
   }
 

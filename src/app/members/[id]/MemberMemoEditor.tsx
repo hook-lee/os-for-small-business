@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/ui/toast'
 
 import { useState } from 'react'
 import { Card } from '@/components/ui/Card'
@@ -17,9 +18,9 @@ export function MemberMemoEditor({ memberId, initialInternalMemo }: { memberId: 
         body: JSON.stringify({ internalMemo: memo }),
       })
       const json = await res.json() as { ok?: boolean; error?: string }
-      if (!res.ok) { alert(`저장 실패: ${json.error}`); return }
+      if (!res.ok) { toast(`저장 실패: ${json.error}`); return }
       setEditing(false)
-    } catch { alert('네트워크 오류') }
+    } catch { toast('네트워크 오류') }
     finally { setSaving(false) }
   }
 

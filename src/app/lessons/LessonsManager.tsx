@@ -1,4 +1,5 @@
 'use client'
+import { toast } from '@/components/ui/toast'
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
@@ -137,7 +138,7 @@ export function LessonsManager({ initialDate, initialLessons, monthLessons = [],
         })
         const json = await res.json() as { ok?: boolean; count?: number; error?: string }
         if (!res.ok) { setError(json.error ?? '저장 실패'); return }
-        alert(`✓ ${json.count}건의 수업이 등록되었습니다`)
+        toast(`✓ ${json.count}건의 수업이 등록되었습니다`)
       } else {
         const res = await fetch('/api/lessons', {
           method: 'POST',
@@ -189,9 +190,9 @@ export function LessonsManager({ initialDate, initialLessons, monthLessons = [],
         body: JSON.stringify({ status: newStatus }),
       })
       const json = await res.json() as { ok?: boolean; deductionDelta?: number; error?: string }
-      if (!res.ok) { alert(`상태 변경 실패: ${json.error}`); return }
+      if (!res.ok) { toast(`상태 변경 실패: ${json.error}`); return }
       await reloadLessons()
-    } catch { alert('네트워크 오류') }
+    } catch { toast('네트워크 오류') }
   }
 
   async function handleDelete(l: LessonWithNames) {
@@ -200,9 +201,9 @@ export function LessonsManager({ initialDate, initialLessons, monthLessons = [],
     try {
       const res = await fetch(`/api/lessons/${l.id}`, { method: 'DELETE' })
       const json = await res.json() as { ok?: boolean; error?: string }
-      if (!res.ok) { alert(`삭제 실패: ${json.error}`); return }
+      if (!res.ok) { toast(`삭제 실패: ${json.error}`); return }
       await reloadLessons()
-    } catch { alert('네트워크 오류') }
+    } catch { toast('네트워크 오류') }
   }
 
   const deductedCount = useMemo(() => lessons.filter(l => l.deducted).length, [lessons])
