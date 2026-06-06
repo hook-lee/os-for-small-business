@@ -1,4 +1,4 @@
-import { fetchAllInstructors, countMembersByInstructor } from '@/lib/supabase/instructors'
+import { fetchAllInstructors } from '@/lib/supabase/instructors'
 import { fetchAllPasses } from '@/lib/supabase/passes'
 import { fetchPayrollByMonth } from '@/lib/supabase/payroll'
 import { fetchAllRates } from '@/lib/supabase/member-instructor-rates'
@@ -29,16 +29,22 @@ export default async function InstructorsPage({ searchParams }: { searchParams: 
   if (hasSupabaseConfig()) {
     instructors = await fetchAllInstructors(ownerId)
     if (tab === 'list') {
-      await Promise.all(instructors.map(async i => {
-        memberCounts[i.id] = await countMembersByInstructor(i.id, ownerId)
-      }))
+      // 강사별 회원수 + 매출을 passes 한 번 조회로 집계 (이전엔 강사 N명당 N+1 쿼리).
       try {
         const allPasses = await fetchAllPasses(ownerId)
+        const memberSets: Record<number, Set<number>> = {}
         for (const p of allPasses) {
           if (p.instructorId == null) continue
           revenueByInstructor[p.instructorId] = (revenueByInstructor[p.instructorId] ?? 0) + (p.paymentAmount ?? 0)
+          // 회원수 = 이용중 수강권 보유 unique 회원 (countMembersByInstructor와 동일 기준)
+          if (p.status === '이용중' && p.memberId != null) {
+            (memberSets[p.instructorId] ??= new Set<number>()).add(p.memberId)
+          }
         }
-      } catch {/* fallback */}
+        for (const inst of instructors) {
+          memberCounts[inst.id] = memberSets[inst.id]?.size ?? 0
+        }
+      } catch {/* fallback: 카운트·매출 0 유지 */}
     } else if (tab === 'scorecard') {
       try {
         const today = new Date().toISOString().slice(0, 10)

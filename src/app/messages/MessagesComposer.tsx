@@ -72,7 +72,7 @@ export function MessagesComposer({
       <h2 className="text-xl font-semibold">메시지 / 공지</h2>
 
       <Card className="text-xs text-neutral-600 bg-amber-50 border-amber-200">
-        ⚠️ 현재는 <strong>UI + 기록 only</strong>. 외부 발송 API(SMS·카카오 알림톡·이메일) 미연동 — 작성 후 전화번호 리스트 복사해서 카톡/문자로 직접 보내세요. v3에서 알리고/SendGrid 연동 예정.
+        ⚠️ 현재는 <strong>작성·기록용</strong>입니다. 문자·카톡 자동 발송은 아직 연동 전이라, 작성 후 전화번호 리스트를 복사해 카톡/문자로 직접 보내주세요.
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

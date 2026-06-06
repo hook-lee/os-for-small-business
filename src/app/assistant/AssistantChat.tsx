@@ -14,10 +14,10 @@ interface Message {
 const EXAMPLES = [
   '이번 달 매출이랑 지출 알려줘',
   '5월 광고선전비 얼마 썼어?',
-  '김우영 강사 이번 달 급여 얼마 나가?',
+  '강사별 이번 달 급여 얼마 나가?',
   '다음 분기 부가세 얼마 적립해야 해?',
   '올해 종소세 예상 얼마?',
-  '회원 박지영 활성 수강권 보여줘',
+  '특정 회원 활성 수강권 보여줘',
 ]
 
 import { renderSafeMarkdown as renderText } from '@/lib/security/sanitize'

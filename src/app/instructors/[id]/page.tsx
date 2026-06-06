@@ -24,21 +24,26 @@ export default async function InstructorDetailPage({
   const instructor = await fetchInstructorById(id, ownerId)
   if (!instructor) notFound()
 
-  const members = await fetchMembersByInstructor(id, ownerId)
+  // members·rates·passes는 instructor 결과에 의존하지 않음 → 병렬 조회 (이전엔 3번 직렬 await).
+  const [members, allRates, allPasses] = await Promise.all([
+    fetchMembersByInstructor(id, ownerId),
+    fetchAllRates(ownerId).catch(() => []),
+    fetchAllPasses(ownerId).catch(() => null),
+  ])
 
   // 이 강사의 회원별 인센티브(회당) — 인라인 편집 prefill용. custom_rate·memo도 함께 보존.
-  const allRates = await fetchAllRates(ownerId).catch(() => [])
   const rateByMember = new Map(allRates.filter(r => r.instructorId === id).map(r => [r.memberId, r]))
 
   // KPI 계산
   let kpi: ReturnType<typeof computeInstructorKPI> | null = null
-  try {
-    const allPasses = await fetchAllPasses(ownerId)
-    const instructorPasses = allPasses.filter(p => p.instructorId === id)
-    const allByMember = groupPassesByMember(allPasses)
-    kpi = computeInstructorKPI(id, instructorPasses, allByMember)
-  } catch {
-    kpi = null
+  if (allPasses) {
+    try {
+      const instructorPasses = allPasses.filter(p => p.instructorId === id)
+      const allByMember = groupPassesByMember(allPasses)
+      kpi = computeInstructorKPI(id, instructorPasses, allByMember)
+    } catch {
+      kpi = null
+    }
   }
 
   const roleLabel = instructor.role === 'owner' ? '스튜디오 오너' : instructor.role === 'admin' ? '관리자' : '강사'
