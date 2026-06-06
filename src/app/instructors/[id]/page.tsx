@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card'
 import { notFound } from 'next/navigation'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
 import { MemberIncentiveInput } from './MemberIncentiveInput'
+import { InstructorAccountSection } from './InstructorAccountSection'
 
 export const dynamic = 'force-dynamic'
 
@@ -65,6 +66,13 @@ export default async function InstructorDetailPage({
         <Row label="듀엣 시급" value={`${instructor.rateDuet.toLocaleString()}원`} />
         <Row label="그룹 시급" value={`${instructor.rateGroup.toLocaleString()}원`} />
       </Card>
+
+      <InstructorAccountSection
+        instructorId={instructor.id}
+        instructorName={instructor.name}
+        email={instructor.email}
+        connected={instructor.authUserId != null}
+      />
 
       {kpi && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">

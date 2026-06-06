@@ -7,10 +7,10 @@ import type { Instructor } from '@/lib/supabase/instructors'
 
 function inst(id: number, name: string, role: Instructor['role'] = 'instructor'): Instructor {
   return {
-    id, name, phone: null, role,
+    id, name, phone: null, email: null, role,
     employmentType: null, defaultHourlyRate: 0,
     ratePrivate: 0, rateRehab: 0, rateDuet: 0, rateGroup: 0,
-    color: null, active: true,
+    color: null, active: true, authUserId: null,
   }
 }
 

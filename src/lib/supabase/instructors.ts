@@ -4,6 +4,7 @@ export interface Instructor {
   id: number
   name: string
   phone: string | null
+  email: string | null
   role: 'owner' | 'instructor' | 'admin'
   employmentType: string | null
   defaultHourlyRate: number  // fallback
@@ -13,12 +14,14 @@ export interface Instructor {
   rateGroup: number
   color: string | null
   active: boolean
+  authUserId: string | null   // 로그인 계정 연결 여부 (v3.17). null=미연결
 }
 
 interface InstructorRow {
   id: number
   name: string
   phone: string | null
+  email: string | null
   role: string
   employment_type: string | null
   default_hourly_rate: number
@@ -28,6 +31,7 @@ interface InstructorRow {
   rate_group: number
   color: string | null
   active: boolean
+  auth_user_id?: string | null
 }
 
 function rowToInstructor(row: InstructorRow): Instructor {
@@ -35,6 +39,7 @@ function rowToInstructor(row: InstructorRow): Instructor {
     id: row.id,
     name: row.name,
     phone: row.phone,
+    email: row.email ?? null,
     role: row.role as 'owner' | 'instructor' | 'admin',
     employmentType: row.employment_type,
     defaultHourlyRate: Number(row.default_hourly_rate),
@@ -44,6 +49,7 @@ function rowToInstructor(row: InstructorRow): Instructor {
     rateGroup: Number(row.rate_group),
     color: row.color,
     active: row.active,
+    authUserId: row.auth_user_id ?? null,
   }
 }
 
