@@ -101,7 +101,22 @@ export async function insertTransaction(input: NewTransactionInput, ownerId: str
   }
   if (ownerId !== 'no-auth') row.owner_id = ownerId
   const { error } = await supabase.from('transactions').insert(row)
-  if (error) throw new Error(`Supabase insert failed: ${error.message}`)
+  if (error) {
+    // 신규 컬럼(v3.7 pass_id·pass_product_id·member_id·instructor_id 등) 마이그레이션 미실행 DB 폴백:
+    // 해당 컬럼을 빼고 재시도 → 거래(매출) 자체는 저장됨. 마이그 실행 후엔 연결 컬럼도 정상 저장.
+    if (/pass_id|pass_product_id|member_id|instructor_id|person|does not exist|schema cache/i.test(error.message)) {
+      const rest: Record<string, unknown> = { ...row }
+      delete rest.pass_id
+      delete rest.pass_product_id
+      delete rest.member_id
+      delete rest.instructor_id
+      delete rest.person
+      const retry = await supabase.from('transactions').insert(rest)
+      if (retry.error) throw new Error(`Supabase insert failed: ${retry.error.message}`)
+      return
+    }
+    throw new Error(`Supabase insert failed: ${error.message}`)
+  }
 }
 
 /**

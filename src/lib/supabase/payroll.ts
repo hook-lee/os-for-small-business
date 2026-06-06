@@ -115,5 +115,18 @@ export async function upsertPayroll(input: UpsertPayrollInput, ownerId: string):
   const { error } = await supabase
     .from('payroll_records')
     .upsert(row, { onConflict: 'instructor_id,year_month' })
-  if (error) throw new Error(`Upsert payroll failed: ${error.message}`)
+  if (error) {
+    // 신규 컬럼(v3.9 adjustment·tax_withholding) 마이그레이션 미실행 DB 폴백: 빼고 재시도.
+    if (/adjustment|tax_withholding|does not exist|schema cache/i.test(error.message)) {
+      const rest: Record<string, unknown> = { ...row }
+      delete rest.adjustment
+      delete rest.tax_withholding
+      const retry = await supabase
+        .from('payroll_records')
+        .upsert(rest, { onConflict: 'instructor_id,year_month' })
+      if (retry.error) throw new Error(`Upsert payroll failed: ${retry.error.message}`)
+      return
+    }
+    throw new Error(`Upsert payroll failed: ${error.message}`)
+  }
 }
