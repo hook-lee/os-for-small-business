@@ -606,3 +606,8 @@ create policy owner_all_delete on contracts for delete using (auth.uid() = owner
 
 -- v3.20: 전자계약 손글씨 서명 이미지(base64 PNG dataURL) 저장
 alter table contracts add column if not exists signature_data text;
+
+-- v3.21: 전자계약 첨부파일(서류 스캔/사진 등 base64 dataURL) + 파일명
+--  - 종이로 받은 계약서를 사진/스캔으로 첨부하거나, 원장이 직접 동의 처리할 때 사용.
+alter table contracts add column if not exists attachment_data text;
+alter table contracts add column if not exists attachment_name text;

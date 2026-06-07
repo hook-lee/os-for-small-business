@@ -64,6 +64,7 @@ export interface Contract {
   agreedName: string | null
   agreedAt: string | null
   signatureData: string | null
+  attachmentName: string | null
   createdAt: string
 }
 
@@ -79,6 +80,7 @@ interface ContractRow {
   agreed_name: string | null
   agreed_at: string | null
   signature_data: string | null
+  attachment_name: string | null
   created_at: string
 }
 
@@ -88,7 +90,8 @@ function rowToContract(r: ContractRow): Contract {
     memberId: r.member_id, instructorId: r.instructor_id,
     title: r.title, body: r.body, status: r.status,
     agreedName: r.agreed_name, agreedAt: r.agreed_at,
-    signatureData: r.signature_data, createdAt: r.created_at,
+    signatureData: r.signature_data, attachmentName: r.attachment_name,
+    createdAt: r.created_at,
   }
 }
 
@@ -134,8 +137,14 @@ async function fetchContractsBy(col: 'member_id' | 'instructor_id', id: number, 
 export const fetchContractsByMember = (memberId: number, ownerId: string) => fetchContractsBy('member_id', memberId, ownerId)
 export const fetchContractsByInstructor = (instructorId: number, ownerId: string) => fetchContractsBy('instructor_id', instructorId, ownerId)
 
-/** 동의 처리: 이름 + 손글씨 서명(base64) + 시각 기록. 이미 동의된 건 무시. */
-export async function agreeContract(contractId: number, ownerId: string, name: string, signatureData: string | null): Promise<void> {
+/** 동의 처리: 이름 + 손글씨 서명(base64) + (선택)첨부파일 + 시각 기록. 이미 동의된 건 무시. */
+export async function agreeContract(
+  contractId: number,
+  ownerId: string,
+  name: string,
+  signatureData: string | null,
+  attachment?: { data: string; name: string } | null,
+): Promise<void> {
   const supabase = getSupabaseClient()
   const patch: Record<string, unknown> = {
     status: 'agreed',
@@ -143,8 +152,21 @@ export async function agreeContract(contractId: number, ownerId: string, name: s
     agreed_at: new Date().toISOString(),
     signature_data: signatureData,
   }
+  if (attachment) {
+    patch.attachment_data = attachment.data
+    patch.attachment_name = attachment.name
+  }
   let q = supabase.from('contracts').update(patch).eq('id', contractId).neq('status', 'agreed')
   if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
   const { error } = await q
   if (error) throw new Error(`동의 처리 실패: ${error.message}`)
+}
+
+/** 계약(발송분) 삭제 — 잘못 보냈거나 중복일 때. */
+export async function deleteContract(id: number, ownerId: string): Promise<void> {
+  const supabase = getSupabaseClient()
+  let q = supabase.from('contracts').delete().eq('id', id)
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { error } = await q
+  if (error) throw new Error(`계약서 삭제 실패: ${error.message}`)
 }

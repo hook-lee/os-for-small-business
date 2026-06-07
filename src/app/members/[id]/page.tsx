@@ -146,7 +146,7 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
 
       <MemberAccessLink memberId={m.id} initialToken={m.accessToken ?? null} />
 
-      <SendMemberContract memberId={m.id} accessToken={m.accessToken ?? null} initial={contracts} />
+      <SendMemberContract memberId={m.id} memberName={m.name} accessToken={m.accessToken ?? null} initial={contracts} />
 
       <div>
         <div className="flex items-center justify-between mt-6 mb-2">
