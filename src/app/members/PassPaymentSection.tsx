@@ -21,10 +21,17 @@ export interface PassPaymentDraft {
   paymentMethod: '카드' | '계좌이체' | '현금'
   amount: string       // 실결제금액 (빈값=정가)
   bonusCount: string   // 회차 추가(+)/감소(-) — 서비스 1회 등. 빈값/0 = 조정 없음
+  firstLessonEnabled: boolean   // 첫 수업(체험) 일정도 함께 잡기 → 시간표에 자동 등록
+  firstLessonDate: string
+  firstLessonTime: string
 }
 
 export function emptyPassPayment(today: string): PassPaymentDraft {
-  return { enabled: false, productId: '', instructorId: '', date: today, paymentType: '신규결제', paymentMethod: '카드', amount: '', bonusCount: '' }
+  return {
+    enabled: false, productId: '', instructorId: '', date: today,
+    paymentType: '신규결제', paymentMethod: '카드', amount: '', bonusCount: '',
+    firstLessonEnabled: false, firstLessonDate: today, firstLessonTime: '10:00',
+  }
 }
 
 /**
@@ -158,6 +165,44 @@ export function PassPaymentSection({ value, onChange }: {
               placeholder={selected ? `${selected.price.toLocaleString()} (정가)` : '0'}
               className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
             />
+          </div>
+
+          <div className="border-t border-blue-200/50 pt-2.5">
+            <label className="flex items-center gap-2 text-sm font-medium text-blue-900 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={value.firstLessonEnabled}
+                onChange={e => set({ firstLessonEnabled: e.target.checked })}
+              />
+              📅 첫 수업(체험) 일정도 잡기 — 시간표에 자동 등록 (선택)
+            </label>
+            {value.firstLessonEnabled && (
+              <>
+                <div className="grid grid-cols-2 gap-3 mt-2">
+                  <div>
+                    <label className="block text-xs text-neutral-500 mb-1">수업 날짜</label>
+                    <input
+                      type="date"
+                      value={value.firstLessonDate}
+                      onChange={e => set({ firstLessonDate: e.target.value })}
+                      className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-neutral-500 mb-1">시간</label>
+                    <input
+                      type="time"
+                      value={value.firstLessonTime}
+                      onChange={e => set({ firstLessonTime: e.target.value })}
+                      className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
+                    />
+                  </div>
+                </div>
+                <p className="text-[11px] text-neutral-400 mt-1">
+                  위에서 고른 담당 강사로 수업이 잡혀요. 체험은 보통 1일짜리 수강권이라 이 일정이 곧 체험일이 됩니다.
+                </p>
+              </>
+            )}
           </div>
 
           <p className="text-[11px] text-blue-700/80">

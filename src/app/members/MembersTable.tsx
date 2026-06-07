@@ -119,9 +119,30 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
             bonusCount: payment.bonusCount ? parseInt(payment.bonusCount, 10) : undefined,
           }),
         })
-        const payJson = await payRes.json() as { ok?: boolean; error?: string }
+        const payJson = await payRes.json() as { ok?: boolean; error?: string; id?: number }
         if (!payRes.ok) {
           toast(`회원은 등록됐지만 수강권 발급 실패: ${payJson.error ?? 'unknown'}\n회원 상세에서 다시 발급해주세요.`)
+        } else if (payment.firstLessonEnabled && payJson.id) {
+          // 첫 수업(체험) 일정 → 시간표에 자동 등록 (담당 강사 = 위에서 고른 강사)
+          try {
+            const lessonRes = await fetch('/api/lessons', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                memberId: json.id,
+                lessonDate: payment.firstLessonDate,
+                lessonTime: payment.firstLessonTime || undefined,
+                passId: payJson.id,
+                instructorId: payment.instructorId ? parseInt(payment.instructorId, 10) : null,
+              }),
+            })
+            if (!lessonRes.ok) {
+              const lj = await lessonRes.json() as { error?: string }
+              toast(`수강권은 발급됐지만 첫 수업 등록 실패: ${lj.error ?? ''} (수업 페이지에서 직접 추가하세요)`, 'error')
+            }
+          } catch {
+            toast('첫 수업 등록 실패: 네트워크 오류', 'error')
+          }
         }
       }
       resetForm()
