@@ -66,11 +66,15 @@ describe('evaluatePassGuard', () => {
     expect(evaluatePassGuard([pass({ status: '사용중' })], today).usable).toBe(true)
   })
 
-  it('명시적 종료/무효 상태(환불·정지·양도·해지)는 기간·잔여 멀쩡해도 차단', () => {
+  it('명시적 종료/무효 상태(환불·양도·해지)는 기간·잔여 멀쩡해도 차단', () => {
     expect(evaluatePassGuard([pass({ status: '환불' })], today).usable).toBe(false)
-    expect(evaluatePassGuard([pass({ status: '정지' })], today).usable).toBe(false)
     expect(evaluatePassGuard([pass({ status: '양도' })], today).usable).toBe(false)
     expect(evaluatePassGuard([pass({ status: '해지' })], today).usable).toBe(false)
+  })
+
+  it("'정지'(일시정지)는 종료가 아니므로 차단 안 함 — 잔여·기간 멀쩡하면 활성", () => {
+    // 정지는 status 텍스트가 아니라 pass_suspensions(별도 이력)로 관리한다.
+    expect(evaluatePassGuard([pass({ status: '정지' })], today).usable).toBe(true)
   })
 
   it("그래도 '이용기간 지남'·'잔여 0'은 status 무관하게 만료", () => {
