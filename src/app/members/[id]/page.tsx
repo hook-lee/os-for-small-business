@@ -18,6 +18,8 @@ import { MemberNotesTimeline } from './MemberNotesTimeline'
 import { getStudioContext } from '@/lib/supabase/auth-server'
 import { fetchNotesByMember } from '@/lib/supabase/member-notes'
 import { fetchSuspensionsByPassIds } from '@/lib/supabase/pass-suspensions'
+import { fetchContractsByMember } from '@/lib/supabase/contracts'
+import { SendMemberContract } from './SendMemberContract'
 import { loadProfile } from '@/lib/profile/settings'
 import type { Suspension } from '@/lib/analytics/suspensions'
 
@@ -48,6 +50,7 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
   const suspensionsByPass: Record<number, Suspension[]> = {}
   for (const [pid, list] of suspMap) suspensionsByPass[pid] = list
   const maxSuspendDays = profile?.maxSuspendDays ?? 30
+  const contracts = await fetchContractsByMember(id, ownerId).catch(() => [])
 
   const ltv = computeMemberLTV(passes)
   const attendance = computeAttendanceStats(lessons, today)
@@ -142,6 +145,8 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
       />
 
       <MemberAccessLink memberId={m.id} initialToken={m.accessToken ?? null} />
+
+      <SendMemberContract memberId={m.id} accessToken={m.accessToken ?? null} initial={contracts} />
 
       <div>
         <div className="flex items-center justify-between mt-6 mb-2">

@@ -603,3 +603,6 @@ create policy owner_all_select on contracts for select using (auth.uid() = owner
 create policy owner_all_insert on contracts for insert with check (auth.uid() = owner_id);
 create policy owner_all_update on contracts for update using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
 create policy owner_all_delete on contracts for delete using (auth.uid() = owner_id);
+
+-- v3.20: 전자계약 손글씨 서명 이미지(base64 PNG dataURL) 저장
+alter table contracts add column if not exists signature_data text;
