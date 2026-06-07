@@ -1,7 +1,8 @@
-export function SettingsTabs({ current }: { current: 'personal' | 'operations' }) {
-  const items: Array<{ href: string; label: string; key: 'personal' | 'operations' }> = [
+export function SettingsTabs({ current }: { current: 'personal' | 'operations' | 'contracts' }) {
+  const items: Array<{ href: string; label: string; key: 'personal' | 'operations' | 'contracts' }> = [
     { href: '/settings', label: '개인·세무 정보', key: 'personal' },
     { href: '/settings/operations', label: '운영정보', key: 'operations' },
+    { href: '/settings/contracts', label: '계약서', key: 'contracts' },
   ]
   return (
     <div className="flex gap-1 border-b border-neutral-200 mb-4 overflow-x-auto">

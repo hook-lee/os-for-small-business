@@ -541,3 +541,65 @@ create policy owner_all_delete on pass_suspensions for delete using (auth.uid() 
 
 -- 센터별 최대 누적 정지일수 (운영설정). 0 = 무제한.
 alter table profile add column if not exists max_suspend_days integer not null default 30;
+
+-- ============================================================
+-- v3.19: 전자계약(자체 간이 동의) — 템플릿 + 발송/동의 인스턴스
+--
+-- 의도:
+--  - 원장이 계약서 템플릿(회원 이용약관·환불규정·개인정보 동의·강사 계약)을 편집.
+--    기본 샘플은 코드(contracts/defaults.ts)에서 제공, 편집분만 DB 저장.
+--  - 특정 회원/강사에게 계약 발송 → 본문 스냅샷 저장 → 상대가 링크/로그인으로 열어
+--    이름 입력 + 동의 → status·agreed_at·agreed_name 기록(열람·재현·보존성 확보).
+--  - 본인확인은 토큰+이름 수준(간이). 강한 법적 계약은 추후 전문 SaaS.
+--
+-- 멱등: if not exists / drop policy if exists.
+-- ============================================================
+
+create table if not exists contract_templates (
+  id bigint generated always as identity primary key,
+  owner_id uuid references auth.users(id) on delete cascade,
+  kind text not null,            -- member_terms / refund / privacy / instructor (자유 확장)
+  title text not null,
+  body text not null,
+  updated_at timestamptz not null default now(),
+  unique (owner_id, kind)
+);
+create index if not exists contract_templates_owner_idx on contract_templates (owner_id);
+
+create table if not exists contracts (
+  id bigint generated always as identity primary key,
+  owner_id uuid references auth.users(id) on delete cascade,
+  kind text not null,
+  target_type text not null check (target_type in ('member','instructor')),
+  member_id bigint references members(id) on delete set null,
+  instructor_id bigint references instructors(id) on delete set null,
+  title text not null,
+  body text not null,            -- 발송 시점 본문 스냅샷(변수 치환 완료본)
+  status text not null default 'sent' check (status in ('sent','agreed','void')),
+  agreed_name text,
+  agreed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists contracts_owner_idx on contracts (owner_id);
+create index if not exists contracts_member_idx on contracts (member_id);
+create index if not exists contracts_instructor_idx on contracts (instructor_id);
+
+alter table contract_templates enable row level security;
+drop policy if exists owner_all_select on contract_templates;
+drop policy if exists owner_all_insert on contract_templates;
+drop policy if exists owner_all_update on contract_templates;
+drop policy if exists owner_all_delete on contract_templates;
+create policy owner_all_select on contract_templates for select using (auth.uid() = owner_id);
+create policy owner_all_insert on contract_templates for insert with check (auth.uid() = owner_id);
+create policy owner_all_update on contract_templates for update using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+create policy owner_all_delete on contract_templates for delete using (auth.uid() = owner_id);
+
+alter table contracts enable row level security;
+drop policy if exists owner_all_select on contracts;
+drop policy if exists owner_all_insert on contracts;
+drop policy if exists owner_all_update on contracts;
+drop policy if exists owner_all_delete on contracts;
+create policy owner_all_select on contracts for select using (auth.uid() = owner_id);
+create policy owner_all_insert on contracts for insert with check (auth.uid() = owner_id);
+create policy owner_all_update on contracts for update using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+create policy owner_all_delete on contracts for delete using (auth.uid() = owner_id);
