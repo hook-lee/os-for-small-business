@@ -17,6 +17,9 @@ import { MemberInstructorRates } from './MemberInstructorRates'
 import { MemberNotesTimeline } from './MemberNotesTimeline'
 import { getStudioContext } from '@/lib/supabase/auth-server'
 import { fetchNotesByMember } from '@/lib/supabase/member-notes'
+import { fetchSuspensionsByPassIds } from '@/lib/supabase/pass-suspensions'
+import { loadProfile } from '@/lib/profile/settings'
+import type { Suspension } from '@/lib/analytics/suspensions'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,15 +32,22 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
   const ownerId = ctx.ownerId
 
   const today = new Date().toISOString().slice(0, 10)
-  const [m, passes, lessons, instructors, memberRates, notes] = await Promise.all([
+  const [m, passes, lessons, instructors, memberRates, notes, profile] = await Promise.all([
     fetchMemberById(id, ownerId),
     fetchPassesByMember(id, ownerId),
     fetchLessonsByMember(id, ownerId),
     fetchAllInstructors(ownerId).catch(() => []),
     fetchRatesByMember(id, ownerId).catch(() => []),
     fetchNotesByMember(id, ownerId).catch(() => []),
+    loadProfile(ownerId).catch(() => null),
   ])
   if (!m) notFound()
+
+  // 수강권별 정지 이력 (만료일 연장·정지중 표시용)
+  const suspMap = await fetchSuspensionsByPassIds(passes.map(p => p.id), ownerId).catch(() => new Map<number, Suspension[]>())
+  const suspensionsByPass: Record<number, Suspension[]> = {}
+  for (const [pid, list] of suspMap) suspensionsByPass[pid] = list
+  const maxSuspendDays = profile?.maxSuspendDays ?? 30
 
   const ltv = computeMemberLTV(passes)
   const attendance = computeAttendanceStats(lessons, today)
@@ -138,7 +148,12 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
           <h3 className="text-lg font-semibold">수강권 이력 ({passes.length}건)</h3>
           <IssuePassForm memberId={m.id} />
         </div>
-        <PassesList initial={passes} />
+        <PassesList
+          initial={passes}
+          suspensionsByPass={suspensionsByPass}
+          maxSuspendDays={maxSuspendDays}
+          today={today}
+        />
       </div>
 
       <div className="mt-6">

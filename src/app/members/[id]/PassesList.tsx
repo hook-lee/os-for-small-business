@@ -5,8 +5,17 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import type { Pass } from '@/lib/supabase/passes'
+import type { Suspension } from '@/lib/analytics/suspensions'
+import { PassSuspensionControl } from './PassSuspensionControl'
 
-export function PassesList({ initial }: { initial: Pass[] }) {
+export function PassesList({
+  initial, suspensionsByPass = {}, maxSuspendDays = 30, today,
+}: {
+  initial: Pass[]
+  suspensionsByPass?: Record<number, Suspension[]>
+  maxSuspendDays?: number
+  today: string
+}) {
   const router = useRouter()
   const [passes, setPasses] = useState<Pass[]>(initial)
   const [deletingId, setDeletingId] = useState<number | null>(null)
@@ -141,6 +150,9 @@ export function PassesList({ initial }: { initial: Pass[] }) {
                       onChange={e => setEditStatus(e.target.value)}
                       className="block w-full mt-1 border rounded px-2 py-1 text-sm"
                     >
+                      {editStatus && !['이용중', '이용만료', '환불'].includes(editStatus) && (
+                        <option value={editStatus}>{editStatus} (현재값)</option>
+                      )}
                       <option value="이용중">이용중</option>
                       <option value="이용만료">이용만료</option>
                       <option value="환불">환불</option>
@@ -239,6 +251,12 @@ export function PassesList({ initial }: { initial: Pass[] }) {
                 <div className="text-xs text-neutral-500">
                   {p.paymentType ?? '—'} · {p.paymentAmount?.toLocaleString() ?? '—'}원 · {p.paymentMethod ?? '—'} · {p.paidAt ?? '—'}
                 </div>
+                <PassSuspensionControl
+                  passId={p.id}
+                  initial={suspensionsByPass[p.id] ?? []}
+                  maxSuspendDays={maxSuspendDays}
+                  today={today}
+                />
               </>
             )}
           </Card>

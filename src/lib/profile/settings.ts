@@ -95,6 +95,7 @@ export interface UserProfile {
   lowRemainingThreshold: number        // 잔여 N회 이하면 홈에서 알림. 기본 3. 0이면 끔
   notificationSettings: NotificationSettings  // 종(알림)에서 받을 알림 종류
   payrollDay: number | null            // 강사 월급 지급일 (매월 1~31). null이면 미설정
+  maxSuspendDays: number               // 수강권 최대 누적 정지일수. 기본 30. 0이면 무제한
 }
 
 export const DEFAULT_PROFILE: UserProfile = {
@@ -115,6 +116,7 @@ export const DEFAULT_PROFILE: UserProfile = {
   lowRemainingThreshold: 3,
   notificationSettings: DEFAULT_NOTIFICATION_SETTINGS,
   payrollDay: null,
+  maxSuspendDays: 30,
 }
 
 interface ProfileRow {
@@ -136,6 +138,7 @@ interface ProfileRow {
   low_remaining_threshold?: string | number | null
   notification_settings?: Record<string, unknown> | string | null
   payroll_day?: string | number | null
+  max_suspend_days?: string | number | null
 }
 
 function rowToProfile(row: ProfileRow): UserProfile {
@@ -166,6 +169,7 @@ function rowToProfile(row: ProfileRow): UserProfile {
       typeof row.notification_settings === 'string' ? safeJsonParse(row.notification_settings) : row.notification_settings,
     ),
     payrollDay: row.payroll_day == null ? null : Math.min(31, Math.max(1, Math.floor(Number(row.payroll_day)) || 1)),
+    maxSuspendDays: row.max_suspend_days == null ? 30 : Math.max(0, Math.floor(Number(row.max_suspend_days)) || 0),
   }
 }
 
@@ -231,6 +235,7 @@ export async function saveProfile(profile: UserProfile, ownerId: string): Promis
     low_remaining_threshold: profile.lowRemainingThreshold ?? 3,
     notification_settings: profile.notificationSettings ?? DEFAULT_NOTIFICATION_SETTINGS,
     payroll_day: profile.payrollDay ?? null,
+    max_suspend_days: profile.maxSuspendDays ?? 30,
     updated_at: new Date().toISOString(),
   }
 
@@ -248,7 +253,7 @@ export async function saveProfile(profile: UserProfile, ownerId: string): Promis
   ): Promise<void> => {
     const msg = error.message
     const missing: string[] = []
-    for (const col of ['workspace_name', 'role', 'business_phone', 'personal_deduction_count', 'tax_payer_type', 'tax_start_month', 'tax_general_since_month', 'annual_goals', 'low_remaining_threshold', 'notification_settings', 'payroll_day']) {
+    for (const col of ['workspace_name', 'role', 'business_phone', 'personal_deduction_count', 'tax_payer_type', 'tax_start_month', 'tax_general_since_month', 'annual_goals', 'low_remaining_threshold', 'notification_settings', 'payroll_day', 'max_suspend_days']) {
       if (msg.includes(col)) missing.push(col)
     }
     if (missing.length === 0) throw new Error(`프로필 저장 실패: ${msg}`)

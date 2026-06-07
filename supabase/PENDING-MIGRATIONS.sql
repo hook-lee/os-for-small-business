@@ -502,3 +502,42 @@ create policy owner_all_delete on member_notes for delete using (auth.uid() = ow
 
 alter table instructors add column if not exists auth_user_id uuid references auth.users(id) on delete set null;
 create unique index if not exists instructors_auth_user_uniq on instructors (auth_user_id) where auth_user_id is not null;
+
+-- ============================================================
+-- v3.18: 수강권 정지(일시정지) 이력 + 센터 최대 정지일수
+--
+-- 의도:
+--  - 회원이 여행·부상 등으로 수강권을 일시정지 → 정지 일수만큼 만료일 자동 연장.
+--  - 정지 '이력'을 남겨, 전체 기간 누적 정지일수가 센터 최대치를 넘으면 추가 정지 차단.
+--  - '정지'는 종료가 아니라 '잠시 멈춤' → 회원은 여전히 활성(잔여·기간 남으면).
+--    (기존엔 passes.status 텍스트에 '정지'가 있으면 만료로 잘못 분류됐음 → 코드에서 키워드 제거)
+--  - 정지 등록 시 passes.end_date += days, 삭제 시 −= days (앱에서 처리).
+--
+-- 멱등: if not exists / drop policy if exists.
+-- ============================================================
+
+create table if not exists pass_suspensions (
+  id bigint generated always as identity primary key,
+  owner_id uuid references auth.users(id) on delete cascade,
+  pass_id bigint not null references passes(id) on delete cascade,
+  start_date date not null,
+  end_date date not null,
+  days int not null,             -- 정지 일수(start~end 포함). 만료일 연장 = 이 값.
+  reason text,
+  created_at timestamptz not null default now()
+);
+create index if not exists pass_suspensions_owner_idx on pass_suspensions (owner_id);
+create index if not exists pass_suspensions_pass_idx on pass_suspensions (pass_id);
+
+alter table pass_suspensions enable row level security;
+drop policy if exists owner_all_select on pass_suspensions;
+drop policy if exists owner_all_insert on pass_suspensions;
+drop policy if exists owner_all_update on pass_suspensions;
+drop policy if exists owner_all_delete on pass_suspensions;
+create policy owner_all_select on pass_suspensions for select using (auth.uid() = owner_id);
+create policy owner_all_insert on pass_suspensions for insert with check (auth.uid() = owner_id);
+create policy owner_all_update on pass_suspensions for update using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+create policy owner_all_delete on pass_suspensions for delete using (auth.uid() = owner_id);
+
+-- 센터별 최대 누적 정지일수 (운영설정). 0 = 무제한.
+alter table profile add column if not exists max_suspend_days integer not null default 30;

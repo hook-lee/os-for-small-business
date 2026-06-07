@@ -35,9 +35,11 @@ export interface PassLike {
 
 /**
  * 명백히 '사용 불가'로 못박힌 수강권 상태 키워드.
- * 기간·잔여가 멀쩡해도 이 상태면 active 아님 (환불/정지/양도/해지/만료/종료 등).
+ * 기간·잔여가 멀쩡해도 이 상태면 active 아님 (환불/양도/해지/만료/종료 등).
+ * 단 '정지'(일시정지)는 종료가 아니라 잠시 멈춤 → 키워드에서 제외(정지중도 활성 유지).
+ * 정지는 status 텍스트가 아니라 pass_suspensions(별도 이력)로 관리한다.
  */
-const INACTIVE_STATUS_KEYWORDS = ['만료', '환불', '정지', '양도', '취소', '해지', '종료']
+const INACTIVE_STATUS_KEYWORDS = ['만료', '환불', '양도', '취소', '해지', '종료']
 
 export function isInactivePassStatus(status: string | null | undefined): boolean {
   if (!status) return false

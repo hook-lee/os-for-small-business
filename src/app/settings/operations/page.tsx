@@ -5,6 +5,7 @@ import { SettingsTabs } from '../SettingsTabs'
 import { OperationsForm } from './OperationsForm'
 import { RoomsManager } from './RoomsManager'
 import { NotificationSettingsForm } from './NotificationSettingsForm'
+import { SuspendPolicyForm } from './SuspendPolicyForm'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,6 +35,7 @@ export default async function OperationsSettingsPage() {
           payrollDay: profile.payrollDay,
         }}
       />
+      <SuspendPolicyForm initial={profile.maxSuspendDays} />
       <RoomsManager />
     </div>
   )
