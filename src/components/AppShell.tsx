@@ -1,11 +1,10 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { Nav } from './Nav'
+import { Sidebar } from './Sidebar'
 import { MobileTabBar } from './MobileTabBar'
 import { NotificationBell } from './NotificationBell'
 import { FloatingAssistant } from './FloatingAssistant'
-import { UserMenu } from './UserMenu'
 import { ToastContainer } from './ui/toast'
 import type { StudioRole } from '@/lib/supabase/auth-server'
 
@@ -24,41 +23,39 @@ export function AppShell({
   const isMember = pathname?.startsWith('/m/')
   const isLogin = pathname === '/login' || pathname === '/signup'
 
-  // 로그인/회원가입 페이지: 헤더/푸터 X (자체 레이아웃)
+  // 로그인/회원가입 페이지: 헤더/사이드바 X (자체 레이아웃)
   if (isLogin) {
     return <>{children}</>
   }
 
+  // 회원 토큰 페이지: 자체 레이아웃
   if (isMember) {
     return <div className="min-h-screen bg-neutral-50">{children}<ToastContainer /></div>
   }
 
   return (
-    <>
-      <header className="border-b bg-white">
-        <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
-          <h1 className="text-lg font-semibold">
-            <a href="/" className="bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent hover:opacity-80 transition-opacity" aria-label="홈으로">
+    <div className="md:flex bg-neutral-50 min-h-screen">
+      {/* 데스크탑: 좌측 세로 사이드바 */}
+      <Sidebar userEmail={userEmail} workspaceName={workspaceName} role={role} />
+
+      <div className="flex-1 min-w-0 flex flex-col min-h-screen">
+        {/* 모바일: 상단 얇은 헤더 (사이드바는 모바일에서 숨김 → 하단 탭바가 담당) */}
+        <header className="md:hidden border-b border-neutral-200 bg-white sticky top-0 z-30">
+          <div className="px-4 h-14 flex items-center justify-between">
+            <a href="/" className="text-lg font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent" aria-label="홈으로">
               Onmove
+              {workspaceName && <span className="text-neutral-400 text-xs font-normal"> · {workspaceName}</span>}
             </a>
-            {userEmail && workspaceName && (
-              <span className="text-neutral-400 text-sm font-normal"> · {workspaceName}</span>
-            )}
-          </h1>
-          <div className="flex items-center gap-3">
             {userEmail && <NotificationBell />}
-            {/* 데스크탑: 상단 가로 메뉴. 모바일에선 숨기고 하단 탭바가 담당 */}
-            <div className="hidden md:flex items-center gap-4">
-              <Nav role={role} />
-              <UserMenu email={userEmail} />
-            </div>
           </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-5xl px-4 py-6 pb-24 md:pb-6">{children}</main>
+        </header>
+
+        <main className="flex-1 mx-auto max-w-5xl w-full px-4 py-6 pb-24 md:pb-8">{children}</main>
+      </div>
+
       {userEmail && <FloatingAssistant />}
       {userEmail && <MobileTabBar userEmail={userEmail} role={role} />}
       <ToastContainer />
-    </>
+    </div>
   )
 }
