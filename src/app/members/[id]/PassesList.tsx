@@ -254,7 +254,7 @@ export function PassesList({
                 <PassSuspensionControl
                   passId={p.id}
                   initial={suspensionsByPass[p.id] ?? []}
-                  maxSuspendDays={maxSuspendDays}
+                  maxSuspendDays={p.maxSuspendDays ?? maxSuspendDays}
                   today={today}
                 />
               </>

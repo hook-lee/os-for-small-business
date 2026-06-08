@@ -611,3 +611,8 @@ alter table contracts add column if not exists signature_data text;
 --  - 종이로 받은 계약서를 사진/스캔으로 첨부하거나, 원장이 직접 동의 처리할 때 사용.
 alter table contracts add column if not exists attachment_data text;
 alter table contracts add column if not exists attachment_name text;
+
+-- v3.22: 수강권별 최대 정지일수 (상품에서 설정 → 발급 시 passes로 스냅샷)
+--  - null이면 센터 기본(profile.max_suspend_days)을 사용. 0이면 무제한.
+alter table pass_products add column if not exists max_suspend_days integer;
+alter table passes        add column if not exists max_suspend_days integer;

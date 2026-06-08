@@ -24,6 +24,7 @@ export interface Pass {
   isFamily: boolean
   issuedAt: string | null
   lastModifiedAt: string | null
+  maxSuspendDays?: number | null   // 발급 시 상품에서 스냅샷. null/없음 = 센터 기본
 }
 
 interface PassRow {
@@ -47,6 +48,7 @@ interface PassRow {
   is_family: boolean
   issued_at: string | null
   last_modified_at: string | null
+  max_suspend_days?: number | null
 }
 
 export function rowToPass(row: PassRow): Pass {
@@ -71,6 +73,7 @@ export function rowToPass(row: PassRow): Pass {
     isFamily: row.is_family,
     issuedAt: row.issued_at,
     lastModifiedAt: row.last_modified_at,
+    maxSuspendDays: row.max_suspend_days ?? null,
   }
 }
 
@@ -107,7 +110,7 @@ export interface IssuePassInput {
 
 export async function issuePass(
   input: IssuePassInput,
-  product: { name: string; passType: '프라이빗' | '그룹'; durationDays: number; totalCount: number; price: number },
+  product: { name: string; passType: '프라이빗' | '그룹'; durationDays: number; totalCount: number; price: number; maxSuspendDays?: number | null },
   ownerId: string,
 ): Promise<number> {
   const supabase = getSupabaseClient()
@@ -143,6 +146,7 @@ export async function issuePass(
     is_family: false,
     issued_at: paidAt,
   }
+  if (product.maxSuspendDays != null) row.max_suspend_days = product.maxSuspendDays
   if (ownerId !== 'no-auth') row.owner_id = ownerId
   const { data, error } = await supabase
     .from('passes')

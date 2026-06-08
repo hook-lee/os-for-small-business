@@ -43,6 +43,7 @@ type FormState = {
   perUnitPrice: string
   displayOrder: string
   color: string
+  maxSuspendDays: string
 }
 
 const EMPTY_FORM: FormState = {
@@ -55,6 +56,7 @@ const EMPTY_FORM: FormState = {
   perUnitPrice: '',
   displayOrder: '0',
   color: '',
+  maxSuspendDays: '',
 }
 
 function productToForm(p: PassProduct): FormState {
@@ -68,6 +70,7 @@ function productToForm(p: PassProduct): FormState {
     perUnitPrice: p.perUnitPrice ? String(p.perUnitPrice) : '',
     displayOrder: String(p.displayOrder),
     color: p.color ?? '',
+    maxSuspendDays: p.maxSuspendDays != null ? String(p.maxSuspendDays) : '',
   }
 }
 
@@ -83,6 +86,7 @@ type PayloadOk = {
     perUnitPrice?: number
     displayOrder?: number
     color?: string
+    maxSuspendDays?: number | null
   }
 }
 type PayloadErr = { ok: false; error: string }
@@ -109,6 +113,7 @@ function formToPayload(f: FormState): PayloadOk | PayloadErr {
       perUnitPrice: per,
       displayOrder: ord,
       color: f.color.trim() || undefined,
+      maxSuspendDays: f.maxSuspendDays.trim() === '' ? null : Math.max(0, parseInt(f.maxSuspendDays, 10) || 0),
     },
   }
 }
@@ -377,6 +382,16 @@ function FormFields({
       </div>
       <Field label="컬러 (카테고리 안에서 자유. 비우면 카테고리 색 사용)">
         <ColorPicker value={form.color} onChange={v => setForm({ ...form, color: v })} />
+      </Field>
+      <Field label="최대 정지일수 (이 수강권 전용 · 비우면 센터 기본)">
+        <input
+          type="number"
+          min="0"
+          value={form.maxSuspendDays}
+          onChange={e => setForm({ ...form, maxSuspendDays: e.target.value })}
+          placeholder="비우면 운영설정 기본값 사용"
+          className="w-full border border-neutral-300 rounded px-2 py-1 text-sm tabular-nums"
+        />
       </Field>
     </div>
   )

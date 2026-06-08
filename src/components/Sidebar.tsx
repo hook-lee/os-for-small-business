@@ -14,8 +14,8 @@ const GROUPS: NavGroup[] = [
   {
     label: '운영',
     items: [
-      { href: '/lessons', label: '수업', icon: '📅', match: ['/lessons'] },
-      { href: '/members', label: '회원', icon: '👥', match: ['/members', '/pass-products', '/messages', '/consultations'] },
+      { href: '/lessons', label: '수업', icon: '📅', match: ['/lessons', '/pass-products'] },
+      { href: '/members', label: '회원', icon: '👥', match: ['/members', '/messages', '/consultations'] },
       { href: '/instructors', label: '강사', icon: '🧑‍🏫', match: ['/instructors'] },
     ],
   },

@@ -30,6 +30,7 @@ export async function POST(req: Request) {
       perUnitPrice?: number
       displayOrder?: number
       color?: string
+      maxSuspendDays?: number | null
     }
     if (!body.name || !body.passType || typeof body.durationDays !== 'number' || typeof body.totalCount !== 'number' || typeof body.price !== 'number') {
       return NextResponse.json({ error: 'name, passType, durationDays, totalCount, price 필수' }, { status: 400 })
@@ -47,6 +48,7 @@ export async function POST(req: Request) {
       perUnitPrice: body.perUnitPrice ?? null,
       displayOrder: body.displayOrder ?? 0,
       color: body.color ?? null,
+      maxSuspendDays: body.maxSuspendDays ?? null,
     }, ownerId)
     return NextResponse.json({ ok: true, id })
   } catch (error) {

@@ -12,6 +12,7 @@ export interface PassProduct {
   displayOrder: number
   color: string | null
   active: boolean
+  maxSuspendDays: number | null   // 이 수강권의 최대 정지일수. null = 센터 기본(profile.max_suspend_days)
 }
 
 interface PassProductRow {
@@ -26,6 +27,7 @@ interface PassProductRow {
   display_order: number
   color: string | null
   active: boolean
+  max_suspend_days?: number | null
 }
 
 function rowToProduct(row: PassProductRow): PassProduct {
@@ -41,6 +43,7 @@ function rowToProduct(row: PassProductRow): PassProduct {
     displayOrder: row.display_order,
     color: row.color,
     active: row.active,
+    maxSuspendDays: row.max_suspend_days ?? null,
   }
 }
 
@@ -80,6 +83,7 @@ export interface NewPassProductInput {
   perUnitPrice?: number | null
   displayOrder?: number
   color?: string | null
+  maxSuspendDays?: number | null
 }
 
 export interface UpdatePassProductInput {
@@ -93,6 +97,7 @@ export interface UpdatePassProductInput {
   displayOrder?: number
   color?: string | null
   active?: boolean
+  maxSuspendDays?: number | null
 }
 
 export async function insertPassProduct(input: NewPassProductInput, ownerId: string): Promise<number> {
@@ -109,6 +114,7 @@ export async function insertPassProduct(input: NewPassProductInput, ownerId: str
     color: input.color ?? null,
     active: true,
   }
+  if (input.maxSuspendDays != null) row.max_suspend_days = input.maxSuspendDays
   if (ownerId !== 'no-auth') row.owner_id = ownerId
   const { data, error } = await supabase
     .from('pass_products')
@@ -132,6 +138,7 @@ export async function updatePassProduct(id: number, patch: UpdatePassProductInpu
   if (patch.displayOrder !== undefined) dbPatch.display_order = patch.displayOrder
   if (patch.color !== undefined) dbPatch.color = patch.color
   if (patch.active !== undefined) dbPatch.active = patch.active
+  if (patch.maxSuspendDays !== undefined) dbPatch.max_suspend_days = patch.maxSuspendDays
 
   let q = supabase.from('pass_products').update(dbPatch).eq('id', id)
   if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)

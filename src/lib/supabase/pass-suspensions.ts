@@ -85,17 +85,20 @@ export async function createSuspension(
   const days = inclusiveDays(input.startDate, input.endDate)
   if (days <= 0) throw new Error('종료일이 시작일보다 빨라요')
 
-  const existing = await fetchSuspensionsByPass(input.passId, ownerId)
-  const used = totalSuspendDays(existing)
-  if (maxDays > 0 && used + days > maxDays) {
-    throw new Error(`센터 최대 정지일수(${maxDays}일)를 넘어요. 이미 ${used}일 사용 → 최대 ${Math.max(0, maxDays - used)}일까지 가능`)
-  }
-
-  // 현재 만료일 조회
-  let pq = supabase.from('passes').select('end_date').eq('id', input.passId)
+  // 만료일 + 이 수강권의 최대 정지일수 조회. 상품별 한도(passes.max_suspend_days)가 있으면 우선,
+  // 없으면 센터 기본(maxDays). (select('*') → 마이그 전 컬럼 없어도 안전)
+  let pq = supabase.from('passes').select('*').eq('id', input.passId)
   if (ownerId !== 'no-auth') pq = pq.eq('owner_id', ownerId)
   const { data: passRow } = await pq.maybeSingle()
-  const curEnd = (passRow as { end_date: string | null } | null)?.end_date ?? null
+  const pr = passRow as { end_date: string | null; max_suspend_days?: number | null } | null
+  const curEnd = pr?.end_date ?? null
+  const effectiveMax = pr?.max_suspend_days ?? maxDays
+
+  const existing = await fetchSuspensionsByPass(input.passId, ownerId)
+  const used = totalSuspendDays(existing)
+  if (effectiveMax > 0 && used + days > effectiveMax) {
+    throw new Error(`최대 정지일수(${effectiveMax}일)를 넘어요. 이미 ${used}일 사용 → 최대 ${Math.max(0, effectiveMax - used)}일까지 가능`)
+  }
 
   const row: Record<string, unknown> = {
     pass_id: input.passId,
