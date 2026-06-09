@@ -158,7 +158,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '알 수 없는 entity' }, { status: 400 })
     }
   } catch (error) {
-    // 부분 성공 + 중단 지점 보존
+    // 부분 성공 + 중단 지점 보존. 거래 import는 일부라도 들어갔으면 캐시 무효화(즉시 반영).
+    if (entity === 'transactions') invalidateCache(ownerId)
     return NextResponse.json(
       { error: (error as Error).message, inserted, failed: errors.length, errors: errors.slice(0, 50) },
       { status: 500 },

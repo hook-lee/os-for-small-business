@@ -8,8 +8,8 @@ import { Icon, type IconName } from './ui/Icon'
 
 const TABS: { href: string; label: string; icon: IconName; match: string[] }[] = [
   { href: '/', label: '홈', icon: 'home', match: ['/'] },
-  { href: '/lessons', label: '수업', icon: 'calendar', match: ['/lessons'] },
-  { href: '/members', label: '회원', icon: 'users', match: ['/members', '/pass-products', '/messages', '/consultations'] },
+  { href: '/lessons', label: '수업', icon: 'calendar', match: ['/lessons', '/pass-products'] },
+  { href: '/members', label: '회원', icon: 'users', match: ['/members', '/messages', '/consultations'] },
   { href: '/finances', label: '재무', icon: 'wallet', match: ['/finances', '/add', '/sales', '/tax', '/analytics'] },
 ]
 

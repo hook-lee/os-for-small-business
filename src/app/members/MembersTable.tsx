@@ -1,7 +1,7 @@
 'use client'
 import { toast } from '@/components/ui/toast'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import type { Member } from '@/lib/supabase/members'
@@ -44,6 +44,13 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
   const [expireFilter, setExpireFilter] = useState<ExpireFilter>('all')
   const [remainingFilter, setRemainingFilter] = useState<RemainingFilter>('all')
   const [query, setQuery] = useState('')
+
+  // 알림 종·홈 카드에서 ?filter=low|expiring 로 진입하면 해당 필터를 자동 적용한다.
+  useEffect(() => {
+    const f = new URLSearchParams(window.location.search).get('filter')
+    if (f === 'low') setRemainingFilter('low')
+    else if (f === 'expiring') setExpireFilter('7d')
+  }, [])
 
   const [showAddForm, setShowAddForm] = useState(false)
   const [saving, setSaving] = useState(false)

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { getSupabaseAuthBrowser } from '@/lib/supabase/auth-browser'
 import type { StudioRole } from '@/lib/supabase/auth-server'
 import { NotificationBell } from './NotificationBell'
@@ -88,6 +88,7 @@ export function Sidebar({
   role?: StudioRole
 }) {
   const pathname = usePathname() ?? '/'
+  const searchParams = useSearchParams()
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
@@ -105,9 +106,14 @@ export function Sidebar({
   const isInstructor = role === 'instructor'
   function isActive(m: string[]) { return m.some(p => (p === '/' ? pathname === '/' : pathname.startsWith(p))) }
   function subActive(href: string) {
-    if (pathname === href) return true
-    if (PARENT_HREFS.has(href)) return false           // 첫 항목은 하위경로에서 비활성
-    return pathname.startsWith(href + '/') || pathname.startsWith(href)
+    const [path, qs] = href.split('?')
+    const hrefTab = qs ? new URLSearchParams(qs).get('tab') : null
+    const curTab = searchParams?.get('tab') ?? null
+    if (path !== pathname) {
+      if (PARENT_HREFS.has(path)) return false         // 첫 항목은 하위경로에서 비활성
+      return pathname.startsWith(path + '/') || pathname.startsWith(path)
+    }
+    return hrefTab === curTab                           // 같은 경로면 tab 쿼리 일치로 판정
   }
 
   return (

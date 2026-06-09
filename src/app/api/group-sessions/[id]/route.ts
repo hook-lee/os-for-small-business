@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { fetchSessionById, deleteGroupSession, updateGroupSession, cancelGroupSession } from '@/lib/supabase/group-sessions'
-import { fetchReservationsBySession } from '@/lib/supabase/group-reservations'
+import { fetchReservationsBySession, setReservationStatus } from '@/lib/supabase/group-reservations'
 import { findRoomTimeConflict } from '@/lib/supabase/rooms'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
 
@@ -42,8 +42,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
     // 취소(soft) — 사유 기록. '인원 부족'이면 폐강으로 집계.
     if (body.cancel) {
+      // 소유권 확인(테넌트 격리) 후 취소
+      const session = await fetchSessionById(id, ownerId)
+      if (!session) return NextResponse.json({ error: '세션을 찾을 수 없습니다.' }, { status: 404 })
       const reason = (body.cancelReason ?? '기타').trim() || '기타'
       await cancelGroupSession(id, reason, ownerId)
+      // 예약자 정리 — reserved는 '취소'로, 차감(출석/노쇼)됐던 회차는 자동 환불(+1).
+      // 폐강은 센터 사정이므로 회원이 회차를 손해 보지 않게 한다.
+      const reservations = await fetchReservationsBySession(id)
+      for (const r of reservations) {
+        if (r.status !== 'cancelled') {
+          try { await setReservationStatus(r.id, 'cancelled') } catch { /* 개별 실패는 무시 */ }
+        }
+      }
       return NextResponse.json({ ok: true })
     }
     // 룸·시간 cross-table 충돌 검증

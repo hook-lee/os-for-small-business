@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { usePathname } from 'next/navigation'
 import { Sidebar } from './Sidebar'
 import { MobileTabBar } from './MobileTabBar'
@@ -35,8 +36,10 @@ export function AppShell({
 
   return (
     <div className="md:flex bg-neutral-50 min-h-screen">
-      {/* 데스크탑: 좌측 세로 사이드바 */}
-      <Sidebar userEmail={userEmail} workspaceName={workspaceName} role={role} />
+      {/* 데스크탑: 좌측 세로 사이드바 (useSearchParams → Suspense 경계 필요) */}
+      <Suspense fallback={<aside className="hidden md:block w-56 shrink-0 border-r border-neutral-200 bg-white" />}>
+        <Sidebar userEmail={userEmail} workspaceName={workspaceName} role={role} />
+      </Suspense>
 
       <div className="flex-1 min-w-0 flex flex-col min-h-screen">
         {/* 모바일: 상단 얇은 헤더 (사이드바는 모바일에서 숨김 → 하단 탭바가 담당) */}

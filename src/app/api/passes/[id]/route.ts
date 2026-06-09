@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { deletePass, updatePass } from '@/lib/supabase/passes'
+import { deleteTransactionsByPass } from '@/lib/supabase/transactions'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
 import { invalidateCache } from '@/lib/data/loader'
 
@@ -22,6 +23,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       paymentAmount?: number
     }
     await updatePass(id, body, ownerId)
+    // 환불 처리 시 발급 때 자동생성된 매출(v3.7)을 제거 — 환불은 매출이 아니므로.
+    // ('이용만료' 등 다른 비활성 상태는 결제가 유효 → 매출 유지)
+    if (body.status === '환불') {
+      await deleteTransactionsByPass(id, ownerId)
+    }
+    invalidateCache(ownerId)   // 재무·세금 화면 즉시 갱신
     return NextResponse.json({ ok: true })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })
