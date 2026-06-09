@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import type { NotificationItem } from '@/lib/analytics/notifications'
+import { Icon } from './ui/Icon'
 
 /**
  * 헤더 종(알림) 아이콘 + 패널. 모바일/데스크탑 공통.
@@ -40,7 +41,7 @@ export function NotificationBell() {
         className="relative text-neutral-500 hover:text-neutral-800 leading-none"
         aria-label={`알림${count > 0 ? ` ${count}건` : ''}`}
       >
-        <span className="text-xl" aria-hidden>🔔</span>
+        <Icon name="bell" size={20} />
         {count > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center">
             {count > 9 ? '9+' : count}

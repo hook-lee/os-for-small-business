@@ -6,18 +6,19 @@ import { getSupabaseAuthBrowser } from '@/lib/supabase/auth-browser'
 import type { StudioRole } from '@/lib/supabase/auth-server'
 import { NotificationBell } from './NotificationBell'
 import { ThemeToggle } from './ThemeToggle'
+import { Icon, type IconName } from './ui/Icon'
 
 interface SubItem { href: string; label: string }
-interface NavItem { href: string; label: string; icon: string; match: string[]; children?: SubItem[] }
+interface NavItem { href: string; label: string; icon: IconName; match: string[]; children?: SubItem[] }
 interface NavGroup { label: string; items: NavItem[] }
 
 const GROUPS: NavGroup[] = [
-  { label: '', items: [{ href: '/', label: '홈', icon: '🏠', match: ['/'] }] },
+  { label: '', items: [{ href: '/', label: '홈', icon: 'home', match: ['/'] }] },
   {
     label: '운영',
     items: [
       {
-        href: '/lessons', label: '수업', icon: '📅', match: ['/lessons', '/pass-products'],
+        href: '/lessons', label: '수업', icon: 'calendar', match: ['/lessons', '/pass-products'],
         children: [
           { href: '/lessons', label: '전체 일정' },
           { href: '/lessons/groups', label: '그룹 예약 관리' },
@@ -25,21 +26,21 @@ const GROUPS: NavGroup[] = [
         ],
       },
       {
-        href: '/members', label: '회원', icon: '👥', match: ['/members', '/messages', '/consultations'],
+        href: '/members', label: '회원', icon: 'users', match: ['/members', '/messages', '/consultations'],
         children: [
           { href: '/members', label: '회원 목록' },
           { href: '/consultations', label: '상담' },
           { href: '/messages', label: '메시지' },
         ],
       },
-      { href: '/instructors', label: '강사', icon: '🧑‍🏫', match: ['/instructors'] },
+      { href: '/instructors', label: '강사', icon: 'instructor', match: ['/instructors'] },
     ],
   },
   {
     label: '재무·목표',
     items: [
       {
-        href: '/finances', label: '재무', icon: '💰', match: ['/finances', '/add', '/sales', '/tax', '/analytics'],
+        href: '/finances', label: '재무', icon: 'wallet', match: ['/finances', '/add', '/sales', '/tax', '/analytics'],
         children: [
           { href: '/finances', label: '월별 요약' },
           { href: '/sales', label: '매출' },
@@ -48,14 +49,14 @@ const GROUPS: NavGroup[] = [
           { href: '/analytics', label: '분석' },
         ],
       },
-      { href: '/goals', label: '목표', icon: '🎯', match: ['/goals'] },
+      { href: '/goals', label: '목표', icon: 'target', match: ['/goals'] },
     ],
   },
   {
     label: '설정',
     items: [
       {
-        href: '/settings', label: '설정', icon: '⚙️', match: ['/settings'],
+        href: '/settings', label: '설정', icon: 'settings', match: ['/settings'],
         children: [
           { href: '/settings', label: '개인·세무' },
           { href: '/settings/operations', label: '운영정보' },
@@ -134,11 +135,11 @@ export function Sidebar({
                         active ? 'bg-violet-50 text-violet-700 font-medium' : 'text-neutral-600 hover:bg-neutral-100'
                       } ${collapsed ? 'justify-center' : ''}`}
                     >
-                      <span className="text-base shrink-0" aria-hidden>{i.icon}</span>
+                      <Icon name={i.icon} size={18} className="shrink-0" />
                       {!collapsed && <span className="truncate">{i.label}</span>}
                     </a>
-                    {/* 하위 메뉴 — 펼친 상태 + 활성 그룹일 때 노출 */}
-                    {!collapsed && active && i.children && (
+                    {/* 하위 메뉴 — 펼친 상태면 항상 노출 (활성 그룹은 강조) */}
+                    {!collapsed && i.children && (
                       <div className="ml-7 mr-2 mb-1 border-l border-neutral-100 pl-2">
                         {i.children.map(s => (
                           <a
@@ -164,14 +165,14 @@ export function Sidebar({
       <div className="border-t border-neutral-100 p-2 space-y-0.5">
         <ThemeToggle collapsed={collapsed} />
         <button onClick={toggle} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-neutral-500 hover:bg-neutral-100" title={collapsed ? '펼치기' : '접기'}>
-          <span className="text-base shrink-0" aria-hidden>{collapsed ? '»' : '«'}</span>
+          <Icon name={collapsed ? 'chevronRight' : 'chevronLeft'} size={18} className="shrink-0" />
           {!collapsed && <span>접기</span>}
         </button>
         {userEmail && (
           <>
             {!collapsed && <div className="px-2.5 pt-1 text-[10px] text-neutral-400 truncate">{userEmail}</div>}
             <button onClick={signOut} disabled={signingOut} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 disabled:opacity-50" title="로그아웃">
-              <span className="text-base shrink-0" aria-hidden>🚪</span>
+              <Icon name="logout" size={18} className="shrink-0" />
               {!collapsed && <span>{signingOut ? '로그아웃 중…' : '로그아웃'}</span>}
             </button>
           </>

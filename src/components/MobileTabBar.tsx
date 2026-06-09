@@ -4,18 +4,19 @@ import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { getSupabaseAuthBrowser } from '@/lib/supabase/auth-browser'
 import type { StudioRole } from '@/lib/supabase/auth-server'
+import { Icon, type IconName } from './ui/Icon'
 
-const TABS = [
-  { href: '/', label: '홈', icon: '🏠', match: ['/'] },
-  { href: '/lessons', label: '수업', icon: '📅', match: ['/lessons'] },
-  { href: '/members', label: '회원', icon: '👥', match: ['/members', '/pass-products', '/messages', '/consultations'] },
-  { href: '/finances', label: '재무', icon: '💰', match: ['/finances', '/add', '/sales', '/tax', '/analytics'] },
+const TABS: { href: string; label: string; icon: IconName; match: string[] }[] = [
+  { href: '/', label: '홈', icon: 'home', match: ['/'] },
+  { href: '/lessons', label: '수업', icon: 'calendar', match: ['/lessons'] },
+  { href: '/members', label: '회원', icon: 'users', match: ['/members', '/pass-products', '/messages', '/consultations'] },
+  { href: '/finances', label: '재무', icon: 'wallet', match: ['/finances', '/add', '/sales', '/tax', '/analytics'] },
 ]
 
-const MORE = [
-  { href: '/instructors', label: '강사', icon: '🧑‍🏫', match: ['/instructors'] },
-  { href: '/goals', label: '목표', icon: '🎯', match: ['/goals'] },
-  { href: '/settings', label: '설정', icon: '⚙️', match: ['/settings'] },
+const MORE: { href: string; label: string; icon: IconName; match: string[] }[] = [
+  { href: '/instructors', label: '강사', icon: 'instructor', match: ['/instructors'] },
+  { href: '/goals', label: '목표', icon: 'target', match: ['/goals'] },
+  { href: '/settings', label: '설정', icon: 'settings', match: ['/settings'] },
 ]
 
 function isActive(pathname: string, match: string[]): boolean {
@@ -57,7 +58,7 @@ export function MobileTabBar({ userEmail, role = 'owner' }: { userEmail: string 
               className={`flex-1 flex flex-col items-center py-2 text-[10px] ${active ? 'text-blue-600 font-semibold' : 'text-neutral-500'}`}
               aria-current={active ? 'page' : undefined}
             >
-              <span className="text-lg leading-none" aria-hidden>{t.icon}</span>
+              <Icon name={t.icon} size={22} />
               <span className="mt-0.5">{t.label}</span>
             </a>
           )
@@ -67,7 +68,7 @@ export function MobileTabBar({ userEmail, role = 'owner' }: { userEmail: string 
           onClick={() => setMoreOpen(true)}
           className={`flex-1 flex flex-col items-center py-2 text-[10px] ${moreActive || moreOpen ? 'text-blue-600 font-semibold' : 'text-neutral-500'}`}
         >
-          <span className="text-lg leading-none" aria-hidden>☰</span>
+          <Icon name="menu" size={22} />
           <span className="mt-0.5">더보기</span>
         </button>
       </nav>
@@ -88,7 +89,7 @@ export function MobileTabBar({ userEmail, role = 'owner' }: { userEmail: string 
                   onClick={() => setMoreOpen(false)}
                   className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm ${active ? 'bg-blue-50 text-blue-700 font-medium' : 'text-neutral-700 hover:bg-neutral-50'}`}
                 >
-                  <span className="text-lg" aria-hidden>{m.icon}</span>{m.label}
+                  <Icon name={m.icon} size={20} />{m.label}
                 </a>
               )
             })}
@@ -101,7 +102,7 @@ export function MobileTabBar({ userEmail, role = 'owner' }: { userEmail: string 
                   disabled={signingOut}
                   className="w-full text-left flex items-center gap-3 px-3 py-3 rounded-lg text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
                 >
-                  <span className="text-lg" aria-hidden>🚪</span>{signingOut ? '로그아웃 중...' : '로그아웃'}
+                  <Icon name="logout" size={20} />{signingOut ? '로그아웃 중...' : '로그아웃'}
                 </button>
               </div>
             )}
