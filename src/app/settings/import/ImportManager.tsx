@@ -119,13 +119,18 @@ export function ImportManager() {
           <span className="text-sm font-semibold">{schema.label} CSV 올리기</span>
           <button onClick={downloadTemplate} className="text-xs font-medium text-violet-600 hover:underline shrink-0">↓ 표준 템플릿 받기</button>
         </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".csv,text/csv"
-          onChange={onFile}
-          className="block w-full text-sm text-neutral-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
-        />
+        <label className="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-violet-300 rounded-lg bg-violet-50/40 hover:bg-violet-50 cursor-pointer py-6 text-center transition-colors">
+          <span className="text-2xl" aria-hidden>📄</span>
+          <span className="text-sm font-semibold text-violet-700">여기를 눌러 CSV 파일 선택</span>
+          <span className="text-[11px] text-neutral-400">엑셀에서 «다른 이름으로 저장 → CSV(쉼표로 분리)»로 만든 파일</span>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".csv,text/csv"
+            onChange={onFile}
+            className="hidden"
+          />
+        </label>
         {fileName && <p className="text-xs text-neutral-500 mt-2">📄 {fileName} · {rows.length}행 · 컬럼 {csvHeaders.length}개 인식</p>}
       </div>
 

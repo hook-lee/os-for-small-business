@@ -104,6 +104,7 @@ export async function fetchUnifiedLessonsByRange(
       .select('id, session_name, lesson_date, lesson_time, duration_minutes, capacity, instructor_id, room_id, instructors(id, name, color, role), rooms(id, name)')
       .gte('lesson_date', start)
       .lte('lesson_date', end)
+      .eq('active', true)   // 취소(폐강)된 세션은 일정에서 숨김
       .order('lesson_date', { ascending: true })
       .order('lesson_time', { ascending: true })
     if (ownerId !== 'no-auth') grpQ = grpQ.eq('owner_id', ownerId)

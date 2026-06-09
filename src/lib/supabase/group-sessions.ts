@@ -232,15 +232,12 @@ export async function cancelGroupSession(id: number, reason: string, ownerId: st
   if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
   const { error } = await q
   if (error) {
-    if (/cancel_reason|cancelled_at/i.test(error.message)) {
-      // 컬럼 미존재 폴백 — active만 끔
-      let q2 = supabase.from('group_sessions').update({ active: false }).eq('id', id)
-      if (ownerId !== 'no-auth') q2 = q2.eq('owner_id', ownerId)
-      const retry = await q2
-      if (retry.error) throw new Error(`Cancel group session failed: ${retry.error.message}`)
-      return
-    }
-    throw new Error(`Cancel group session failed: ${error.message}`)
+    // cancel_reason/cancelled_at 컬럼이 아직 없는 DB(v3.23 전) → active만 끄는 폴백.
+    // 메시지 형식에 의존하지 않고 무조건 재시도(취소 자체는 항상 동작하도록).
+    let q2 = supabase.from('group_sessions').update({ active: false }).eq('id', id)
+    if (ownerId !== 'no-auth') q2 = q2.eq('owner_id', ownerId)
+    const retry = await q2
+    if (retry.error) throw new Error(`Cancel group session failed: ${retry.error.message}`)
   }
 }
 

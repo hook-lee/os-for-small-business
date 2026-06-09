@@ -7,6 +7,9 @@ import { toast } from '@/components/ui/toast'
 
 interface Room { id: number; name: string; isActive: boolean }
 
+// 그룹 수업 취소 사유. '인원 부족' = 폐강(강사 성과 폐강률 반영).
+const CANCEL_REASONS = ['인원 부족', '강사 사정', '시설·기타'] as const
+
 /**
  * 통합 수업 뷰의 row·카드 클릭시 열리는 상세 모달.
  * 핵심: 룸 변경 + 시간 변경 + 삭제.
@@ -35,6 +38,7 @@ export function LessonDetailModal({
   const [noteOpen, setNoteOpen] = useState(false)
   const [noteContent, setNoteContent] = useState('')
   const [noteSaving, setNoteSaving] = useState(false)
+  const [cancelOpen, setCancelOpen] = useState(false)
 
   useEffect(() => {
     if (!open || !lesson) return
@@ -42,7 +46,7 @@ export function LessonDetailModal({
     setDate(lesson.date)
     setTime(lesson.time ?? '')
     setError('')
-    setNoteOpen(false); setNoteContent('')
+    setNoteOpen(false); setNoteContent(''); setCancelOpen(false)
     fetch('/api/rooms').then(r => r.json()).then((j: { rooms?: Room[] }) => setRooms(j.rooms ?? []))
   }, [open, lesson])
 
@@ -90,6 +94,27 @@ export function LessonDetailModal({
       const res = await fetch(`${apiBase}/${lesson.id}`, { method: 'DELETE' })
       const json = await res.json() as { ok?: boolean; error?: string }
       if (!res.ok) { setError(json.error ?? '삭제 실패'); return }
+      router.refresh()
+      onClose()
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleCancel(reason: string) {
+    if (!lesson) return
+    setBusy(true); setError('')
+    try {
+      const res = await fetch(`/api/group-sessions/${lesson.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cancel: true, cancelReason: reason }),
+      })
+      const json = await res.json() as { ok?: boolean; error?: string }
+      if (!res.ok) { setError(json.error ?? '취소 실패'); return }
+      toast(reason === '인원 부족' ? '폐강 처리됐어요 ✓ (강사 성과 반영)' : '수업이 취소됐어요 ✓', 'success')
       router.refresh()
       onClose()
     } catch (e) {
@@ -246,7 +271,31 @@ export function LessonDetailModal({
           </div>
         )}
 
-        <div className="flex gap-2 pt-1">
+        {/* 그룹 — 취소(사유) 선택 */}
+        {isGroup && cancelOpen && (
+          <div className="border border-amber-200 bg-amber-50 rounded-lg p-3 space-y-2">
+            <div className="text-xs font-medium text-amber-800">취소 사유 — «인원 부족»은 폐강으로 집계됩니다</div>
+            <div className="flex flex-wrap gap-1.5">
+              {CANCEL_REASONS.map(reason => (
+                <button
+                  key={reason}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => handleCancel(reason)}
+                  className={`text-xs px-2.5 py-1.5 rounded border disabled:opacity-50 ${
+                    reason === '인원 부족'
+                      ? 'border-amber-300 bg-white text-amber-800 hover:bg-amber-100'
+                      : 'border-neutral-200 bg-white hover:bg-neutral-50'
+                  }`}
+                >
+                  {reason}{reason === '인원 부족' ? ' (폐강)' : ''}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2 pt-1">
           <button
             type="button"
             onClick={handleDelete}
@@ -255,6 +304,16 @@ export function LessonDetailModal({
           >
             삭제
           </button>
+          {isGroup && (
+            <button
+              type="button"
+              onClick={() => setCancelOpen(o => !o)}
+              disabled={busy}
+              className="text-sm bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded px-3 py-2 disabled:opacity-50"
+            >
+              취소(폐강)
+            </button>
+          )}
           {isGroup ? (
             <a
               href={`/lessons/groups/${lesson.id}`}
