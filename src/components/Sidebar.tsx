@@ -61,6 +61,7 @@ const GROUPS: NavGroup[] = [
           { href: '/settings', label: '개인·세무' },
           { href: '/settings/operations', label: '운영정보' },
           { href: '/settings/contracts', label: '계약서' },
+          { href: '/settings/import', label: '데이터 가져오기' },
         ],
       },
     ],

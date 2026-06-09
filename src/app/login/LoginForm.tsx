@@ -27,7 +27,7 @@ export function LoginForm({ next }: { next: string }) {
         if (msg.includes('invalid login credentials') || msg.includes('invalid')) {
           setError('이메일 또는 비밀번호가 올바르지 않습니다')
         } else if (msg.includes('email not confirmed')) {
-          setError('이메일 인증이 완료되지 않은 계정입니다. 운영자에게 문의하세요')
+          setError('이메일 인증이 아직 안 됐어요. 받은 인증 메일의 링크를 클릭한 뒤 로그인하세요')
         } else {
           setError(signInError.message)
         }
@@ -84,10 +84,9 @@ export function LoginForm({ next }: { next: string }) {
         {submitting ? '로그인 중...' : '로그인'}
       </button>
 
-      <div className="text-[11px] text-neutral-400 text-center pt-2 border-t border-neutral-100">
-        계정 발급은 운영자가 직접 합니다.<br />
-        가입 신청 X — 외부 사용자 차단을 위해서입니다.
-      </div>
+      <p className="text-[11px] text-neutral-400 text-center pt-2 border-t border-neutral-100">
+        처음이신가요? 누구나 무료로 워크스페이스를 만들 수 있어요.
+      </p>
     </form>
   )
 }
