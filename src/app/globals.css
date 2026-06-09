@@ -26,3 +26,47 @@ body {
     cursor: pointer;
   }
 }
+
+/*
+ * 다크 테마. html.dark 클래스가 붙으면 적용.
+ * 색을 화면 곳곳에 Tailwind 유틸로 직접 박아둔 상태라, 다크 토큰화 전까지는
+ * 주요 표면/글자/테두리 유틸을 .dark에서 오버라이드해 전 화면을 어둡게 만든다.
+ * (포인트색 violet/blue 등은 유지 → 브랜드감 보존)
+ */
+html.dark {
+  color-scheme: dark;
+}
+@layer base {
+  html.dark body { background-color: #0a0a0a; color: #ededed; }
+
+  /* 표면 */
+  html.dark .bg-white { background-color: #181818 !important; }
+  html.dark .bg-neutral-50 { background-color: #111111 !important; }
+  html.dark .bg-neutral-100 { background-color: #242424 !important; }
+  html.dark .bg-neutral-200 { background-color: #2e2e2e !important; }
+
+  /* 글자 */
+  html.dark .text-neutral-900 { color: #ededed !important; }
+  html.dark .text-neutral-800 { color: #e3e3e3 !important; }
+  html.dark .text-neutral-700 { color: #d4d4d4 !important; }
+  html.dark .text-neutral-600 { color: #b0b0b0 !important; }
+  html.dark .text-neutral-500 { color: #909090 !important; }
+  html.dark .text-neutral-400 { color: #707070 !important; }
+  html.dark .text-neutral-300 { color: #585858 !important; }
+
+  /* 테두리 */
+  html.dark .border-neutral-100 { border-color: #222 !important; }
+  html.dark .border-neutral-200 { border-color: #2c2c2c !important; }
+  html.dark .border-neutral-300 { border-color: #3a3a3a !important; }
+  html.dark .border { border-color: #2c2c2c; }
+  html.dark .divide-neutral-100 > :not([hidden]) ~ :not([hidden]) { border-color: #222 !important; }
+
+  /* 입력 */
+  html.dark input, html.dark select, html.dark textarea { background-color: #1c1c1c; color: #ededed; }
+  html.dark input::placeholder, html.dark textarea::placeholder { color: #6a6a6a; }
+
+  /* 연한 포인트 배경은 살짝 죽여서 다크에 어울리게 */
+  html.dark .bg-blue-50, html.dark .bg-violet-50, html.dark .bg-emerald-50,
+  html.dark .bg-amber-50, html.dark .bg-red-50, html.dark .bg-orange-50,
+  html.dark .bg-purple-50, html.dark .bg-teal-50 { filter: brightness(0.5) saturate(1.3); }
+}

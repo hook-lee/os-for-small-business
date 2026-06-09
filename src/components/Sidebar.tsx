@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { getSupabaseAuthBrowser } from '@/lib/supabase/auth-browser'
 import type { StudioRole } from '@/lib/supabase/auth-server'
 import { NotificationBell } from './NotificationBell'
+import { ThemeToggle } from './ThemeToggle'
 
 interface SubItem { href: string; label: string }
 interface NavItem { href: string; label: string; icon: string; match: string[]; children?: SubItem[] }
@@ -161,6 +162,7 @@ export function Sidebar({
       </nav>
 
       <div className="border-t border-neutral-100 p-2 space-y-0.5">
+        <ThemeToggle collapsed={collapsed} />
         <button onClick={toggle} className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-neutral-500 hover:bg-neutral-100" title={collapsed ? '펼치기' : '접기'}>
           <span className="text-base shrink-0" aria-hidden>{collapsed ? '»' : '«'}</span>
           {!collapsed && <span>접기</span>}

@@ -23,7 +23,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     role = await getRoleSafe()
   }
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
+      <head>
+        {/* 다크 테마 깜빡임(FOUC) 방지 — 첫 페인트 전에 html.dark 적용 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}",
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-neutral-50 text-neutral-900">
         <AppShell userEmail={user?.email ?? null} workspaceName={workspaceName} role={role}>{children}</AppShell>
       </body>
