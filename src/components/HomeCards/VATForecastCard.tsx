@@ -1,4 +1,5 @@
 import { Card } from '@/components/ui/Card'
+import { StatNumber } from '@/components/ui/StatNumber'
 import type { AnnualVATResult } from '@/lib/tax/vat'
 
 export function VATForecastCard({ result }: { result: AnnualVATResult }) {
@@ -11,8 +12,8 @@ export function VATForecastCard({ result }: { result: AnnualVATResult }) {
           {isSimplified ? '간이과세' : '일반과세'}
         </span>
       </div>
-      <div className="text-2xl sm:text-3xl font-bold mt-2 tabular-nums break-keep">
-        {result.estimatedAnnualVAT.toLocaleString()}<span className="text-base font-normal ml-1">원</span>
+      <div className="mt-2">
+        <StatNumber amount={result.estimatedAnnualVAT} size="hero" />
       </div>
       {result.exempt ? (
         <div className="text-xs text-green-600 mt-2">

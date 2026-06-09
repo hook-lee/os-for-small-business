@@ -69,7 +69,7 @@ export function MonthlyDashboard({
       </div>
 
       {/* 상단 큰 지표 4개 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
         <Stat label="매출" value={summary.revenue} highlight color="blue" />
         <Stat label="영업이익" value={summary.operatingProfit} highlight color="emerald" sub="= 매출 - 사업비" />
         <Stat label="순수익" value={summary.netProfit} highlight color="violet" sub="= 영업이익 - 개인비" />
@@ -233,7 +233,7 @@ function Stat({ label, value, sub, highlight, color, suffix = '원' }: {
   return (
     <Card className={highlight ? 'border-2' : ''}>
       <div className="text-xs text-neutral-500">{label}</div>
-      <div className={`text-lg sm:text-xl md:text-2xl font-bold tabular-nums mt-1 break-keep ${colorClass}`}>
+      <div className={`text-base sm:text-lg font-bold tabular-nums tracking-tight mt-1 break-keep ${colorClass}`}>
         {value.toLocaleString()}{suffix}
       </div>
       {sub && <div className="text-[10px] text-neutral-400 mt-0.5">{sub}</div>}

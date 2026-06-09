@@ -140,7 +140,7 @@ export default async function TaxPage() {
           <div className="flex items-baseline justify-between mb-2">
             <div>
               <div className="text-xs text-neutral-500">직전 1년({eligibility.asOfMonth} 기준) 매출</div>
-              <div className="text-2xl sm:text-3xl font-bold tabular-nums text-neutral-800 mt-1 break-keep">
+              <div className="text-xl sm:text-2xl font-bold tabular-nums tracking-tight text-neutral-800 mt-1 break-keep">
                 {eligibility.rollingRevenue.toLocaleString()}원
               </div>
             </div>
@@ -227,7 +227,7 @@ export default async function TaxPage() {
       {actualTaxes.length > 0 && (
         <section>
           <h2 className="text-lg font-semibold mb-3">💰 과거 납부 세금 (실측)</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+          <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3 mb-3">
             <KpiCard title="총 납부 세금" amount={totalActualTax} subtitle={`${actualTaxes.length}건`} />
             {Object.entries(taxByCategory).map(([cat, amt]) => (
               <KpiCard key={cat} title={cat} amount={amt} />
@@ -302,7 +302,7 @@ export default async function TaxPage() {
         ) : (
           // 일반과세자: 분기별. 지난 분기 = 매출 확정, 현재/미래 = 예상.
           <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
               {vatByQuarter.map(v => {
                 const ended = v.quarter < currentQuarterNum
                 const ongoing = v.quarter === currentQuarterNum
@@ -345,7 +345,7 @@ export default async function TaxPage() {
               <div className="text-sm font-semibold text-blue-900">
                 {incomeTax.filingYear}년 5월 예상 납부 총액 (국세 + 지방세)
               </div>
-              <div className="text-2xl font-bold text-blue-700 tabular-nums">
+              <div className="text-xl sm:text-2xl font-bold text-blue-700 tabular-nums tracking-tight break-keep">
                 {incomeTax.totalTax.toLocaleString()}원
               </div>
             </div>

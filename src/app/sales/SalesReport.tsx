@@ -92,7 +92,7 @@ export function SalesReport({ initialMonth, passes, instructors, transactions }:
       </div>
 
       {/* 합계 카드 — 가계부(transactions) 기준 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
         <Stat label="총 매출" value={`${grandTotal.toLocaleString()}원`} sub={`${txKPI.count}건 · 가계부`} highlight />
         <Stat label="순이익" value={`${(grandTotal - txKPI.expense).toLocaleString()}원`} sub="매출 - 지출" />
         <Stat label="총 지출" value={`-${txKPI.expense.toLocaleString()}원`} sub={`${txKPI.expenseCount}건`} />
@@ -105,7 +105,7 @@ export function SalesReport({ initialMonth, passes, instructors, transactions }:
           <h3 className="text-sm font-semibold text-neutral-700">📒 회원 결제 이력 (참고)</h3>
           <span className="text-[10px] text-neutral-400">총 매출에 합산 X · passes 테이블 기준</span>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
           <Stat label="결제 건수" value={`${passKPI.transactionCount}건`} sub={`${passKPI.total.toLocaleString()}원`} />
           <Stat label="신규결제" value={`${passKPI.newPayment.toLocaleString()}원`} />
           <Stat label="재결제" value={`${passKPI.rePayment.toLocaleString()}원`} />
@@ -149,7 +149,7 @@ function Stat({ label, value, sub, highlight }: { label: string; value: string; 
   return (
     <Card>
       <div className="text-xs text-neutral-500">{label}</div>
-      <div className={`text-base sm:text-xl font-bold mt-1 tabular-nums break-keep ${highlight ? 'text-blue-600' : ''}`}>{value}</div>
+      <div className={`text-base sm:text-lg font-bold mt-1 tabular-nums tracking-tight break-keep ${highlight ? 'text-blue-600' : ''}`}>{value}</div>
       {sub && <div className="text-xs text-neutral-400 mt-1">{sub}</div>}
     </Card>
   )

@@ -1,4 +1,4 @@
-import { Card } from './Card'
+import { StatNumber } from './StatNumber'
 
 interface KpiCardProps {
   title: string
@@ -9,14 +9,12 @@ interface KpiCardProps {
 
 export function KpiCard({ title, amount, subtitle, unit = '원' }: KpiCardProps) {
   const isNegative = amount < 0
+  // p-3(여유 패딩 축소)으로 좁은 칸에서도 숫자가 들어갈 자리를 확보.
   return (
-    <Card>
+    <div className="rounded-lg border border-neutral-200 bg-white p-3 shadow-sm">
       <div className="text-xs text-neutral-500">{title}</div>
-      <div className={`text-lg sm:text-2xl font-bold mt-1 tabular-nums break-keep ${isNegative ? 'text-red-600' : 'text-neutral-900'}`}>
-        {amount.toLocaleString()}
-        <span className="text-sm font-normal ml-1">{unit}</span>
-      </div>
+      <StatNumber amount={amount} unit={unit} className={`mt-1 ${isNegative ? 'text-red-600' : 'text-neutral-900'}`} />
       {subtitle && <div className="text-xs text-neutral-500 mt-1">{subtitle}</div>}
-    </Card>
+    </div>
   )
 }

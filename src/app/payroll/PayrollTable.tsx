@@ -235,7 +235,7 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
         <Stat label="총 급여 (gross)" value={`${totals.gross.toLocaleString()}원`} />
         <Stat label="사업소득세 3.3%" value={`-${totals.tax.toLocaleString()}원`} />
         <Stat label="보너스 / 기타 공제" value={`+${totals.bonus.toLocaleString()} / -${totals.deduction.toLocaleString()}원`} />
@@ -444,7 +444,7 @@ function Stat({ label, value, highlight }: { label: string; value: string; highl
   return (
     <Card>
       <div className="text-xs text-neutral-500">{label}</div>
-      <div className={`text-base sm:text-xl font-bold mt-1 tabular-nums break-keep ${highlight ? 'text-blue-600' : ''}`}>{value}</div>
+      <div className={`text-base sm:text-lg font-bold mt-1 tabular-nums tracking-tight break-keep ${highlight ? 'text-blue-600' : ''}`}>{value}</div>
     </Card>
   )
 }

@@ -39,7 +39,7 @@ export default async function AnalyticsPage() {
           return (
             <div key={year} className="mb-4">
               <div className="text-sm font-medium text-neutral-600 mb-2">{year}년</div>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
                 <KpiCard title="매출" amount={t.revenue} />
                 <KpiCard title="지출" amount={-t.expense} />
                 <KpiCard title="순이익" amount={t.net} />

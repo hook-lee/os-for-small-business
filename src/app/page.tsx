@@ -106,7 +106,7 @@ export default async function HomePage() {
       {nextDue && <DueDateBanner due={nextDue} />}
 
       {/* Hero KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-3">
         <HeroKpi
           label="오늘 수업"
           value={`${todayLessons.length}건`}
