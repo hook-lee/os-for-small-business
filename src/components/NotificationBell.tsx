@@ -7,8 +7,12 @@ import { Icon } from './ui/Icon'
 /**
  * 헤더 종(알림) 아이콘 + 패널. 모바일/데스크탑 공통.
  * 열 때(마운트) /api/notifications 1회 fetch. 설정(ON/OFF) 반영된 활성 알림만 옴.
+ *
+ * panelAlign: 패널이 펼쳐지는 방향.
+ *  - 'right'(기본): 종 오른쪽 끝 기준 왼쪽으로 펼침 → 모바일 전체폭 헤더(오른쪽 끝)에 적합.
+ *  - 'left': 종 왼쪽 기준 오른쪽(본문 쪽)으로 펼침 → 좁은 PC 사이드바에 적합(왼쪽 화면밖 잘림 방지).
  */
-export function NotificationBell() {
+export function NotificationBell({ panelAlign = 'right' }: { panelAlign?: 'left' | 'right' }) {
   const [items, setItems] = useState<NotificationItem[]>([])
   const [open, setOpen] = useState(false)
   const [loaded, setLoaded] = useState(false)
@@ -49,7 +53,7 @@ export function NotificationBell() {
         )}
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-72 max-w-[85vw] bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-50">
+        <div className={`absolute ${panelAlign === 'left' ? 'left-0' : 'right-0'} mt-2 w-72 max-w-[85vw] bg-white rounded-lg shadow-lg border border-neutral-200 py-1 z-50`}>
           <div className="px-3 py-2 border-b border-neutral-100 flex items-center justify-between">
             <span className="text-sm font-semibold">알림</span>
             <a href="/settings" onClick={() => setOpen(false)} className="text-[11px] text-blue-600 hover:underline">알림 설정</a>

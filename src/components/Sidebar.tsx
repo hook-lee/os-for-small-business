@@ -108,7 +108,7 @@ export function Sidebar({
         <a href="/" className={`font-bold bg-gradient-to-r from-violet-600 to-fuchsia-600 bg-clip-text text-transparent truncate ${collapsed ? 'text-base' : 'text-lg'}`}>
           {collapsed ? 'O' : 'Onmove'}
         </a>
-        {!collapsed && userEmail && <NotificationBell />}
+        {!collapsed && userEmail && <NotificationBell panelAlign="left" />}
       </div>
       {!collapsed && workspaceName && (
         <div className="px-3 py-1.5 text-xs text-neutral-400 truncate border-b border-neutral-50">{workspaceName}</div>
