@@ -616,3 +616,15 @@ alter table contracts add column if not exists attachment_name text;
 --  - null이면 센터 기본(profile.max_suspend_days)을 사용. 0이면 무제한.
 alter table pass_products add column if not exists max_suspend_days integer;
 alter table passes        add column if not exists max_suspend_days integer;
+
+-- ============================================================
+-- v3.23: 그룹 수업 취소 사유 + 폐강 추적
+--  - 그룹 수업을 취소할 때 사유를 남김(active=false + cancel_reason).
+--  - cancel_reason='인원 부족'이면 '폐강'(수강 인원 부족으로 닫힘)으로 간주.
+--    강사 성과의 '폐강률' = 폐강 수 / 개설한 그룹 수업 수. 0%면 그 강사 수업 수요가 많다는 뜻.
+--  - '삭제'(하드 delete)와 별개 — 취소는 이력 보존(분석에 사용).
+-- 멱등: add column if not exists.
+-- ============================================================
+
+alter table group_sessions add column if not exists cancel_reason text;
+alter table group_sessions add column if not exists cancelled_at  timestamptz;

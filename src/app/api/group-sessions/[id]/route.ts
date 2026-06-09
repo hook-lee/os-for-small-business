@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
-import { fetchSessionById, deleteGroupSession, updateGroupSession } from '@/lib/supabase/group-sessions'
+import { fetchSessionById, deleteGroupSession, updateGroupSession, cancelGroupSession } from '@/lib/supabase/group-sessions'
 import { fetchReservationsBySession } from '@/lib/supabase/group-reservations'
 import { findRoomTimeConflict } from '@/lib/supabase/rooms'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
@@ -37,6 +37,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       capacity?: number
       notes?: string | null
       lessonDate?: string
+      cancel?: boolean
+      cancelReason?: string
+    }
+    // 취소(soft) — 사유 기록. '인원 부족'이면 폐강으로 집계.
+    if (body.cancel) {
+      const reason = (body.cancelReason ?? '기타').trim() || '기타'
+      await cancelGroupSession(id, reason, ownerId)
+      return NextResponse.json({ ok: true })
     }
     // 룸·시간 cross-table 충돌 검증
     if (body.roomId && body.lessonTime && body.lessonDate) {

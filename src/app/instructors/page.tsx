@@ -6,7 +6,8 @@ import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { InstructorsTabs } from './InstructorsTabs'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
 import { groupPassesByMember } from '@/lib/analytics/instructor-kpi'
-import { computeInstructorScorecards, type InstructorScorecardRow, type IncentiveSetting } from '@/lib/analytics/instructor-scorecard'
+import { computeInstructorScorecards, computeGroupClosureStats, type InstructorScorecardRow, type IncentiveSetting } from '@/lib/analytics/instructor-scorecard'
+import { fetchGroupSessionsForAnalytics } from '@/lib/supabase/group-sessions'
 import { resolvePeriod, isPeriodKey, type PeriodKey } from '@/lib/analytics/period'
 
 export const dynamic = 'force-dynamic'
@@ -49,9 +50,10 @@ export default async function InstructorsPage({ searchParams }: { searchParams: 
     } else if (tab === 'scorecard') {
       try {
         const today = new Date().toISOString().slice(0, 10)
-        const [allPasses, rates] = await Promise.all([
+        const [allPasses, rates, groupSessions] = await Promise.all([
           fetchAllPasses(ownerId),
           fetchAllRates(ownerId),
+          fetchGroupSessionsForAnalytics(ownerId),
         ])
         const allByMember = groupPassesByMember(allPasses)
         const ratesByInstructor = new Map<number, IncentiveSetting[]>()
@@ -61,7 +63,8 @@ export default async function InstructorsPage({ searchParams }: { searchParams: 
           ratesByInstructor.set(r.instructorId, arr)
         }
         const period = resolvePeriod(periodKey, today)
-        scorecards = computeInstructorScorecards(instructors, allPasses, allByMember, period, ratesByInstructor)
+        const closureByInstructor = computeGroupClosureStats(groupSessions, period)
+        scorecards = computeInstructorScorecards(instructors, allPasses, allByMember, period, ratesByInstructor, closureByInstructor)
       } catch {/* fallback: 빈 scorecards */}
     } else {
       payrollRecords = await fetchPayrollByMonth(yearMonth, ownerId)

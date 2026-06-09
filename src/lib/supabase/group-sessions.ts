@@ -14,6 +14,8 @@ export interface GroupSession {
   capacity: number
   notes: string | null
   active: boolean
+  cancelReason: string | null
+  cancelledAt: string | null
   reservedCount: number
   attendedCount: number
 }
@@ -30,6 +32,8 @@ interface GroupSessionRow {
   capacity: number
   notes: string | null
   active: boolean
+  cancel_reason?: string | null
+  cancelled_at?: string | null
   created_at: string
   instructors: { id: number; name: string } | null
   rooms: { id: number; name: string } | null
@@ -50,6 +54,8 @@ function rowToSession(row: GroupSessionRow, reservedCount = 0, attendedCount = 0
     capacity: row.capacity,
     notes: row.notes,
     active: row.active,
+    cancelReason: row.cancel_reason ?? null,
+    cancelledAt: row.cancelled_at ?? null,
     reservedCount,
     attendedCount,
   }
@@ -209,4 +215,67 @@ export async function deleteGroupSession(id: number, ownerId: string): Promise<v
   if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
   const { error } = await q
   if (error) throw new Error(`Delete group session failed: ${error.message}`)
+}
+
+/**
+ * 그룹 수업 취소(soft) — active=false + 사유 기록(이력 보존, 폐강률 분석에 사용).
+ * cancel_reason 컬럼이 아직 없는 DB(v3.23 전)면 active만 끄는 폴백.
+ */
+export async function cancelGroupSession(id: number, reason: string, ownerId: string): Promise<void> {
+  const supabase = getSupabaseClient()
+  const patch: Record<string, unknown> = {
+    active: false,
+    cancel_reason: reason,
+    cancelled_at: new Date().toISOString(),
+  }
+  let q = supabase.from('group_sessions').update(patch).eq('id', id)
+  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+  const { error } = await q
+  if (error) {
+    if (/cancel_reason|cancelled_at/i.test(error.message)) {
+      // 컬럼 미존재 폴백 — active만 끔
+      let q2 = supabase.from('group_sessions').update({ active: false }).eq('id', id)
+      if (ownerId !== 'no-auth') q2 = q2.eq('owner_id', ownerId)
+      const retry = await q2
+      if (retry.error) throw new Error(`Cancel group session failed: ${retry.error.message}`)
+      return
+    }
+    throw new Error(`Cancel group session failed: ${error.message}`)
+  }
+}
+
+/** 폐강률 분석용 경량 조회 — 모든 그룹 세션(진행+취소). 예약 수 미포함. */
+export interface GroupSessionLite {
+  instructorId: number | null
+  category: string
+  lessonDate: string
+  active: boolean
+  cancelReason: string | null
+}
+
+export async function fetchGroupSessionsForAnalytics(ownerId: string): Promise<GroupSessionLite[]> {
+  try {
+    const supabase = getSupabaseClient()
+    const sel = (cols: string) => {
+      let q = supabase.from('group_sessions').select(cols)
+      if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+      return q
+    }
+    let { data, error } = await sel('instructor_id, category, lesson_date, active, cancel_reason')
+    if (error && /cancel_reason/i.test(error.message)) {
+      ;({ data, error } = await sel('instructor_id, category, lesson_date, active'))
+    }
+    if (error) return []
+    return ((data ?? []) as unknown as Array<{
+      instructor_id: number | null; category: string | null; lesson_date: string; active: boolean; cancel_reason?: string | null
+    }>).map(r => ({
+      instructorId: r.instructor_id,
+      category: r.category ?? '그룹',
+      lessonDate: r.lesson_date,
+      active: r.active,
+      cancelReason: r.cancel_reason ?? null,
+    }))
+  } catch {
+    return []
+  }
 }

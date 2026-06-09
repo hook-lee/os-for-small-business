@@ -11,7 +11,7 @@ const PERIOD_ORDER: PeriodKey[] = ['month', 'quarter', 'year', 'all']
 // 정렬 가능한 숫자 컬럼 정의
 type SortKey =
   | 'revenue' | 'newMembers' | 'reregistrationCount'
-  | 'trialConversionRate' | 'reregistrationRate' | 'activeMembers'
+  | 'trialConversionRate' | 'reregistrationRate' | 'activeMembers' | 'closureRate'
 
 interface ColDef {
   key: SortKey
@@ -19,6 +19,7 @@ interface ColDef {
   scope: '기간' | '누적' | '현재'
   value: (r: InstructorScorecardRow) => number
   render: (r: InstructorScorecardRow) => string
+  lowerIsBetter?: boolean   // 폐강률처럼 낮을수록 좋은 지표 → 색 강조 반전
 }
 
 function manwon(won: number): string {
@@ -34,6 +35,7 @@ const COLS: ColDef[] = [
   { key: 'trialConversionRate', label: '전환율', scope: '누적', value: r => r.trialConversionRate, render: r => `${(r.trialConversionRate * 100).toFixed(0)}%` },
   { key: 'reregistrationRate', label: '재등록률', scope: '누적', value: r => r.reregistrationRate, render: r => `${(r.reregistrationRate * 100).toFixed(0)}%` },
   { key: 'activeMembers', label: '활성', scope: '현재', value: r => r.activeMembers, render: r => `${r.activeMembers}명` },
+  { key: 'closureRate', label: '폐강률', scope: '기간', value: r => r.closureRate, render: r => (r.groupTotal === 0 ? '—' : `${(r.closureRate * 100).toFixed(0)}%`), lowerIsBetter: true },
 ]
 
 function roleLabel(role: InstructorScorecardRow['role']): string | null {
@@ -88,6 +90,9 @@ export function InstructorScorecard({ rows, periodKey }: { rows: InstructorScore
   }
 
   const sortedCol = COLS.find(c => c.key === sortKey)!
+  // 폐강률처럼 '낮을수록 좋은' 지표면 best=최소·worst=최대로 색을 뒤집는다.
+  const best = sortedCol.lowerIsBetter ? lo : hi
+  const worst = sortedCol.lowerIsBetter ? hi : lo
 
   return (
     <div className="space-y-3">
@@ -138,9 +143,9 @@ export function InstructorScorecard({ rows, periodKey }: { rows: InstructorScore
         )}
         {sorted.map(r => {
           const sortVal = sortedCol.value(r)
-          const accent = highlightActive && sortVal === hi
+          const accent = highlightActive && sortVal === best
             ? 'border-green-300 bg-green-50/40'
-            : highlightActive && sortVal === lo
+            : highlightActive && sortVal === worst
               ? 'border-amber-300 bg-amber-50/30'
               : 'border-neutral-200'
           const rl = roleLabel(r.role)
@@ -167,11 +172,13 @@ export function InstructorScorecard({ rows, periodKey }: { rows: InstructorScore
                   const isSorted = col.key === sortKey
                   const v = col.value(r)
                   const cellAccent = isSorted && highlightActive
-                    ? (v === hi ? 'text-green-700' : v === lo ? 'text-amber-700' : 'text-neutral-800')
+                    ? (v === best ? 'text-green-700' : v === worst ? 'text-amber-700' : 'text-neutral-800')
                     : 'text-neutral-800'
                   const sub = col.key === 'trialConversionRate' && r.trialMemberCount > 0
                     ? `체험 ${r.trialMemberCount}→${r.convertedMemberCount}`
-                    : null
+                    : col.key === 'closureRate' && r.groupTotal > 0
+                      ? `${r.groupClosed}/${r.groupTotal} 폐강`
+                      : null
                   return (
                     <div key={col.key} className={`min-w-0 ${isSorted ? 'rounded-md bg-blue-50/60 -mx-0.5 px-1.5 py-0.5' : ''}`}>
                       <div className="text-[10px] text-neutral-400 leading-tight">
@@ -217,9 +224,9 @@ export function InstructorScorecard({ rows, periodKey }: { rows: InstructorScore
             <tbody>
               {sorted.map(r => {
                 const sortVal = sortedCol.value(r)
-                const rowAccent = highlightActive && sortVal === hi
+                const rowAccent = highlightActive && sortVal === best
                   ? 'bg-green-50/50'
-                  : highlightActive && sortVal === lo
+                  : highlightActive && sortVal === worst
                     ? 'bg-amber-50/40'
                     : ''
                 const rl = roleLabel(r.role)
@@ -236,12 +243,14 @@ export function InstructorScorecard({ rows, periodKey }: { rows: InstructorScore
                       const isSorted = col.key === sortKey
                       const v = col.value(r)
                       const cellAccent = isSorted && highlightActive
-                        ? (v === hi ? 'text-green-700 font-semibold' : v === lo ? 'text-amber-700' : '')
+                        ? (v === best ? 'text-green-700 font-semibold' : v === worst ? 'text-amber-700' : '')
                         : ''
-                      // 전환율은 분모 노출(체험 N명)로 0% 오해 방지
+                      // 전환율은 분모 노출(체험 N명)로 0% 오해 방지 / 폐강률은 N/M 노출
                       const sub = col.key === 'trialConversionRate' && r.trialMemberCount > 0
                         ? `체험 ${r.trialMemberCount}→${r.convertedMemberCount}`
-                        : null
+                        : col.key === 'closureRate' && r.groupTotal > 0
+                          ? `${r.groupClosed}/${r.groupTotal} 폐강`
+                          : null
                       return (
                         <td key={col.key} className="px-4 py-3 text-right whitespace-nowrap tabular-nums">
                           <span className={cellAccent}>{col.render(r)}</span>
@@ -281,6 +290,7 @@ export function InstructorScorecard({ rows, periodKey }: { rows: InstructorScore
         <p>※ <b>매출·신규·재등록</b>은 선택한 <b>기간</b> 기준(결제일). 매출은 그 강사에게 귀속된 수강권 결제액입니다(스튜디오 전체 매출과 다름).</p>
         <p>※ <b>전환율·재등록률</b>은 누적(전체 기간) 기준 — 체험→정회원은 시차가 커서 짧은 기간은 오해를 줄 수 있어 누적으로 고정했습니다.</p>
         <p>※ <b>활성</b>은 현재 이용중 수강권 보유 회원(시점 스냅샷). <b>인센티브</b>는 현재 설정된 회당 금액·대상 회원 수입니다.</p>
+        <p>※ <b>폐강률</b>(기간) = 인원 부족으로 취소(폐강)된 그룹 수업 ÷ 개설한 그룹 수업. <b>낮을수록 좋음</b>(0%면 수요가 많다는 신호). 그룹 수업 취소 시 사유를 «인원 부족»으로 선택하면 폐강으로 집계됩니다. 그룹 수업이 없으면 «—».</p>
       </div>
     </div>
   )

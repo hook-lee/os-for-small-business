@@ -1,5 +1,6 @@
 import type { Pass } from '@/lib/supabase/passes'
 import type { Instructor } from '@/lib/supabase/instructors'
+import type { GroupSessionLite } from '@/lib/supabase/group-sessions'
 import { computeInstructorKPI, groupPassesByMember } from './instructor-kpi'
 import { isInPeriod, type PeriodRange } from './period'
 
@@ -39,6 +40,10 @@ export interface InstructorScorecardRow {
   convertedMemberCount: number
   activeMembers: number        // 현재 이용중 (스냅샷)
   totalMembers: number         // 누적 담당 회원
+  // ── 그룹 수업 폐강률 (기간) ──
+  groupTotal: number           // 개설한 그룹 수업 수
+  groupClosed: number          // 그중 폐강(인원 부족) 수
+  closureRate: number          // 0~1 · 낮을수록 좋음 · groupTotal=0이면 0
   incentive: InstructorIncentiveSummary
 }
 
@@ -53,6 +58,7 @@ export function computeInstructorScorecards(
   allByMember: Map<number, Pass[]>,
   period: PeriodRange | null,
   ratesByInstructor: Map<number, IncentiveSetting[]>,
+  closureByInstructor: Map<number, ClosureStat> = new Map(),
 ): InstructorScorecardRow[] {
   // 강사별 pass 그룹
   const passesByInstructor = new Map<number, Pass[]>()
@@ -111,8 +117,42 @@ export function computeInstructorScorecards(
       convertedMemberCount: kpi.convertedMemberCount,
       activeMembers: kpi.activeMemberCount,
       totalMembers: kpi.totalMemberCount,
+      groupTotal: (closureByInstructor.get(inst.id)?.total) ?? 0,
+      groupClosed: (closureByInstructor.get(inst.id)?.closed) ?? 0,
+      closureRate: (() => {
+        const c = closureByInstructor.get(inst.id)
+        return c && c.total > 0 ? c.closed / c.total : 0
+      })(),
       incentive,
     })
   }
   return rows
+}
+
+/** 폐강으로 간주하는 취소 사유 (수강 인원 부족). */
+export const GROUP_CLOSURE_REASON = '인원 부족'
+
+export interface ClosureStat { total: number; closed: number }
+
+/**
+ * 강사별 그룹 수업 폐강 통계. category==='그룹' 세션 중 lessonDate가 기간 내인 것:
+ *  - total  = 개설한 그룹 수업 수
+ *  - closed = 취소사유가 '인원 부족'(폐강)인 수
+ * 폐강률(closureRate) = closed/total. 0%면 그 강사 그룹 수업 수요가 많다는 신호.
+ */
+export function computeGroupClosureStats(
+  sessions: GroupSessionLite[],
+  period: PeriodRange | null,
+): Map<number, ClosureStat> {
+  const map = new Map<number, ClosureStat>()
+  for (const s of sessions) {
+    if (s.instructorId == null) continue
+    if (s.category !== '그룹') continue
+    if (!isInPeriod(s.lessonDate, period)) continue
+    const stat = map.get(s.instructorId) ?? { total: 0, closed: 0 }
+    stat.total++
+    if (!s.active && s.cancelReason === GROUP_CLOSURE_REASON) stat.closed++
+    map.set(s.instructorId, stat)
+  }
+  return map
 }

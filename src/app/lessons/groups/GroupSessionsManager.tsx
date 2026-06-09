@@ -21,12 +21,17 @@ const DEFAULT_FORM = {
   notes: '',
 }
 
+// 그룹 수업 취소 사유. '인원 부족' = 폐강(강사 성과 폐강률에 반영).
+const CANCEL_REASONS = ['인원 부족', '강사 사정', '시설·기타'] as const
+
 export function GroupSessionsManager({ initialSessions, instructors }: Props) {
   const [sessions, setSessions] = useState<GroupSession[]>(initialSessions)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState(DEFAULT_FORM)
+  const [cancelTarget, setCancelTarget] = useState<number | null>(null)
+  const [cancelling, setCancelling] = useState(false)
   // 반복 옵션
   const [repeatEnabled, setRepeatEnabled] = useState(false)
   const [repeatEnd, setRepeatEnd] = useState(new Date().toISOString().slice(0, 10))
@@ -109,7 +114,7 @@ export function GroupSessionsManager({ initialSessions, instructors }: Props) {
   }
 
   async function handleDelete(id: number) {
-    if (!confirm('이 세션을 삭제하시겠습니까?')) return
+    if (!confirm('이 세션을 완전히 삭제하시겠습니까? (이력도 남지 않아요. 폐강/취소는 «취소»를 쓰세요)')) return
     try {
       const res = await fetch(`/api/group-sessions/${id}`, { method: 'DELETE' })
       if (!res.ok) {
@@ -119,6 +124,28 @@ export function GroupSessionsManager({ initialSessions, instructors }: Props) {
       setSessions(s => s.filter(x => x.id !== id))
     } catch (err) {
       toast((err as Error).message)
+    }
+  }
+
+  async function handleCancel(id: number, reason: string) {
+    setCancelling(true)
+    try {
+      const res = await fetch(`/api/group-sessions/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cancel: true, cancelReason: reason }),
+      })
+      if (!res.ok) {
+        const json = await res.json()
+        throw new Error(json.error ?? '취소 실패')
+      }
+      setSessions(s => s.filter(x => x.id !== id))
+      setCancelTarget(null)
+      toast(reason === '인원 부족' ? '✓ 폐강 처리됐어요 (강사 성과에 반영)' : '✓ 수업이 취소됐어요')
+    } catch (err) {
+      toast((err as Error).message)
+    } finally {
+      setCancelling(false)
     }
   }
 
@@ -312,9 +339,16 @@ export function GroupSessionsManager({ initialSessions, instructors }: Props) {
                     명단 →
                   </a>
                   <button
+                    onClick={() => setCancelTarget(s.id)}
+                    className="text-xs text-amber-500 hover:text-amber-700"
+                    title="수업 취소 (사유 기록 · 인원부족=폐강 집계)"
+                  >
+                    취소
+                  </button>
+                  <button
                     onClick={() => handleDelete(s.id)}
                     className="text-xs text-red-400 hover:text-red-600"
-                    title="세션 삭제"
+                    title="세션 완전 삭제"
                   >
                     삭제
                   </button>
@@ -325,6 +359,44 @@ export function GroupSessionsManager({ initialSessions, instructors }: Props) {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* 취소 사유 선택 모달 */}
+      {cancelTarget !== null && (
+        <div
+          className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+          onClick={() => !cancelling && setCancelTarget(null)}
+        >
+          <div className="bg-white rounded-xl p-5 w-full max-w-xs space-y-3" onClick={e => e.stopPropagation()}>
+            <div className="text-sm font-semibold">수업 취소 사유</div>
+            <p className="text-xs text-neutral-500 break-keep">
+              «인원 부족»을 고르면 <b>폐강</b>으로 집계돼 강사 성과(폐강률)에 반영됩니다.
+            </p>
+            <div className="space-y-1.5">
+              {CANCEL_REASONS.map(reason => (
+                <button
+                  key={reason}
+                  disabled={cancelling}
+                  onClick={() => handleCancel(cancelTarget, reason)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm border transition-colors disabled:opacity-50 ${
+                    reason === '인원 부족'
+                      ? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
+                      : 'border-neutral-200 hover:bg-neutral-50'
+                  }`}
+                >
+                  {reason}{reason === '인원 부족' ? ' (폐강)' : ''}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setCancelTarget(null)}
+              disabled={cancelling}
+              className="w-full text-xs text-neutral-400 hover:text-neutral-600 pt-1"
+            >
+              닫기
+            </button>
+          </div>
         </div>
       )}
     </div>

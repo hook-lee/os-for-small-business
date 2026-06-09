@@ -33,7 +33,14 @@ const GROUPS: NavGroup[] = [
           { href: '/messages', label: '메시지' },
         ],
       },
-      { href: '/instructors', label: '강사', icon: 'instructor', match: ['/instructors'] },
+      {
+        href: '/instructors', label: '강사', icon: 'instructor', match: ['/instructors'],
+        children: [
+          { href: '/instructors', label: '강사 목록' },
+          { href: '/instructors?tab=scorecard', label: '강사 성과' },
+          { href: '/instructors?tab=payroll', label: '월별 급여 정산' },
+        ],
+      },
     ],
   },
   {
