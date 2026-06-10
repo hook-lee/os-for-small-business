@@ -7,16 +7,13 @@ import type { StudioSettings } from '@/lib/supabase/studio-settings'
 
 /**
  * 운영정보 설정 폼.
- *
- * 1차 wave: 핵심 6개 카드만 노출.
- * 나머지 11개 설정은 DEFAULT_STUDIO_SETTINGS에 정의되어 있고, '고급' 섹션 토글로 점진 노출 가능.
+ * 관련 설정을 그룹(예약 / 폐강 / 예약대기 / 회원앱 / 급여)으로 묶고 01~11 연속 번호로 표시.
  */
 export function OperationsForm({ initial }: { initial: StudioSettings }) {
   const router = useRouter()
   const [s, setS] = useState<StudioSettings>(initial)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
-  const [showAdvanced, setShowAdvanced] = useState(false)
 
   function patch<K extends keyof StudioSettings>(key: K, value: StudioSettings[K]) {
     setS(prev => ({ ...prev, [key]: value }))
@@ -44,13 +41,11 @@ export function OperationsForm({ initial }: { initial: StudioSettings }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* 01. 예약·취소 가능 시간 */}
-      <SettingCard
-        num={1}
-        title="예약·취소 가능 시간"
-        description="회원이 수업 시작 몇 시간 전까지 예약/취소 가능한지 설정합니다."
-      >
+    <form onSubmit={handleSubmit} className="space-y-3">
+      {/* ── 예약 규칙 ── */}
+      <GroupHeader>📅 예약 규칙</GroupHeader>
+
+      <SettingCard num={1} title="예약·취소 가능 시간" description="회원이 수업 시작 몇 시간 전까지 예약/취소할 수 있는지">
         <div className="space-y-3">
           <Row label="프라이빗 예약 가능">
             <span className="text-sm text-neutral-500">수업 시작</span>
@@ -79,12 +74,53 @@ export function OperationsForm({ initial }: { initial: StudioSettings }) {
         </div>
       </SettingCard>
 
-      {/* 02. 폐강 시간 */}
-      <SettingCard
-        num={2}
-        title="폐강 시간 설정"
-        description="최소 수강인원 미달 시 수업이 자동 폐강되는 시점을 설정합니다."
-      >
+      <SettingCard num={2} title="예약 가능 기간" description="수업일 N일 전부터 예약 받기">
+        <div className="space-y-3">
+          <Row label="프라이빗">
+            <span className="text-sm text-neutral-500">수업일</span>
+            <NumberInput value={s.privateBookableDaysAhead} onChange={v => patch('privateBookableDaysAhead', v)} min={0} max={90} suffix="일 전" />
+            <TimeInput value={s.privateBookableTimeOfDay} onChange={v => patch('privateBookableTimeOfDay', v)} />
+            <span className="text-sm text-neutral-500">부터</span>
+          </Row>
+          <Row label="그룹">
+            <span className="text-sm text-neutral-500">수업일</span>
+            <NumberInput value={s.groupBookableDaysAhead} onChange={v => patch('groupBookableDaysAhead', v)} min={0} max={90} suffix="일 전" />
+            <TimeInput value={s.groupBookableTimeOfDay} onChange={v => patch('groupBookableTimeOfDay', v)} />
+            <span className="text-sm text-neutral-500">부터</span>
+          </Row>
+        </div>
+      </SettingCard>
+
+      <SettingCard num={3} title="프라이빗 예약 시간 단위" description="예약 시간 분 단위 선택지">
+        <div className="flex gap-2 flex-wrap">
+          {(['flexible', '30', '20', '15', '10', '5'] as const).map(u => (
+            <button
+              key={u}
+              type="button"
+              onClick={() => patch('privateBookingTimeUnit', u)}
+              className={`px-3 py-1.5 text-sm rounded border ${
+                s.privateBookingTimeUnit === u
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white border-neutral-300 hover:bg-neutral-50'
+              }`}
+            >
+              {u === 'flexible' ? '정시' : `${u}분`}
+            </button>
+          ))}
+        </div>
+      </SettingCard>
+
+      <SettingCard num={4} title="일별 예약 가능 횟수" description="회원이 하루에 최대 몇 개의 그룹 수업을 예약할 수 있는지">
+        <Row label="회원당 하루">
+          <NumberInput value={s.dailyBookingMaxGroupCount} onChange={v => patch('dailyBookingMaxGroupCount', v)} min={1} max={20} suffix="개 그룹 수업까지 예약 가능" />
+        </Row>
+        <div className="text-xs text-neutral-400 mt-2">제한 기준: <strong>수강권별</strong> (수강권 1개당 일별 제한 적용)</div>
+      </SettingCard>
+
+      {/* ── 폐강 ── */}
+      <GroupHeader>⛔ 폐강</GroupHeader>
+
+      <SettingCard num={5} title="폐강 시간 설정" description="최소 수강인원 미달 시 수업이 자동 폐강되는 시점">
         <Row label="폐강 시점">
           <span className="text-sm text-neutral-500">수업 시작</span>
           <NumberInput value={s.autoCloseHoursBeforeStart} onChange={v => patch('autoCloseHoursBeforeStart', v)} min={0} max={72} suffix="시간 전" />
@@ -92,151 +128,64 @@ export function OperationsForm({ initial }: { initial: StudioSettings }) {
         </Row>
       </SettingCard>
 
-      {/* 03. 예약대기 횟수 */}
-      <SettingCard
-        num={3}
-        title="예약대기 횟수 제한"
-        description="한 회원이 동시에 예약대기에 등록할 수 있는 최대 횟수를 설정합니다."
-      >
+      {/* ── 예약대기 ── */}
+      <GroupHeader>⏳ 예약대기</GroupHeader>
+
+      <SettingCard num={6} title="예약대기 횟수 제한" description="한 회원이 동시에 예약대기에 등록할 수 있는 최대 횟수">
         <Row label="회원당 최대">
           <NumberInput value={s.waitlistMaxCount} onChange={v => patch('waitlistMaxCount', v)} min={0} max={50} suffix="회까지 대기 가능" />
         </Row>
       </SettingCard>
 
-      {/* 04. 일별 예약 가능 횟수 */}
-      <SettingCard
-        num={4}
-        title="일별 예약 가능 횟수"
-        description="회원이 하루에 최대 몇 개의 그룹 수업을 예약할 수 있는지 설정합니다."
-      >
-        <Row label="회원당 하루">
-          <NumberInput value={s.dailyBookingMaxGroupCount} onChange={v => patch('dailyBookingMaxGroupCount', v)} min={1} max={20} suffix="개 그룹 수업까지 예약 가능" />
+      <SettingCard num={7} title="예약대기 자동 예약 시간" description="자동으로 예약대기 → 예약 전환되는 시점">
+        <Row label="자동 예약">
+          <span className="text-sm text-neutral-500">수업 시작</span>
+          <NumberInput value={s.waitlistAutoBookHoursBefore} onChange={v => patch('waitlistAutoBookHoursBefore', v)} min={0} max={48} suffix="시간 전" />
         </Row>
-        <div className="text-xs text-neutral-400 mt-2">
-          제한 기준: <strong>수강권별</strong> (수강권 1개당 일별 제한 적용)
-        </div>
       </SettingCard>
 
-      {/* 05. 그룹 예약대기 인원 표시 */}
-      <SettingCard
-        num={5}
-        title="그룹 예약대기 인원 표시"
-        description="회원에게 대기 인원수를 보여줄지 설정합니다."
-      >
+      <SettingCard num={8} title="그룹 예약대기 인원 표시" description="회원에게 대기 인원수를 보여줄지">
         <div className="space-y-2">
-          <Checkbox
-            checked={s.showWaitlistCountForReserved}
-            onChange={v => patch('showWaitlistCountForReserved', v)}
-            label="그룹 수업 예약자에게 대기 인원 표시"
-          />
-          <Checkbox
-            checked={s.showWaitlistCountForWaitlisted}
-            onChange={v => patch('showWaitlistCountForWaitlisted', v)}
-            label="예약대기 회원에게 대기 인원 표시"
-          />
+          <Checkbox checked={s.showWaitlistCountForReserved} onChange={v => patch('showWaitlistCountForReserved', v)} label="그룹 수업 예약자에게 대기 인원 표시" />
+          <Checkbox checked={s.showWaitlistCountForWaitlisted} onChange={v => patch('showWaitlistCountForWaitlisted', v)} label="예약대기 회원에게 대기 인원 표시" />
         </div>
       </SettingCard>
 
-      {/* 06. 회원앱 옵션 */}
-      <SettingCard
-        num={6}
-        title="회원앱 표시 옵션"
-        description="회원이 보는 화면에 어떤 정보를 표시할지 설정합니다."
-      >
+      {/* ── 회원앱 표시 ── */}
+      <GroupHeader>📱 회원앱 표시</GroupHeader>
+
+      <SettingCard num={9} title="회원앱 표시 옵션" description="회원이 보는 화면에 어떤 정보를 표시할지">
         <div className="space-y-2">
-          <Checkbox
-            checked={s.hideExpiredPassesFromMembers}
-            onChange={v => patch('hideExpiredPassesFromMembers', v)}
-            label="만료된 수강권은 회원앱에서 숨김"
-          />
-          <Checkbox
-            checked={s.showAllLessons}
-            onChange={v => patch('showAllLessons', v)}
-            label="회원이 자기 수강권으로 들을 수 없는 수업도 표시"
-          />
+          <Checkbox checked={s.hideExpiredPassesFromMembers} onChange={v => patch('hideExpiredPassesFromMembers', v)} label="만료된 수강권은 회원앱에서 숨김" />
+          <Checkbox checked={s.showAllLessons} onChange={v => patch('showAllLessons', v)} label="회원이 자기 수강권으로 들을 수 없는 수업도 표시" />
         </div>
       </SettingCard>
 
-      {/* 고급 설정 — 점진 노출 */}
-      <div className="border-t border-neutral-200 pt-4">
-        <button
-          type="button"
-          onClick={() => setShowAdvanced(v => !v)}
-          className="text-sm text-blue-600 hover:underline"
-        >
-          {showAdvanced ? '▾ 고급 설정 접기' : '▸ 고급 설정 펼치기'}
-        </button>
-      </div>
-
-      {showAdvanced && (
-        <div className="space-y-4">
-          <SettingCard num={8} title="예약대기 자동 예약 시간" description="자동으로 예약대기 → 예약 전환되는 시점">
-            <Row label="자동 예약">
-              <span className="text-sm text-neutral-500">수업 시작</span>
-              <NumberInput value={s.waitlistAutoBookHoursBefore} onChange={v => patch('waitlistAutoBookHoursBefore', v)} min={0} max={48} suffix="시간 전" />
-            </Row>
-          </SettingCard>
-
-          <SettingCard num={9} title="예약 가능 기간" description="수업일 N일 전부터 예약 받기">
-            <div className="space-y-3">
-              <Row label="프라이빗">
-                <span className="text-sm text-neutral-500">수업일</span>
-                <NumberInput value={s.privateBookableDaysAhead} onChange={v => patch('privateBookableDaysAhead', v)} min={0} max={90} suffix="일 전" />
-                <TimeInput value={s.privateBookableTimeOfDay} onChange={v => patch('privateBookableTimeOfDay', v)} />
-                <span className="text-sm text-neutral-500">부터</span>
-              </Row>
-              <Row label="그룹">
-                <span className="text-sm text-neutral-500">수업일</span>
-                <NumberInput value={s.groupBookableDaysAhead} onChange={v => patch('groupBookableDaysAhead', v)} min={0} max={90} suffix="일 전" />
-                <TimeInput value={s.groupBookableTimeOfDay} onChange={v => patch('groupBookableTimeOfDay', v)} />
-                <span className="text-sm text-neutral-500">부터</span>
-              </Row>
-            </div>
-          </SettingCard>
-
-          <SettingCard num={10} title="프라이빗 예약 시간 단위" description="예약 시간 분 단위 선택지">
-            <div className="flex gap-2 flex-wrap">
-              {(['flexible', '30', '20', '15', '10', '5'] as const).map(u => (
-                <button
-                  key={u}
-                  type="button"
-                  onClick={() => patch('privateBookingTimeUnit', u)}
-                  className={`px-3 py-1.5 text-sm rounded border ${
-                    s.privateBookingTimeUnit === u
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white border-neutral-300 hover:bg-neutral-50'
-                  }`}
-                >
-                  {u === 'flexible' ? '정시' : `${u}분`}
-                </button>
-              ))}
-            </div>
-          </SettingCard>
-
-          <SettingCard num={11} title="기타 회원앱 옵션">
-            <div className="space-y-2">
-              <Checkbox checked={s.useMessageBoard} onChange={v => patch('useMessageBoard', v)} label="문자 게시판 사용" />
-              <Checkbox checked={s.useAcademicRecord} onChange={v => patch('useAcademicRecord', v)} label="학적 기능 사용" />
-              <Checkbox checked={s.useCancelWithoutDeduction} onChange={v => patch('useCancelWithoutDeduction', v)} label="횟수 차감되지 않는 취소 사용" />
-              <p className="text-[11px] text-neutral-400 pl-6 break-keep leading-relaxed">
-                위 <b>#01 취소 가능 시간</b>과 함께 <b>회원이 직접 취소</b>할 때의 차감 기준으로 쓰입니다. 원장이 일정에서 직접 처리할 땐 수업 상세 «취소·삭제»에서 차감 여부를 직접 고릅니다.
-              </p>
-              <Checkbox checked={s.autoFillUnpaidAmount} onChange={v => patch('autoFillUnpaidAmount', v)} label="수강권 미수금 자동 입력" />
-              <Checkbox checked={s.useMemberAppLounge} onChange={v => patch('useMemberAppLounge', v)} label="회원앱 라운지 사용" />
-            </div>
-          </SettingCard>
-
-          <SettingCard num={12} title="급여 정산 기준" description="당일취소·노쇼를 강사 급여(자동집계)에 반영할지 — 센터마다 다름">
-            <div className="space-y-2">
-              <Checkbox checked={s.payrollCountsSameDayCancel} onChange={v => patch('payrollCountsSameDayCancel', v)} label="당일 취소를 강사 급여에 반영" />
-              <Checkbox checked={s.payrollCountsNoshow} onChange={v => patch('payrollCountsNoshow', v)} label="노쇼를 강사 급여에 반영" />
-              <p className="text-[11px] text-neutral-400 pl-6 break-keep leading-relaxed">
-                끄면 해당 수업은 <b>강사 시급 자동집계에서 제외</b>됩니다(강사에게 안 줌). 회원의 <b>회차 차감</b>과는 별개예요. 취소 기준 시간은 위 <b>#01 취소 가능 시간</b>에서 센터별로 설정하세요.
-              </p>
-            </div>
-          </SettingCard>
+      <SettingCard num={10} title="기타 회원앱 옵션">
+        <div className="space-y-2">
+          <Checkbox checked={s.useMessageBoard} onChange={v => patch('useMessageBoard', v)} label="문자 게시판 사용" />
+          <Checkbox checked={s.useAcademicRecord} onChange={v => patch('useAcademicRecord', v)} label="학적 기능 사용" />
+          <Checkbox checked={s.useCancelWithoutDeduction} onChange={v => patch('useCancelWithoutDeduction', v)} label="횟수 차감되지 않는 취소 사용" />
+          <p className="text-[11px] text-neutral-400 pl-6 break-keep leading-relaxed">
+            위 <b>01 예약·취소 가능 시간</b>과 함께 <b>회원이 직접 취소</b>할 때의 차감 기준으로 쓰입니다. 원장이 일정에서 직접 처리할 땐 수업 상세 «취소·삭제»에서 차감 여부를 직접 고릅니다.
+          </p>
+          <Checkbox checked={s.autoFillUnpaidAmount} onChange={v => patch('autoFillUnpaidAmount', v)} label="수강권 미수금 자동 입력" />
+          <Checkbox checked={s.useMemberAppLounge} onChange={v => patch('useMemberAppLounge', v)} label="회원앱 라운지 사용" />
         </div>
-      )}
+      </SettingCard>
+
+      {/* ── 급여 ── */}
+      <GroupHeader>💰 급여</GroupHeader>
+
+      <SettingCard num={11} title="급여 정산 기준" description="당일취소·노쇼를 강사 급여(자동집계)에 반영할지 — 센터마다 다름">
+        <div className="space-y-2">
+          <Checkbox checked={s.payrollCountsSameDayCancel} onChange={v => patch('payrollCountsSameDayCancel', v)} label="당일 취소를 강사 급여에 반영" />
+          <Checkbox checked={s.payrollCountsNoshow} onChange={v => patch('payrollCountsNoshow', v)} label="노쇼를 강사 급여에 반영" />
+          <p className="text-[11px] text-neutral-400 pl-6 break-keep leading-relaxed">
+            끄면 해당 수업은 <b>강사 시급 자동집계에서 제외</b>됩니다(강사에게 안 줌). 회원의 <b>회차 차감</b>과는 별개예요. 취소 기준 시간은 위 <b>01 예약·취소 가능 시간</b>에서 센터별로 설정하세요.
+          </p>
+        </div>
+      </SettingCard>
 
       {/* 저장 */}
       <div className="flex items-center gap-3 sticky bottom-0 bg-white border-t border-neutral-200 py-3 -mx-4 px-4">
@@ -247,9 +196,7 @@ export function OperationsForm({ initial }: { initial: StudioSettings }) {
         >
           {status === 'saving' ? '저장 중...' : status === 'saved' ? '저장됨 ✓' : '운영 정보 저장'}
         </button>
-        {status === 'error' && (
-          <span className="text-sm text-red-600">⚠ {errorMsg}</span>
-        )}
+        {status === 'error' && <span className="text-sm text-red-600">⚠ {errorMsg}</span>}
       </div>
     </form>
   )
@@ -258,6 +205,10 @@ export function OperationsForm({ initial }: { initial: StudioSettings }) {
 // ─────────────────────────────────────────────
 // 공용 컴포넌트
 // ─────────────────────────────────────────────
+function GroupHeader({ children }: { children: React.ReactNode }) {
+  return <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider pt-3 pb-0.5">{children}</div>
+}
+
 function SettingCard({ num, title, description, children }: {
   num: number
   title: string

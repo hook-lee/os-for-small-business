@@ -85,7 +85,7 @@ export function RoomsManager() {
     <Card>
       <div className="mb-3">
         <div className="flex items-baseline gap-2">
-          <span className="text-xs font-bold text-neutral-400 tabular-nums">07</span>
+          <span className="text-xs" aria-hidden>🏠</span>
           <h3 className="text-sm font-semibold text-neutral-800">룸 관리</h3>
         </div>
         <p className="text-xs text-neutral-500 mt-1 ml-6">

@@ -28,6 +28,8 @@ export default async function OperationsSettingsPage() {
         </p>
       </div>
       <OperationsForm initial={initial} />
+      <RoomsManager />
+      <SuspendPolicyForm initial={profile.maxSuspendDays} />
       <NotificationSettingsForm
         initial={{
           notificationSettings: profile.notificationSettings,
@@ -35,8 +37,6 @@ export default async function OperationsSettingsPage() {
           payrollDay: profile.payrollDay,
         }}
       />
-      <SuspendPolicyForm initial={profile.maxSuspendDays} />
-      <RoomsManager />
     </div>
   )
 }

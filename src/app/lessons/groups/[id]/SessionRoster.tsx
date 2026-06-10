@@ -90,6 +90,23 @@ export function SessionRoster({ session, initialReservations, eligibleMembers }:
       })
       const json = await res.json() as { ok?: boolean; id?: number; error?: string }
       if (!res.ok) { setAddError(json.error ?? '추가 실패'); return }
+      // 즉시 목록 반영 — reservations는 로컬 state라 router.refresh만으론 안 갱신됨
+      const member = members.find(m => m.id === selectedMemberId)
+      if (json.id != null) {
+        setReservations(prev => [...prev, {
+          id: json.id as number,
+          sessionId: session.id,
+          memberId: selectedMemberId,
+          memberName: member?.name ?? memberQuery,
+          memberPhone: member?.phone ?? null,
+          passId: null,
+          status: 'reserved',
+          deducted: false,
+          reservedAt: new Date().toISOString(),
+          cancelledAt: null,
+        }])
+      }
+      toast(`✓ ${member?.name ?? memberQuery} 예약 추가됨`)
       router.refresh()
       setMemberQuery('')
       setSelectedMemberId(null)
