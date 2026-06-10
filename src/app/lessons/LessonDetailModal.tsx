@@ -103,6 +103,29 @@ export function LessonDetailModal({
     }
   }
 
+  // 개인·듀엣 등(individual) 예약 취소 — 운영설정 마감시간 기준 자동 차감/미차감
+  async function handleCancelIndividual() {
+    if (!lesson) return
+    setBusy(true); setError('')
+    try {
+      const res = await fetch(`/api/lessons/${lesson.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cancel: true, lessonDate: lesson.date, lessonTime: lesson.time }),
+      })
+      const json = await res.json() as { ok?: boolean; error?: string; status?: string }
+      if (!res.ok) { setError(json.error ?? '취소 실패'); return }
+      const deducted = json.status === 'cancelled_same_day'
+      toast(deducted ? '당일 취소 — 회차 1회 차감됨' : '사전 취소 — 회차 차감 안 됨 ✓')
+      router.refresh()
+      onClose()
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function handleCancel(reason: string) {
     if (!lesson) return
     setBusy(true); setError('')
@@ -304,6 +327,17 @@ export function LessonDetailModal({
           >
             삭제
           </button>
+          {!isGroup && (
+            <button
+              type="button"
+              onClick={handleCancelIndividual}
+              disabled={busy}
+              className="text-sm bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded px-3 py-2 disabled:opacity-50"
+              title="예약 취소 — 운영설정 마감시간 기준으로 차감/미차감 자동 결정"
+            >
+              예약 취소
+            </button>
+          )}
           {isGroup && (
             <button
               type="button"

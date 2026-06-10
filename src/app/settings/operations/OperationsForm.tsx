@@ -225,6 +225,16 @@ export function OperationsForm({ initial }: { initial: StudioSettings }) {
               <Checkbox checked={s.useMessageBoard} onChange={v => patch('useMessageBoard', v)} label="문자 게시판 사용" />
               <Checkbox checked={s.useAcademicRecord} onChange={v => patch('useAcademicRecord', v)} label="학적 기능 사용" />
               <Checkbox checked={s.useCancelWithoutDeduction} onChange={v => patch('useCancelWithoutDeduction', v)} label="횟수 차감되지 않는 취소 사용" />
+              {s.useCancelWithoutDeduction && (
+                <p className="text-[11px] text-neutral-500 pl-6 break-keep leading-relaxed">
+                  켜짐: 수업 상세에서 «예약 취소» 시, 위 <b>#01 취소 가능 시간</b>(프라이빗 {s.privateCancelHoursBefore}시간 {s.privateCancelMinutesBefore}분 전)까지면 <b>회차 미차감(사전취소)</b>, 그 이후면 <b>차감(당일취소)</b>으로 자동 분류됩니다.
+                </p>
+              )}
+              {!s.useCancelWithoutDeduction && (
+                <p className="text-[11px] text-neutral-400 pl-6 break-keep leading-relaxed">
+                  꺼짐: «예약 취소»는 항상 회차 차감(당일취소)으로 처리됩니다.
+                </p>
+              )}
               <Checkbox checked={s.autoFillUnpaidAmount} onChange={v => patch('autoFillUnpaidAmount', v)} label="수강권 미수금 자동 입력" />
               <Checkbox checked={s.useMemberAppLounge} onChange={v => patch('useMemberAppLounge', v)} label="회원앱 라운지 사용" />
             </div>

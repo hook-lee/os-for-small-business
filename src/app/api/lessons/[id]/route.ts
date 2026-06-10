@@ -3,6 +3,8 @@ import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { setLessonStatus, deleteLesson, updateLesson, type LessonStatus } from '@/lib/supabase/lessons'
 import { findRoomTimeConflict } from '@/lib/supabase/rooms'
 import { requireOwnerId } from '@/lib/supabase/auth-server'
+import { loadStudioSettings } from '@/lib/supabase/studio-settings'
+import { classifyLessonCancel } from '@/lib/lessons/deduction-rules'
 
 const VALID_STATUSES: LessonStatus[] = ['scheduled', 'completed', 'cancelled_same_day', 'cancelled_advance', 'noshow']
 
@@ -21,6 +23,22 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       instructorId?: number | null
       memo?: string | null
       lessonDate?: string  // 충돌 검사용 (선택)
+      cancel?: boolean     // 시간 기준 자동 취소(사전/당일 자동 분류)
+    }
+
+    // 분기 0: 시간 기준 자동 취소 — 운영설정 마감시간으로 사전/당일 분류 → 차감 자동 결정
+    if (body.cancel) {
+      const settings = await loadStudioSettings(ownerId)
+      const status = classifyLessonCancel(
+        body.lessonDate ?? '',
+        body.lessonTime ?? null,
+        new Date().toISOString(),
+        settings.privateCancelHoursBefore,
+        settings.privateCancelMinutesBefore,
+        settings.useCancelWithoutDeduction,
+      )
+      const result = await setLessonStatus(id, status, ownerId)
+      return NextResponse.json({ ok: true, status, ...result })
     }
 
     // 분기 1: status 변경 (기존 동작)
