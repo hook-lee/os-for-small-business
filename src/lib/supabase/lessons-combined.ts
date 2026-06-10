@@ -92,6 +92,7 @@ export async function fetchUnifiedLessonsByRange(
       .select('id, lesson_date, lesson_time, duration_minutes, instructor_id, member_id, room_id, status, instructors(id, name, color, role), members(id, name), passes(id, pass_name, remaining_count), rooms(id, name)')
       .gte('lesson_date', start)
       .lte('lesson_date', end)
+      .not('status', 'in', '(cancelled_advance,cancelled_same_day)')  // 취소된 수업은 시간표에서 숨김
       .order('lesson_date', { ascending: true })
       .order('lesson_time', { ascending: true, nullsFirst: false })
     if (ownerId !== 'no-auth') indQ = indQ.eq('owner_id', ownerId)
