@@ -103,20 +103,19 @@ export function LessonDetailModal({
     }
   }
 
-  // 개인·듀엣 등(individual) 예약 취소 — 운영설정 마감시간 기준 자동 차감/미차감
-  async function handleCancelIndividual() {
+  // 개인·듀엣 수업 — 원장이 차감 여부를 직접 골라 취소 (사전취소=미차감 / 당일취소=차감)
+  async function handleSetStatus(status: 'cancelled_advance' | 'cancelled_same_day') {
     if (!lesson) return
     setBusy(true); setError('')
     try {
       const res = await fetch(`/api/lessons/${lesson.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cancel: true, lessonDate: lesson.date, lessonTime: lesson.time }),
+        body: JSON.stringify({ status }),
       })
-      const json = await res.json() as { ok?: boolean; error?: string; status?: string }
+      const json = await res.json() as { ok?: boolean; error?: string }
       if (!res.ok) { setError(json.error ?? '취소 실패'); return }
-      const deducted = json.status === 'cancelled_same_day'
-      toast(deducted ? '당일 취소 — 회차 1회 차감됨' : '사전 취소 — 회차 차감 안 됨 ✓')
+      toast(status === 'cancelled_same_day' ? '당일 취소 — 회차 1회 차감됨' : '사전 취소 — 회차 차감 안 됨 ✓')
       router.refresh()
       onClose()
     } catch (e) {
@@ -318,24 +317,56 @@ export function LessonDetailModal({
           </div>
         )}
 
+        {/* 개인·듀엣 — 취소/삭제 방식 선택 (회차 차감 여부를 직접 고름) */}
+        {!isGroup && cancelOpen && (
+          <div className="border border-neutral-200 bg-neutral-50 rounded-lg p-3 space-y-1.5">
+            <div className="text-xs font-medium text-neutral-700">어떻게 처리할까요?</div>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => handleSetStatus('cancelled_advance')}
+              className="w-full text-left px-3 py-2 rounded-lg text-sm border border-neutral-200 bg-white hover:bg-neutral-50 disabled:opacity-50"
+            >
+              <b>사전 취소</b> · 회차 차감 <b>안 함</b> <span className="text-neutral-400">— 미리 취소 / 차감 면제</span>
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => handleSetStatus('cancelled_same_day')}
+              className="w-full text-left px-3 py-2 rounded-lg text-sm border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 disabled:opacity-50"
+            >
+              <b>당일 취소 · 노쇼</b> · 회차 <b>1회 차감</b> <span className="text-amber-600/70">— 늦은 취소 / 안 옴</span>
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={handleDelete}
+              className="w-full text-left px-3 py-2 rounded-lg text-sm border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 disabled:opacity-50"
+            >
+              <b>완전 삭제</b> <span className="text-red-500/70">— 잘못 등록 / 기록도 없앰</span>
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-wrap gap-2 pt-1">
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={busy}
-            className="text-sm bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded px-3 py-2 disabled:opacity-50"
-          >
-            삭제
-          </button>
+          {isGroup && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={busy}
+              className="text-sm bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded px-3 py-2 disabled:opacity-50"
+            >
+              삭제
+            </button>
+          )}
           {!isGroup && (
             <button
               type="button"
-              onClick={handleCancelIndividual}
+              onClick={() => setCancelOpen(o => !o)}
               disabled={busy}
               className="text-sm bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded px-3 py-2 disabled:opacity-50"
-              title="예약 취소 — 운영설정 마감시간 기준으로 차감/미차감 자동 결정"
             >
-              예약 취소
+              취소 · 삭제 {cancelOpen ? '▴' : '▾'}
             </button>
           )}
           {isGroup && (
