@@ -75,6 +75,10 @@ export interface StudioSettings {
 
   // 17. 회원앱 라운지 사용
   useMemberAppLounge: boolean
+
+  // 18. 급여 정산 기준 (센터마다 다름)
+  payrollCountsSameDayCancel: boolean  // 당일취소를 강사 급여 자동집계에 반영
+  payrollCountsNoshow: boolean         // 노쇼를 강사 급여 자동집계에 반영
 }
 
 export const DEFAULT_STUDIO_SETTINGS: StudioSettings = {
@@ -108,6 +112,8 @@ export const DEFAULT_STUDIO_SETTINGS: StudioSettings = {
   hideExpiredPassesFromMembers: true,
   autoFillUnpaidAmount: true,
   useMemberAppLounge: false,
+  payrollCountsSameDayCancel: true,  // 기본: 현재 동작 유지(반영)
+  payrollCountsNoshow: true,
 }
 
 interface StudioSettingsRow {

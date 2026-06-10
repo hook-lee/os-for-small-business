@@ -232,6 +232,16 @@ export function OperationsForm({ initial }: { initial: StudioSettings }) {
               <Checkbox checked={s.useMemberAppLounge} onChange={v => patch('useMemberAppLounge', v)} label="회원앱 라운지 사용" />
             </div>
           </SettingCard>
+
+          <SettingCard num={12} title="급여 정산 기준" description="당일취소·노쇼를 강사 급여(자동집계)에 반영할지 — 센터마다 다름">
+            <div className="space-y-2">
+              <Checkbox checked={s.payrollCountsSameDayCancel} onChange={v => patch('payrollCountsSameDayCancel', v)} label="당일 취소를 강사 급여에 반영" />
+              <Checkbox checked={s.payrollCountsNoshow} onChange={v => patch('payrollCountsNoshow', v)} label="노쇼를 강사 급여에 반영" />
+              <p className="text-[11px] text-neutral-400 pl-6 break-keep leading-relaxed">
+                끄면 해당 수업은 <b>강사 시급 자동집계에서 제외</b>됩니다(강사에게 안 줌). 회원의 <b>회차 차감</b>과는 별개예요. 취소 기준 시간은 위 <b>#01 취소 가능 시간</b>에서 센터별로 설정하세요.
+              </p>
+            </div>
+          </SettingCard>
         </div>
       )}
 

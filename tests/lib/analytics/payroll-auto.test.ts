@@ -4,8 +4,30 @@ import {
   sessionCategoryToPayrollCategory,
   bucketLessonCounts,
   resolvePayrollWindow,
+  payrollCountedStatuses,
   PAYROLL_COUNTED_STATUSES,
 } from '@/lib/analytics/payroll-auto'
+
+describe('payrollCountedStatuses (센터 설정 기반)', () => {
+  it('둘 다 반영 → 당일취소·노쇼 포함 (기존 동작과 동일)', () => {
+    const s = payrollCountedStatuses({ sameDayCancel: true, noshow: true })
+    expect(s).toEqual(['scheduled', 'completed', 'cancelled_same_day', 'noshow'])
+  })
+  it('당일취소 미반영 → 제외', () => {
+    const s = payrollCountedStatuses({ sameDayCancel: false, noshow: true })
+    expect(s).not.toContain('cancelled_same_day')
+    expect(s).toContain('noshow')
+  })
+  it('노쇼 미반영 → 제외', () => {
+    const s = payrollCountedStatuses({ sameDayCancel: true, noshow: false })
+    expect(s).toContain('cancelled_same_day')
+    expect(s).not.toContain('noshow')
+  })
+  it('예약·완료는 항상 포함', () => {
+    const s = payrollCountedStatuses({ sameDayCancel: false, noshow: false })
+    expect(s).toEqual(['scheduled', 'completed'])
+  })
+})
 
 describe('passNameToPayrollCategory', () => {
   it('재활 → rehab', () => {

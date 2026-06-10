@@ -1,9 +1,10 @@
 import { getSupabaseClient } from './client'
+import { loadStudioSettings } from './studio-settings'
 import {
   bucketLessonCounts,
   passNameToPayrollCategory,
   resolvePayrollWindow,
-  PAYROLL_COUNTED_STATUSES,
+  payrollCountedStatuses,
   type PayrollAggregateMode,
 } from '@/lib/analytics/payroll-auto'
 import type { MemberLessonBucket, PayrollCounts } from '@/lib/analytics/payroll'
@@ -39,13 +40,20 @@ export async function fetchAutoPayrollBreakdown(
     const supabase = getSupabaseClient()
     const { start, end } = resolvePayrollWindow(yearMonth, mode, today)
 
+    // 센터 설정: 당일취소·노쇼를 급여에 반영할지 (기본 둘 다 반영)
+    const settings = await loadStudioSettings(ownerId)
+    const countedStatuses = payrollCountedStatuses({
+      sameDayCancel: settings.payrollCountsSameDayCancel,
+      noshow: settings.payrollCountsNoshow,
+    })
+
     let lessonsQ = supabase
       .from('lessons')
       .select('pass_id, member_id, passes(pass_name), members(id, name)')
       .eq('instructor_id', instructorId)
       .gte('lesson_date', start)
       .lte('lesson_date', end)
-      .in('status', [...PAYROLL_COUNTED_STATUSES])
+      .in('status', countedStatuses)
     if (ownerId !== 'no-auth') lessonsQ = lessonsQ.eq('owner_id', ownerId)
     const { data: lessons } = await lessonsQ
 

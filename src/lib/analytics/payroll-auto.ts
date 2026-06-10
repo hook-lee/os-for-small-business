@@ -13,6 +13,19 @@ export type PayrollCategory = 'private' | 'rehab' | 'duet' | 'group'
  */
 export const PAYROLL_COUNTED_STATUSES = ['scheduled', 'completed', 'cancelled_same_day', 'noshow'] as const
 
+/**
+ * 급여 자동집계에 카운트할 수업 상태를 센터 설정으로 동적 생성.
+ *  - 항상 포함: scheduled(예약), completed(완료)
+ *  - 설정에 따라 포함: cancelled_same_day(당일취소), noshow(노쇼)
+ * 센터마다 "당일취소·노쇼를 강사 급여에 줄지" 정책이 달라 커스텀 가능하게 한다.
+ */
+export function payrollCountedStatuses(opts: { sameDayCancel: boolean; noshow: boolean }): string[] {
+  const list = ['scheduled', 'completed']
+  if (opts.sameDayCancel) list.push('cancelled_same_day')
+  if (opts.noshow) list.push('noshow')
+  return list
+}
+
 export type PayrollAggregateMode = 'full' | 'todate'
 
 export interface PayrollWindow {
