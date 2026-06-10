@@ -25,26 +25,21 @@ const STATUS_COLOR: Record<ReservationStatus, string> = {
 interface Props {
   session: GroupSession
   initialReservations: Reservation[]
+  eligibleMembers: Member[]   // 이 수업 종류 수강권(이용중) 보유 회원만 예약 후보
 }
 
-export function SessionRoster({ session, initialReservations }: Props) {
+export function SessionRoster({ session, initialReservations, eligibleMembers }: Props) {
   const router = useRouter()
   const [reservations, setReservations] = useState<Reservation[]>(initialReservations)
   const [updating, setUpdating] = useState<number | null>(null)
 
-  // 회원 추가 폼 상태
+  // 회원 추가 폼 상태 — 후보는 props(그룹 수강권 보유자)로 고정
   const [showAdd, setShowAdd] = useState(false)
-  const [members, setMembers] = useState<Member[]>([])
+  const members = eligibleMembers
   const [memberQuery, setMemberQuery] = useState('')
   const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null)
   const [addSubmitting, setAddSubmitting] = useState(false)
   const [addError, setAddError] = useState('')
-
-  useEffect(() => {
-    if (showAdd && members.length === 0) {
-      fetch('/api/members').then(r => r.json()).then((j: { members?: Member[] }) => setMembers(j.members ?? []))
-    }
-  }, [showAdd, members.length])
 
   useEffect(() => {
     const match = members.find(m => m.name === memberQuery)
@@ -147,21 +142,29 @@ export function SessionRoster({ session, initialReservations }: Props) {
       {showAdd && (
         <form onSubmit={handleAddMember} className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
           <div>
-            <label className="block text-xs text-neutral-600 mb-1">회원 검색</label>
-            <input
-              type="text"
-              list="roster-member-options"
-              value={memberQuery}
-              onChange={e => setMemberQuery(e.target.value)}
-              placeholder="회원 이름"
-              className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
-              autoFocus
-            />
-            <datalist id="roster-member-options">
-              {members.map(m => <option key={m.id} value={m.name}>{m.phone ?? ''}</option>)}
-            </datalist>
-            {selectedMemberId && <div className="text-xs text-blue-700 mt-1">✓ 매칭됨 (id={selectedMemberId})</div>}
-            {memberQuery && !selectedMemberId && <div className="text-xs text-amber-700 mt-1">⚠ 등록된 회원 중에 매칭 없음</div>}
+            <label className="block text-xs text-neutral-600 mb-1">회원 검색 · <b>{session.category || '그룹'} 수강권 보유자</b>만</label>
+            {members.length === 0 ? (
+              <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 break-keep">
+                이 수업 종류의 수강권(이용중)을 가진 회원이 없어요. 회원에게 <b>{session.category || '그룹'} 수강권</b>을 먼저 등록하면 후보로 떠요.
+              </div>
+            ) : (
+              <>
+                <input
+                  type="text"
+                  list="roster-member-options"
+                  value={memberQuery}
+                  onChange={e => setMemberQuery(e.target.value)}
+                  placeholder="이름 입력 또는 선택"
+                  className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
+                  autoFocus
+                />
+                <datalist id="roster-member-options">
+                  {members.map(m => <option key={m.id} value={m.name}>{m.phone ?? ''}</option>)}
+                </datalist>
+                {selectedMemberId && <div className="text-xs text-blue-700 mt-1">✓ {memberQuery} 선택됨</div>}
+                {memberQuery && !selectedMemberId && <div className="text-xs text-amber-700 mt-1">⚠ {session.category || '그룹'} 수강권 보유 회원 중 매칭 없음</div>}
+              </>
+            )}
           </div>
           {isFull && (
             <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">

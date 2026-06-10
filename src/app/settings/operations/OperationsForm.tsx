@@ -170,13 +170,6 @@ export function OperationsForm({ initial }: { initial: StudioSettings }) {
 
       {showAdvanced && (
         <div className="space-y-4">
-          <SettingCard num={7} title="당일 예약 변경 가능 시간 (그룹)" description="그룹 수업 시작 후 N시간까지 예약 변경 가능">
-            <Row label="변경 가능">
-              <span className="text-sm text-neutral-500">수업 시작</span>
-              <NumberInput value={s.groupChangeHoursAfterStart} onChange={v => patch('groupChangeHoursAfterStart', v)} min={0} max={24} suffix="시간 후까지" />
-            </Row>
-          </SettingCard>
-
           <SettingCard num={8} title="예약대기 자동 예약 시간" description="자동으로 예약대기 → 예약 전환되는 시점">
             <Row label="자동 예약">
               <span className="text-sm text-neutral-500">수업 시작</span>

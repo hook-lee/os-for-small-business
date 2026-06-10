@@ -8,6 +8,8 @@
  * owner_id 격리: lessons + group_sessions 둘 다 owner_id 컬럼 보유 → .eq 필수.
  */
 import { getSupabaseClient, hasSupabaseConfig } from './client'
+import { loadStudioSettings } from './studio-settings'
+import { payrollCountedStatuses } from '@/lib/analytics/payroll-auto'
 
 export type UnifiedLessonType = 'individual' | 'group'
 
@@ -86,13 +88,23 @@ export async function fetchUnifiedLessonsByRange(
   try {
     const supabase = getSupabaseClient()
 
+    // 일정에 보이는 상태 = 급여에 '계산되는' 상태와 일치시킨다.
+    //  - 항상: 예약(scheduled)·완료(completed)
+    //  - 당일취소·노쇼: 급여 반영 설정이 켜진 경우에만 표시(취소 마크). 끄면 일정에서 숨김(미계산).
+    //  - 사전취소(cancelled_advance): 미계산 → 항상 숨김. (기록은 DB·회원로그에 보존)
+    const settings = await loadStudioSettings(ownerId)
+    const visibleStatuses = payrollCountedStatuses({
+      sameDayCancel: settings.payrollCountsSameDayCancel,
+      noshow: settings.payrollCountsNoshow,
+    })
+
     // 개별 수업
     let indQ = supabase
       .from('lessons')
       .select('id, lesson_date, lesson_time, duration_minutes, instructor_id, member_id, room_id, status, instructors(id, name, color, role), members(id, name), passes(id, pass_name, remaining_count), rooms(id, name)')
       .gte('lesson_date', start)
       .lte('lesson_date', end)
-      .not('status', 'in', '(cancelled_advance,cancelled_same_day)')  // 취소된 수업은 시간표에서 숨김
+      .in('status', visibleStatuses)
       .order('lesson_date', { ascending: true })
       .order('lesson_time', { ascending: true, nullsFirst: false })
     if (ownerId !== 'no-auth') indQ = indQ.eq('owner_id', ownerId)
