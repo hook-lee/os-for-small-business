@@ -48,6 +48,34 @@ export function resolvePeriod(key: PeriodKey, today: string): PeriodRange | null
   return { start: `${year}-${pad2(quarterStartMonth)}-01`, end: today }
 }
 
+function lastDayOfMonth(year: number, month: number): number {
+  const days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  if (month === 2 && ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0)) return 29
+  return days[month - 1]
+}
+
+/**
+ * resolvePeriod의 '월말/분기말/연말까지' 버전.
+ * resolvePeriod는 end=today(period-to-date) — 매출처럼 "오늘까지 발생한 것"에 맞다.
+ * 그러나 **폐강률**처럼 미래 일정까지 분모에 넣어야 하는 지표는 이 함수를 쓴다.
+ *  - 폐강은 보통 다가오는(미래) 수업을 닫는 사건이라 end=today면 누락된다.
+ */
+export function resolvePeriodFull(key: PeriodKey, today: string): PeriodRange | null {
+  if (key === 'all') return null
+  const year = parseInt(today.slice(0, 4), 10)
+  const month = parseInt(today.slice(5, 7), 10) // 1~12
+
+  if (key === 'year') {
+    return { start: `${year}-01-01`, end: `${year}-12-31` }
+  }
+  if (key === 'month') {
+    return { start: `${year}-${pad2(month)}-01`, end: `${year}-${pad2(month)}-${pad2(lastDayOfMonth(year, month))}` }
+  }
+  const qStart = Math.floor((month - 1) / 3) * 3 + 1
+  const qEnd = qStart + 2
+  return { start: `${year}-${pad2(qStart)}-01`, end: `${year}-${pad2(qEnd)}-${pad2(lastDayOfMonth(year, qEnd))}` }
+}
+
 /**
  * 'YYYY-MM-DD' 날짜가 기간 범위 안인지. range=null이면 항상 true(누적).
  * date가 null/빈값이면(시점 불명) 기간 필터 시 false, 누적 시 true.

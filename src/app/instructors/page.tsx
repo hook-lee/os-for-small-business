@@ -8,7 +8,7 @@ import { requireOwnerId } from '@/lib/supabase/auth-server'
 import { groupPassesByMember } from '@/lib/analytics/instructor-kpi'
 import { computeInstructorScorecards, computeGroupClosureStats, type InstructorScorecardRow, type IncentiveSetting } from '@/lib/analytics/instructor-scorecard'
 import { fetchGroupSessionsForAnalytics } from '@/lib/supabase/group-sessions'
-import { resolvePeriod, isPeriodKey, type PeriodKey } from '@/lib/analytics/period'
+import { resolvePeriod, resolvePeriodFull, isPeriodKey, type PeriodKey } from '@/lib/analytics/period'
 
 export const dynamic = 'force-dynamic'
 
@@ -63,7 +63,9 @@ export default async function InstructorsPage({ searchParams }: { searchParams: 
           ratesByInstructor.set(r.instructorId, arr)
         }
         const period = resolvePeriod(periodKey, today)
-        const closureByInstructor = computeGroupClosureStats(groupSessions, period)
+        // 폐강률은 미래 일정까지 분모에 포함해야 하므로 '월말/분기말/연말까지' 기간 사용
+        const closurePeriod = resolvePeriodFull(periodKey, today)
+        const closureByInstructor = computeGroupClosureStats(groupSessions, closurePeriod)
         scorecards = computeInstructorScorecards(instructors, allPasses, allByMember, period, ratesByInstructor, closureByInstructor)
       } catch {/* fallback: 빈 scorecards */}
     } else {
