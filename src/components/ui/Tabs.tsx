@@ -19,10 +19,10 @@ export function Tabs({ items, current }: { items: TabItem[]; current: string }) 
               key={t.key}
               href={t.href}
               aria-current={active ? 'page' : undefined}
-              className={`shrink-0 whitespace-nowrap px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+              className={`inline-flex items-center shrink-0 whitespace-nowrap min-h-[40px] px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 active
                   ? 'bg-white text-violet-700 shadow-sm'
-                  : 'text-neutral-500 hover:text-neutral-700'
+                  : 'text-neutral-500 hover:text-neutral-700 hover:bg-white/50'
               }`}
             >
               {t.label}

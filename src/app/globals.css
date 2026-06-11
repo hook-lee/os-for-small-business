@@ -25,6 +25,46 @@ body {
   summary {
     cursor: pointer;
   }
+
+  /* 가독성 — 폰트 안티앨리어싱 */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /*
+   * 키보드/접근성 포커스 가시성 — 클릭 가능한 요소가 "여기 눌러요"를 또렷이 보이게.
+   * focus-visible이라 마우스 클릭 땐 안 뜨고 키보드 탐색 때만 보임(깔끔).
+   */
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  a:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid rgb(139 92 246 / 0.55);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid rgb(139 92 246 / 0.5);
+    outline-offset: 1px;
+  }
+
+}
+
+/*
+ * 모바일에서 입력칸 폰트가 16px 미만이면 iOS가 자동 확대(줌)해 화면이 튄다.
+ * 작은 화면에서만 입력 글자를 16px로 키워 줌·가독성 둘 다 해결. (체크박스/라디오 제외)
+ * @layer 밖(unlayered)에 둬서 Tailwind text-* 유틸리티(text-sm 등)를 이기게 한다.
+ */
+@media (max-width: 640px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }
 
 /*

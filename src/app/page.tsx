@@ -136,31 +136,19 @@ export default async function HomePage() {
       {/* 알림 / 액션 필요 */}
       {(expiring.length > 0 || dormant.length > 0 || unpaidInstructors.length > 0 || lowRemaining.length > 0) && (
         <Card className="border-amber-200 bg-amber-50">
-          <div className="text-sm font-semibold text-amber-900 mb-2">⚠️ 처리 필요</div>
-          <div className="space-y-1.5">
+          <div className="text-sm font-semibold text-amber-900 mb-2.5 flex items-center gap-1.5"><span aria-hidden>⚠️</span> 처리 필요</div>
+          <div className="space-y-0.5">
             {lowRemaining.length > 0 && (
-              <a href="/members?filter=low" className="block text-sm hover:underline">
-                <span className="text-orange-700 font-medium">잔여 {lowRemainingThreshold}회 이하 {lowRemaining.length}명</span>
-                <span className="text-neutral-500 text-xs ml-2">재등록 안내 필요 (설정에서 기준 변경)</span>
-              </a>
+              <AlertRow href="/members?filter=low" tone="orange" title={`잔여 ${lowRemainingThreshold}회 이하 ${lowRemaining.length}명`} desc="재등록 안내가 필요해요" />
             )}
             {expiring.length > 0 && (
-              <a href="/members?filter=expiring" className="block text-sm hover:underline">
-                <span className="text-amber-700 font-medium">만료 임박 {expiring.length}명</span>
-                <span className="text-neutral-500 text-xs ml-2">7일 내 수강권 만료</span>
-              </a>
+              <AlertRow href="/members?filter=expiring" tone="amber" title={`만료 임박 ${expiring.length}명`} desc="7일 내 수강권이 만료돼요" />
             )}
             {dormant.length > 0 && (
-              <a href="/members?filter=dormant" className="block text-sm hover:underline">
-                <span className="text-red-700 font-medium">휴면 회원 {dormant.length}명</span>
-                <span className="text-neutral-500 text-xs ml-2">60일+ 미출석</span>
-              </a>
+              <AlertRow href="/members?filter=dormant" tone="red" title={`휴면 회원 ${dormant.length}명`} desc="60일 넘게 미출석" />
             )}
             {unpaidInstructors.length > 0 && (
-              <a href={`/instructors?tab=payroll&ym=${yearMonth}`} className="block text-sm hover:underline">
-                <span className="text-blue-700 font-medium">미정산 강사 {unpaidInstructors.length}명</span>
-                <span className="text-neutral-500 text-xs ml-2">{yearMonth} 이번달 미지급</span>
-              </a>
+              <AlertRow href={`/instructors?tab=payroll&ym=${yearMonth}`} tone="blue" title={`미정산 강사 ${unpaidInstructors.length}명`} desc={`${yearMonth} 이번달 급여 미지급`} />
             )}
           </div>
         </Card>
@@ -211,6 +199,32 @@ export default async function HomePage() {
         <div className="text-xs text-neutral-400 mt-1">체험 {conversion.trialCount}명 → {conversion.convertedCount}명</div>
       </Card>
     </div>
+  )
+}
+
+function AlertRow({ href, tone, title, desc }: {
+  href: string
+  tone: 'orange' | 'amber' | 'red' | 'blue'
+  title: string
+  desc: string
+}) {
+  const toneCls = {
+    orange: 'text-orange-700',
+    amber: 'text-amber-700',
+    red: 'text-red-700',
+    blue: 'text-blue-700',
+  }[tone]
+  return (
+    <a
+      href={href}
+      className="flex items-center justify-between gap-3 -mx-2 px-3 py-2.5 rounded-lg hover:bg-amber-100/70 active:bg-amber-100 transition-colors"
+    >
+      <div className="min-w-0">
+        <div className={`text-sm font-semibold ${toneCls}`}>{title}</div>
+        <div className="text-xs text-neutral-500 mt-0.5">{desc}</div>
+      </div>
+      <span className="text-lg text-neutral-400 shrink-0" aria-hidden>›</span>
+    </a>
   )
 }
 

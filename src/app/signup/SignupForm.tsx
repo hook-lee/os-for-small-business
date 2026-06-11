@@ -23,6 +23,10 @@ export function SignupForm() {
   const [error, setError] = useState('')
   const [needsEmailConfirm, setNeedsEmailConfirm] = useState(false)
 
+  // 폼 공통 스타일 — 여유 패딩·또렷한 글자·일관된 포커스. (모바일 16px는 globals.css가 보강)
+  const inputCls = 'w-full border border-neutral-300 rounded-lg px-3.5 py-2.5 text-[15px] text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-400 transition'
+  const labelCls = 'block text-sm font-medium text-neutral-700 mb-1.5'
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError('')
@@ -120,7 +124,7 @@ export function SignupForm() {
         </div>
         <a
           href="/login"
-          className="block w-full text-center bg-violet-600 hover:bg-violet-700 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
+          className="flex items-center justify-center w-full min-h-[48px] bg-violet-600 hover:bg-violet-700 text-white font-semibold py-3 rounded-xl text-base shadow-sm transition-colors"
         >
           로그인 페이지로
         </a>
@@ -135,7 +139,7 @@ export function SignupForm() {
         <div className="text-[10px] font-bold uppercase tracking-wider text-violet-600">필수 정보</div>
 
         <div>
-          <label className="block text-xs font-medium text-neutral-600 mb-1.5">이메일 *</label>
+          <label className={labelCls}>이메일 *</label>
           <input
             type="email"
             value={email}
@@ -143,12 +147,12 @@ export function SignupForm() {
             required
             autoComplete="email"
             placeholder="you@example.com"
-            className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className={inputCls}
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-neutral-600 mb-1.5">비밀번호 * (8자 이상)</label>
+          <label className={labelCls}>비밀번호 * (8자 이상)</label>
           <input
             type="password"
             value={password}
@@ -156,46 +160,46 @@ export function SignupForm() {
             required
             minLength={8}
             autoComplete="new-password"
-            className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className={inputCls}
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-neutral-600 mb-1.5">비밀번호 확인 *</label>
+          <label className={labelCls}>비밀번호 확인 *</label>
           <input
             type="password"
             value={passwordConfirm}
             onChange={e => setPasswordConfirm(e.target.value)}
             required
             autoComplete="new-password"
-            className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className={inputCls}
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-neutral-600 mb-1.5">센터명 *</label>
+          <label className={labelCls}>센터명 *</label>
           <input
             type="text"
             value={workspaceName}
             onChange={e => setWorkspaceName(e.target.value)}
             required
             placeholder="예: 라파 필라테스, 강남 PT 스튜디오"
-            className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className={inputCls}
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-neutral-600 mb-1.5">직급 *</label>
-          <div className="grid grid-cols-4 gap-1.5">
+          <label className={labelCls}>직급 *</label>
+          <div className="grid grid-cols-4 gap-2">
             {ROLES.map(r => (
               <button
                 key={r}
                 type="button"
                 onClick={() => setRole(r)}
-                className={`py-2 text-xs rounded-lg font-medium transition-colors border ${
+                className={`min-h-[44px] text-sm rounded-lg font-medium transition-colors border ${
                   role === r
-                    ? 'bg-violet-600 text-white border-violet-600'
-                    : 'bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-50'
+                    ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
+                    : 'bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-50 hover:border-neutral-400'
                 }`}
               >
                 {r}
@@ -210,24 +214,24 @@ export function SignupForm() {
         <div className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">선택 정보 (나중에 설정 가능)</div>
 
         <div>
-          <label className="block text-xs font-medium text-neutral-600 mb-1.5">센터 전화번호</label>
+          <label className={labelCls}>센터 전화번호</label>
           <input
             type="tel"
             value={businessPhone}
             onChange={e => setBusinessPhone(e.target.value)}
             placeholder="02-1234-5678"
-            className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className={inputCls}
           />
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-neutral-600 mb-1.5">센터 주소</label>
+          <label className={labelCls}>센터 주소</label>
           <input
             type="text"
             value={businessAddress}
             onChange={e => setBusinessAddress(e.target.value)}
             placeholder="예: 서울 강남구 역삼동"
-            className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className={inputCls}
           />
         </div>
       </div>
@@ -239,7 +243,7 @@ export function SignupForm() {
       <button
         type="submit"
         disabled={submitting || !email || !password || !passwordConfirm || !workspaceName.trim()}
-        className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 disabled:from-violet-300 disabled:to-fuchsia-300 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
+        className="w-full min-h-[52px] bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 disabled:from-violet-300 disabled:to-fuchsia-300 text-white font-semibold py-3.5 rounded-xl text-base shadow-sm transition-colors"
       >
         {submitting ? '계정 생성 중...' : '계정 만들기'}
       </button>

@@ -159,8 +159,8 @@ export function Sidebar({
                           <a
                             key={s.href}
                             href={s.href}
-                            className={`block px-2 py-1 rounded text-[13px] transition-colors ${
-                              subActive(s.href) ? 'text-violet-700 font-medium' : 'text-neutral-500 hover:text-neutral-800'
+                            className={`block px-2 py-1.5 rounded-md text-[13px] transition-colors ${
+                              subActive(s.href) ? 'text-violet-700 font-medium bg-violet-50/60' : 'text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100'
                             }`}
                           >
                             {s.label}

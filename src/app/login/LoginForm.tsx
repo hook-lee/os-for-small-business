@@ -43,10 +43,13 @@ export function LoginForm({ next }: { next: string }) {
     }
   }
 
+  const inputCls = 'w-full border border-neutral-300 rounded-lg px-3.5 py-2.5 text-[15px] text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-400 transition'
+  const labelCls = 'block text-sm font-medium text-neutral-700 mb-1.5'
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-xs font-medium text-neutral-600 mb-1.5">이메일</label>
+        <label className={labelCls}>이메일</label>
         <input
           type="email"
           value={email}
@@ -54,24 +57,24 @@ export function LoginForm({ next }: { next: string }) {
           required
           autoComplete="email"
           placeholder="you@example.com"
-          className="w-full border border-neutral-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+          className={inputCls}
         />
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-neutral-600 mb-1.5">비밀번호</label>
+        <label className={labelCls}>비밀번호</label>
         <input
           type="password"
           value={password}
           onChange={e => setPassword(e.target.value)}
           required
           autoComplete="current-password"
-          className="w-full border border-neutral-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500"
+          className={inputCls}
         />
       </div>
 
       {error && (
-        <div className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg p-2.5">
+        <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">
           ⚠ {error}
         </div>
       )}
@@ -79,12 +82,12 @@ export function LoginForm({ next }: { next: string }) {
       <button
         type="submit"
         disabled={submitting || !email || !password}
-        className="w-full bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 disabled:from-violet-300 disabled:to-fuchsia-300 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
+        className="w-full min-h-[52px] bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 disabled:from-violet-300 disabled:to-fuchsia-300 text-white font-semibold py-3.5 rounded-xl text-base shadow-sm transition-colors"
       >
         {submitting ? '로그인 중...' : '로그인'}
       </button>
 
-      <p className="text-[11px] text-neutral-400 text-center pt-2 border-t border-neutral-100">
+      <p className="text-xs text-neutral-400 text-center pt-3 border-t border-neutral-100">
         처음이신가요? 누구나 무료로 워크스페이스를 만들 수 있어요.
       </p>
     </form>
