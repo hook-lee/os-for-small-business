@@ -20,6 +20,9 @@ interface ColDef {
   value: (r: InstructorScorecardRow) => number
   render: (r: InstructorScorecardRow) => string
   lowerIsBetter?: boolean   // 폐강률처럼 낮을수록 좋은 지표 → 색 강조 반전
+  // 이 지표가 '해당되는' 행만 색 강조 비교에 포함. 예: 폐강률은 그룹수업 있는 강사만.
+  // (그룹수업 0인 강사는 closureRate=0이라 안 거르면 '최우수(녹색)'로 잘못 강조됨)
+  applies?: (r: InstructorScorecardRow) => boolean
 }
 
 function manwon(won: number): string {
@@ -35,7 +38,7 @@ const COLS: ColDef[] = [
   { key: 'trialConversionRate', label: '전환율', scope: '누적', value: r => r.trialConversionRate, render: r => `${(r.trialConversionRate * 100).toFixed(0)}%` },
   { key: 'reregistrationRate', label: '재등록률', scope: '누적', value: r => r.reregistrationRate, render: r => `${(r.reregistrationRate * 100).toFixed(0)}%` },
   { key: 'activeMembers', label: '활성', scope: '현재', value: r => r.activeMembers, render: r => `${r.activeMembers}명` },
-  { key: 'closureRate', label: '폐강률', scope: '기간', value: r => r.closureRate, render: r => (r.groupTotal === 0 ? '—' : `${(r.closureRate * 100).toFixed(0)}%`), lowerIsBetter: true },
+  { key: 'closureRate', label: '폐강률', scope: '기간', value: r => r.closureRate, render: r => (r.groupTotal === 0 ? '—' : `${(r.closureRate * 100).toFixed(0)}%`), lowerIsBetter: true, applies: r => r.groupTotal > 0 },
 ]
 
 function roleLabel(role: InstructorScorecardRow['role']): string | null {
@@ -67,14 +70,15 @@ export function InstructorScorecard({ rows, periodKey }: { rows: InstructorScore
   }, [rows, sortKey, sortDir])
 
   // 현재 정렬 컬럼의 최고/최저값 (상·하위 색 강조용). 값이 모두 같으면 강조 안 함.
-  const { hi, lo } = useMemo(() => {
+  // applies가 있으면 '해당되는' 행만(예: 폐강률은 그룹수업 있는 강사) 비교 대상에 넣는다.
+  const { hi, lo, applicableCount } = useMemo(() => {
     const col = COLS.find(c => c.key === sortKey)!
-    const vals = rows.map(col.value)
-    const max = Math.max(...vals)
-    const min = Math.min(...vals)
-    return { hi: max, lo: min }
+    const applicable = col.applies ? rows.filter(col.applies) : rows
+    const vals = applicable.map(col.value)
+    if (vals.length === 0) return { hi: NaN, lo: NaN, applicableCount: 0 }
+    return { hi: Math.max(...vals), lo: Math.min(...vals), applicableCount: applicable.length }
   }, [rows, sortKey])
-  const highlightActive = rows.length > 1 && hi !== lo
+  const highlightActive = applicableCount > 1 && hi !== lo
 
   function toggleSort(key: SortKey) {
     if (key === sortKey) {
@@ -143,9 +147,10 @@ export function InstructorScorecard({ rows, periodKey }: { rows: InstructorScore
         )}
         {sorted.map(r => {
           const sortVal = sortedCol.value(r)
-          const accent = highlightActive && sortVal === best
+          const rowApplies = !sortedCol.applies || sortedCol.applies(r)
+          const accent = highlightActive && rowApplies && sortVal === best
             ? 'border-green-300 bg-green-50/40'
-            : highlightActive && sortVal === worst
+            : highlightActive && rowApplies && sortVal === worst
               ? 'border-amber-300 bg-amber-50/30'
               : 'border-neutral-200'
           const rl = roleLabel(r.role)
@@ -171,7 +176,7 @@ export function InstructorScorecard({ rows, periodKey }: { rows: InstructorScore
                 {COLS.map(col => {
                   const isSorted = col.key === sortKey
                   const v = col.value(r)
-                  const cellAccent = isSorted && highlightActive
+                  const cellAccent = isSorted && highlightActive && rowApplies
                     ? (v === best ? 'text-green-700' : v === worst ? 'text-amber-700' : 'text-neutral-800')
                     : 'text-neutral-800'
                   const sub = col.key === 'trialConversionRate' && r.trialMemberCount > 0
@@ -224,9 +229,10 @@ export function InstructorScorecard({ rows, periodKey }: { rows: InstructorScore
             <tbody>
               {sorted.map(r => {
                 const sortVal = sortedCol.value(r)
-                const rowAccent = highlightActive && sortVal === best
+                const rowApplies = !sortedCol.applies || sortedCol.applies(r)
+                const rowAccent = highlightActive && rowApplies && sortVal === best
                   ? 'bg-green-50/50'
-                  : highlightActive && sortVal === worst
+                  : highlightActive && rowApplies && sortVal === worst
                     ? 'bg-amber-50/40'
                     : ''
                 const rl = roleLabel(r.role)
@@ -242,7 +248,7 @@ export function InstructorScorecard({ rows, periodKey }: { rows: InstructorScore
                     {COLS.map(col => {
                       const isSorted = col.key === sortKey
                       const v = col.value(r)
-                      const cellAccent = isSorted && highlightActive
+                      const cellAccent = isSorted && highlightActive && rowApplies
                         ? (v === best ? 'text-green-700 font-semibold' : v === worst ? 'text-amber-700' : '')
                         : ''
                       // 전환율은 분모 노출(체험 N명)로 0% 오해 방지 / 폐강률은 N/M 노출

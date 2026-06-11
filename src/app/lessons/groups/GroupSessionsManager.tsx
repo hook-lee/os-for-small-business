@@ -5,6 +5,7 @@ import { useState, useMemo } from 'react'
 import type { GroupSession } from '@/lib/supabase/group-sessions'
 import type { Instructor } from '@/lib/supabase/instructors'
 import { generateRepeatDates, WEEKDAY_LABELS } from '@/lib/dates/repeat'
+import { DEFAULT_GROUP_CANCEL_REASONS, isClosureReason } from '@/lib/lessons/cancel-reasons'
 
 interface Props {
   initialSessions: GroupSession[]
@@ -21,8 +22,8 @@ const DEFAULT_FORM = {
   notes: '',
 }
 
-// 그룹 수업 취소 사유. '인원 부족' = 폐강(강사 성과 폐강률에 반영).
-const CANCEL_REASONS = ['인원 부족', '강사 사정', '시설·기타'] as const
+// 그룹 수업 취소 사유 — 단일 소스(cancel-reasons 모듈). 폐강 사유는 isClosureReason()로 판정.
+const CANCEL_REASONS = DEFAULT_GROUP_CANCEL_REASONS
 
 export function GroupSessionsManager({ initialSessions, instructors }: Props) {
   const [sessions, setSessions] = useState<GroupSession[]>(initialSessions)
@@ -141,7 +142,7 @@ export function GroupSessionsManager({ initialSessions, instructors }: Props) {
       }
       setSessions(s => s.filter(x => x.id !== id))
       setCancelTarget(null)
-      toast(reason === '인원 부족' ? '✓ 폐강 처리됐어요 (강사 성과에 반영)' : '✓ 수업이 취소됐어요')
+      toast(isClosureReason(reason) ? '✓ 폐강 처리됐어요 (강사 성과에 반영)' : '✓ 수업이 취소됐어요')
     } catch (err) {
       toast((err as Error).message)
     } finally {
@@ -380,12 +381,12 @@ export function GroupSessionsManager({ initialSessions, instructors }: Props) {
                   disabled={cancelling}
                   onClick={() => handleCancel(cancelTarget, reason)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm border transition-colors disabled:opacity-50 ${
-                    reason === '인원 부족'
+                    isClosureReason(reason)
                       ? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
                       : 'border-neutral-200 hover:bg-neutral-50'
                   }`}
                 >
-                  {reason}{reason === '인원 부족' ? ' (폐강)' : ''}
+                  {reason}{isClosureReason(reason) ? ' (폐강)' : ''}
                 </button>
               ))}
             </div>

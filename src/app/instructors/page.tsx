@@ -9,6 +9,7 @@ import { groupPassesByMember } from '@/lib/analytics/instructor-kpi'
 import { computeInstructorScorecards, computeGroupClosureStats, type InstructorScorecardRow, type IncentiveSetting } from '@/lib/analytics/instructor-scorecard'
 import { fetchGroupSessionsForAnalytics } from '@/lib/supabase/group-sessions'
 import { resolvePeriod, resolvePeriodFull, isPeriodKey, type PeriodKey } from '@/lib/analytics/period'
+import { loadStudioSettings } from '@/lib/supabase/studio-settings'
 
 export const dynamic = 'force-dynamic'
 
@@ -50,10 +51,11 @@ export default async function InstructorsPage({ searchParams }: { searchParams: 
     } else if (tab === 'scorecard') {
       try {
         const today = new Date().toISOString().slice(0, 10)
-        const [allPasses, rates, groupSessions] = await Promise.all([
+        const [allPasses, rates, groupSessions, settings] = await Promise.all([
           fetchAllPasses(ownerId),
           fetchAllRates(ownerId),
           fetchGroupSessionsForAnalytics(ownerId),
+          loadStudioSettings(ownerId),
         ])
         const allByMember = groupPassesByMember(allPasses)
         const ratesByInstructor = new Map<number, IncentiveSetting[]>()
@@ -65,7 +67,10 @@ export default async function InstructorsPage({ searchParams }: { searchParams: 
         const period = resolvePeriod(periodKey, today)
         // 폐강률은 미래 일정까지 분모에 포함해야 하므로 '월말/분기말/연말까지' 기간 사용
         const closurePeriod = resolvePeriodFull(periodKey, today)
-        const closureByInstructor = computeGroupClosureStats(groupSessions, closurePeriod)
+        const closureByInstructor = computeGroupClosureStats(groupSessions, closurePeriod, {
+          groupCategories: settings.groupClosureCategories,
+          closureReasons: settings.groupClosureReasons,
+        })
         scorecards = computeInstructorScorecards(instructors, allPasses, allByMember, period, ratesByInstructor, closureByInstructor)
       } catch {/* fallback: 빈 scorecards */}
     } else {

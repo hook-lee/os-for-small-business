@@ -120,12 +120,26 @@ export function OperationsForm({ initial }: { initial: StudioSettings }) {
       {/* ── 폐강 ── */}
       <GroupHeader>⛔ 폐강</GroupHeader>
 
-      <SettingCard num={5} title="폐강 시간 설정" description="최소 수강인원 미달 시 수업이 자동 폐강되는 시점">
-        <Row label="폐강 시점">
-          <span className="text-sm text-neutral-500">수업 시작</span>
-          <NumberInput value={s.autoCloseHoursBeforeStart} onChange={v => patch('autoCloseHoursBeforeStart', v)} min={0} max={72} suffix="시간 전" />
-          <span className="text-sm text-neutral-500">자동 폐강</span>
-        </Row>
+      <SettingCard num={5} title="폐강 기준" description="자동 폐강 시점 + 강사 성과(폐강률)에 집계할 수업 종류">
+        <div className="space-y-3">
+          <Row label="폐강 시점">
+            <span className="text-sm text-neutral-500">수업 시작</span>
+            <NumberInput value={s.autoCloseHoursBeforeStart} onChange={v => patch('autoCloseHoursBeforeStart', v)} min={0} max={72} suffix="시간 전" />
+            <span className="text-sm text-neutral-500">자동 폐강</span>
+          </Row>
+          <div className="pt-2 border-t border-neutral-100">
+            <Row label="폐강률 집계 종류">
+              <TagsInput
+                value={s.groupClosureCategories}
+                onChange={v => patch('groupClosureCategories', v)}
+                placeholder="예: 그룹, 단체, GX"
+              />
+            </Row>
+            <p className="text-[11px] text-neutral-400 mt-1.5 pl-[140px] break-keep leading-relaxed">
+              강사 성과의 <b>폐강률</b>은 여기 적은 수업 종류만 집계해요. 우리 센터가 그룹 수업을 «그룹»이 아닌 다른 이름(단체·GX 등)으로 부르면 그 이름을 넣어주세요. (수업 종류는 수업 추가 시 정하는 «카테고리»와 같아야 합니다.)
+            </p>
+          </div>
+        </div>
       </SettingCard>
 
       {/* ── 예약대기 ── */}
@@ -267,6 +281,29 @@ function TimeInput({ value, onChange }: { value: string; onChange: (v: string) =
       value={value}
       onChange={e => onChange(e.target.value)}
       className="border border-neutral-300 rounded px-2 py-1 text-sm tabular-nums"
+    />
+  )
+}
+
+/** 콤마로 구분하는 문자열 목록 입력 (예: "그룹, 단체, GX" → ['그룹','단체','GX']). */
+function TagsInput({ value, onChange, placeholder }: {
+  value: string[]
+  onChange: (v: string[]) => void
+  placeholder?: string
+}) {
+  // raw(화면 표시)를 로컬 소스로 두어 콤마/공백 타이핑이 자연스럽게 유지되게 한다.
+  const [raw, setRaw] = useState(value.join(', '))
+  function commit(text: string) {
+    setRaw(text)
+    onChange(text.split(',').map(t => t.trim()).filter(Boolean))
+  }
+  return (
+    <input
+      type="text"
+      value={raw}
+      placeholder={placeholder}
+      onChange={e => commit(e.target.value)}
+      className="flex-1 min-w-[180px] border border-neutral-300 rounded px-2 py-1 text-sm"
     />
   )
 }

@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import type { UnifiedLesson } from '@/lib/supabase/lessons-combined'
 import { toast } from '@/components/ui/toast'
+import { DEFAULT_GROUP_CANCEL_REASONS, isClosureReason } from '@/lib/lessons/cancel-reasons'
 
 interface Room { id: number; name: string; isActive: boolean }
 
-// 그룹 수업 취소 사유. '인원 부족' = 폐강(강사 성과 폐강률 반영).
-const CANCEL_REASONS = ['인원 부족', '강사 사정', '시설·기타'] as const
+// 그룹 수업 취소 사유 — 단일 소스(cancel-reasons 모듈). 폐강 사유는 isClosureReason()로 판정.
+const CANCEL_REASONS = DEFAULT_GROUP_CANCEL_REASONS
 
 /**
  * 통합 수업 뷰의 row·카드 클릭시 열리는 상세 모달.
@@ -136,7 +137,7 @@ export function LessonDetailModal({
       })
       const json = await res.json() as { ok?: boolean; error?: string }
       if (!res.ok) { setError(json.error ?? '취소 실패'); return }
-      toast(reason === '인원 부족' ? '폐강 처리됐어요 ✓ (강사 성과 반영)' : '수업이 취소됐어요 ✓', 'success')
+      toast(isClosureReason(reason) ? '폐강 처리됐어요 ✓ (강사 성과 반영)' : '수업이 취소됐어요 ✓', 'success')
       router.refresh()
       onClose()
     } catch (e) {
@@ -305,12 +306,12 @@ export function LessonDetailModal({
                   disabled={busy}
                   onClick={() => handleCancel(reason)}
                   className={`text-xs px-2.5 py-1.5 rounded border disabled:opacity-50 ${
-                    reason === '인원 부족'
+                    isClosureReason(reason)
                       ? 'border-amber-300 bg-white text-amber-800 hover:bg-amber-100'
                       : 'border-neutral-200 bg-white hover:bg-neutral-50'
                   }`}
                 >
-                  {reason}{reason === '인원 부족' ? ' (폐강)' : ''}
+                  {reason}{isClosureReason(reason) ? ' (폐강)' : ''}
                 </button>
               ))}
             </div>

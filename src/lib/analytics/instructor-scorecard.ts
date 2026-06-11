@@ -3,6 +3,7 @@ import type { Instructor } from '@/lib/supabase/instructors'
 import type { GroupSessionLite } from '@/lib/supabase/group-sessions'
 import { computeInstructorKPI, groupPassesByMember } from './instructor-kpi'
 import { isInPeriod, type PeriodRange } from './period'
+import { DEFAULT_GROUP_CLOSURE_CATEGORIES, DEFAULT_GROUP_CLOSURE_REASONS } from '@/lib/lessons/cancel-reasons'
 
 /**
  * 강사 성과 비교 (원장용). 기존 computeInstructorKPI(누적)와 별개로,
@@ -129,29 +130,41 @@ export function computeInstructorScorecards(
   return rows
 }
 
-/** 폐강으로 간주하는 취소 사유 (수강 인원 부족). */
-export const GROUP_CLOSURE_REASON = '인원 부족'
+/** 폐강으로 간주하는 기본 취소 사유 (수강 인원 부족). 실제 적용 값은 원장 설정(groupClosureReasons). */
+export const GROUP_CLOSURE_REASON = DEFAULT_GROUP_CLOSURE_REASONS[0]
 
 export interface ClosureStat { total: number; closed: number }
 
+export interface ClosureOptions {
+  /** '그룹수업'(폐강 대상)으로 볼 카테고리. 미지정 시 기본값 ['그룹']. */
+  groupCategories?: string[]
+  /** '폐강'으로 집계할 취소 사유. 미지정 시 기본값 ['인원 부족']. */
+  closureReasons?: string[]
+}
+
 /**
- * 강사별 그룹 수업 폐강 통계. category==='그룹' 세션 중 lessonDate가 기간 내인 것:
+ * 강사별 그룹 수업 폐강 통계. groupCategories에 속한 세션 중 lessonDate가 기간 내인 것:
  *  - total  = 개설한 그룹 수업 수
- *  - closed = 취소사유가 '인원 부족'(폐강)인 수
+ *  - closed = 취소사유가 closureReasons(폐강)에 속한 수
  * 폐강률(closureRate) = closed/total. 0%면 그 강사 그룹 수업 수요가 많다는 신호.
+ *
+ * §0: 카테고리·사유는 코드에 고정하지 않고 원장 설정에서 받는다(기본값은 cancel-reasons 모듈).
  */
 export function computeGroupClosureStats(
   sessions: GroupSessionLite[],
   period: PeriodRange | null,
+  opts?: ClosureOptions,
 ): Map<number, ClosureStat> {
+  const catSet = new Set(opts?.groupCategories ?? DEFAULT_GROUP_CLOSURE_CATEGORIES)
+  const reasonSet = new Set(opts?.closureReasons ?? DEFAULT_GROUP_CLOSURE_REASONS)
   const map = new Map<number, ClosureStat>()
   for (const s of sessions) {
     if (s.instructorId == null) continue
-    if (s.category !== '그룹') continue
+    if (!catSet.has(s.category)) continue
     if (!isInPeriod(s.lessonDate, period)) continue
     const stat = map.get(s.instructorId) ?? { total: 0, closed: 0 }
     stat.total++
-    if (!s.active && s.cancelReason === GROUP_CLOSURE_REASON) stat.closed++
+    if (!s.active && s.cancelReason != null && reasonSet.has(s.cancelReason)) stat.closed++
     map.set(s.instructorId, stat)
   }
   return map

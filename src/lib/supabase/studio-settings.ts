@@ -7,6 +7,11 @@
  * partial 저장: 사용자가 일부만 변경해도 나머지는 default와 병합되어 유지.
  */
 import { getSupabaseClient, hasSupabaseConfig } from './client'
+import {
+  DEFAULT_GROUP_CANCEL_REASONS,
+  DEFAULT_GROUP_CLOSURE_REASONS,
+  DEFAULT_GROUP_CLOSURE_CATEGORIES,
+} from '@/lib/lessons/cancel-reasons'
 
 // ─────────────────────────────────────────────
 // 타입 정의 — 17개 설정
@@ -79,6 +84,11 @@ export interface StudioSettings {
   // 18. 급여 정산 기준 (센터마다 다름)
   payrollCountsSameDayCancel: boolean  // 당일취소를 강사 급여 자동집계에 반영
   payrollCountsNoshow: boolean         // 노쇼를 강사 급여 자동집계에 반영
+
+  // 19. 그룹 수업 취소·폐강 기준 (센터마다 다름 — 하드코딩 금지, §0)
+  groupCancelReasons: string[]         // 그룹 수업 취소 시 고를 수 있는 사유 목록
+  groupClosureReasons: string[]        // 그 중 '폐강(수요 부족)'으로 집계할 사유
+  groupClosureCategories: string[]     // 어떤 수업 카테고리를 '그룹수업'(폐강 대상)으로 볼지
 }
 
 export const DEFAULT_STUDIO_SETTINGS: StudioSettings = {
@@ -114,6 +124,10 @@ export const DEFAULT_STUDIO_SETTINGS: StudioSettings = {
   useMemberAppLounge: false,
   payrollCountsSameDayCancel: true,  // 기본: 현재 동작 유지(반영)
   payrollCountsNoshow: true,
+
+  groupCancelReasons: DEFAULT_GROUP_CANCEL_REASONS,
+  groupClosureReasons: DEFAULT_GROUP_CLOSURE_REASONS,
+  groupClosureCategories: DEFAULT_GROUP_CLOSURE_CATEGORIES,
 }
 
 interface StudioSettingsRow {
