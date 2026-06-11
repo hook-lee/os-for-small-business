@@ -5,7 +5,14 @@ import { csvToObjects } from '@/lib/csv/parse'
 import { guessMapping, applyMapping } from '@/lib/import/match'
 import { IMPORT_ENTITIES, IMPORT_SCHEMAS, buildTemplateCSV, type ImportEntity } from '@/lib/import/schema'
 
-interface ImportResult { inserted: number; failed: number; errors: { row: number; reason: string }[]; error?: string }
+interface ImportResult {
+  inserted: number
+  failed: number
+  skipped?: number
+  unmatchedCategories?: string[]
+  errors: { row: number; reason: string }[]
+  error?: string
+}
 
 export function ImportManager() {
   const [entity, setEntity] = useState<ImportEntity>('members')
@@ -83,7 +90,14 @@ export function ImportManager() {
       if (!res.ok && json.inserted == null) {
         setResult({ inserted: 0, failed: 0, errors: [], error: json.error ?? '가져오기 실패' })
       } else {
-        setResult({ inserted: json.inserted ?? 0, failed: json.failed ?? 0, errors: json.errors ?? [], error: json.error })
+        setResult({
+          inserted: json.inserted ?? 0,
+          failed: json.failed ?? 0,
+          skipped: json.skipped ?? 0,
+          unmatchedCategories: json.unmatchedCategories ?? [],
+          errors: json.errors ?? [],
+          error: json.error,
+        })
       }
     } catch (err) {
       setResult({ inserted: 0, failed: 0, errors: [], error: (err as Error).message })
@@ -214,8 +228,19 @@ export function ImportManager() {
           ) : (
             <>
               <p className="text-sm font-semibold text-emerald-800">
-                ✅ {result.inserted}건 가져오기 완료{result.failed > 0 ? ` · ${result.failed}건 건너뜀` : ''}
+                ✅ {result.inserted}건 가져오기 완료
+                {result.skipped ? ` · ${result.skipped}건 중복 건너뜀` : ''}
+                {result.failed > 0 ? ` · ${result.failed}건 실패` : ''}
               </p>
+              {result.skipped ? (
+                <p className="text-[11px] text-neutral-500 mt-1 break-keep">ⓘ 이미 등록된 데이터는 다시 넣지 않았어요(중복 방지). 같은 파일을 또 올려도 두 배로 들어가지 않습니다.</p>
+              ) : null}
+              {result.unmatchedCategories && result.unmatchedCategories.length > 0 && (
+                <div className="mt-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 break-keep">
+                  ⚠ 카테고리 관리에 없는 이름은 임시 분류로 넣었어요: <b>{result.unmatchedCategories.join(', ')}</b>
+                  <br />정확한 손익·세금 집계를 위해 <b>설정 → 카테고리 관리</b>에서 이 이름들의 분류(사업비용/개인비용 등)를 지정해 주세요.
+                </div>
+              )}
               {result.error && <p className="text-xs text-amber-700 mt-1">중간에 멈춤: {result.error}</p>}
               {result.errors.length > 0 && (
                 <div className="mt-2 text-xs text-neutral-600 max-h-40 overflow-y-auto space-y-0.5">
