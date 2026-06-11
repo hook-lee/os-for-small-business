@@ -15,7 +15,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   try {
     const session = await fetchSessionById(id, ownerId)
     if (!session) return NextResponse.json({ error: '세션을 찾을 수 없습니다.' }, { status: 404 })
-    const reservations = await fetchReservationsBySession(id)
+    const reservations = await fetchReservationsBySession(id, ownerId)
     return NextResponse.json({ session, reservations })
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 })
@@ -49,13 +49,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       await cancelGroupSession(id, reason, ownerId)
       // 예약자 정리 — reserved는 '취소'로, 차감(출석/노쇼)됐던 회차는 자동 환불(+1).
       // 폐강은 센터 사정이므로 회원이 회차를 손해 보지 않게 한다.
-      const reservations = await fetchReservationsBySession(id)
+      const reservations = await fetchReservationsBySession(id, ownerId)
+      let refundFailed = 0
       for (const r of reservations) {
         if (r.status !== 'cancelled') {
-          try { await setReservationStatus(r.id, 'cancelled') } catch { /* 개별 실패는 무시 */ }
+          try { await setReservationStatus(r.id, 'cancelled', ownerId) } catch { refundFailed++ }
         }
       }
-      return NextResponse.json({ ok: true })
+      // 일부 회차 환불이 실패하면 조용히 넘기지 않고 원장에게 알린다(회원이 손해 안 보게).
+      return NextResponse.json(
+        refundFailed > 0
+          ? { ok: true, warning: `예약자 ${refundFailed}명의 회차 환불에 실패했습니다. 해당 회원 수강권을 확인해주세요.` }
+          : { ok: true },
+      )
     }
     // 룸·시간 cross-table 충돌 검증
     if (body.roomId && body.lessonTime && body.lessonDate) {

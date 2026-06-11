@@ -48,9 +48,23 @@ function rowToReservation(row: ReservationRow): Reservation {
   }
 }
 
-export async function fetchReservationsBySession(sessionId: number): Promise<Reservation[]> {
+/**
+ * 세션의 예약자 목록.
+ * group_reservations엔 owner_id 컬럼이 없으므로 **부모 세션의 owner_id로 간접 격리**한다.
+ * ownerId가 주어지면(='no-auth' 아님) 세션이 그 owner 것인지 먼저 확인 → 아니면 [] 반환.
+ */
+export async function fetchReservationsBySession(sessionId: number, ownerId: string): Promise<Reservation[]> {
   try {
     const supabase = getSupabaseClient()
+    if (ownerId !== 'no-auth') {
+      const { data: sess } = await supabase
+        .from('group_sessions')
+        .select('id')
+        .eq('id', sessionId)
+        .eq('owner_id', ownerId)
+        .maybeSingle()
+      if (!sess) return []   // 내 세션이 아니면 예약자(회원 PII)를 노출하지 않음
+    }
     const { data, error } = await supabase
       .from('group_reservations')
       .select('*, members(id, name, phone)')
@@ -86,17 +100,26 @@ export async function createReservation({
   sessionId: number
   memberId: number
   passId?: number | null
-}): Promise<number> {
+}, ownerId: string): Promise<number> {
   const supabase = getSupabaseClient()
 
-  // Check capacity
-  const { data: sessionData, error: sessionError } = await supabase
-    .from('group_sessions')
-    .select('capacity')
-    .eq('id', sessionId)
-    .single()
+  // owner 격리: 세션이 이 owner 것인지 확인하며 capacity 조회 (남의 세션에 예약 주입 방지)
+  let sq = supabase.from('group_sessions').select('capacity').eq('id', sessionId)
+  if (ownerId !== 'no-auth') sq = sq.eq('owner_id', ownerId)
+  const { data: sessionData, error: sessionError } = await sq.single()
   if (sessionError || !sessionData) throw new Error('세션을 찾을 수 없습니다.')
   const capacity = (sessionData as { capacity: number }).capacity
+
+  // owner 격리: 회원도 이 owner 것인지 확인 (남의 회원을 내 세션에 끼워넣는 것 방지)
+  if (ownerId !== 'no-auth') {
+    const { data: mem } = await supabase
+      .from('members')
+      .select('id')
+      .eq('id', memberId)
+      .eq('owner_id', ownerId)
+      .maybeSingle()
+    if (!mem) throw new Error('회원을 찾을 수 없습니다.')
+  }
 
   const { count: reservedCount } = await supabase
     .from('group_reservations')
@@ -132,17 +155,30 @@ export async function createReservation({
 
 export async function setReservationStatus(
   reservationId: number,
-  newStatus: ReservationStatus
+  newStatus: ReservationStatus,
+  ownerId: string,
 ): Promise<{ deductionDelta: number }> {
   const supabase = getSupabaseClient()
 
-  // 1. Fetch current reservation
+  // 1. Fetch current reservation (session_id 포함 — owner 격리 확인용)
   const { data: current, error: fetchError } = await supabase
     .from('group_reservations')
-    .select('id, pass_id, status, deducted')
+    .select('id, session_id, pass_id, status, deducted')
     .eq('id', reservationId)
     .single()
   if (fetchError || !current) throw new Error(`Reservation fetch failed: ${fetchError?.message ?? 'not found'}`)
+
+  // owner 격리: 이 예약의 부모 세션이 owner 것인지 확인 (남의 예약 상태·회차 변조 방지)
+  if (ownerId !== 'no-auth') {
+    const sessionId = (current as { session_id: number }).session_id
+    const { data: sess } = await supabase
+      .from('group_sessions')
+      .select('id')
+      .eq('id', sessionId)
+      .eq('owner_id', ownerId)
+      .maybeSingle()
+    if (!sess) throw new Error('권한이 없는 예약입니다.')
+  }
 
   const currentDeducted = (current as { deducted: boolean }).deducted
   const targetDeducts = reservationDeducts(newStatus)
@@ -153,13 +189,11 @@ export async function setReservationStatus(
 
   const passId = (current as { pass_id: number | null }).pass_id
 
-  // 2. Update pass.remaining_count if linked + delta != 0
+  // 2. Update pass.remaining_count if linked + delta != 0 (owner 격리)
   if (passId && delta !== 0) {
-    const { data: pass } = await supabase
-      .from('passes')
-      .select('remaining_count, status')
-      .eq('id', passId)
-      .single()
+    let pq = supabase.from('passes').select('remaining_count, status').eq('id', passId)
+    if (ownerId !== 'no-auth') pq = pq.eq('owner_id', ownerId)
+    const { data: pass } = await pq.single()
     if (pass) {
       const cur = (pass as { remaining_count: number | null }).remaining_count ?? 0
       const newRemaining = Math.max(0, cur + delta)
@@ -170,7 +204,9 @@ export async function setReservationStatus(
       }
       if (newRemaining === 0 && passStatus === '이용중') updates.status = '이용만료'
       if (newRemaining > 0 && passStatus === '이용만료' && delta > 0) updates.status = '이용중'
-      await supabase.from('passes').update(updates).eq('id', passId)
+      let uq = supabase.from('passes').update(updates).eq('id', passId)
+      if (ownerId !== 'no-auth') uq = uq.eq('owner_id', ownerId)
+      await uq
     }
   }
 
