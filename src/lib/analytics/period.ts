@@ -27,27 +27,6 @@ function pad2(n: number): string {
   return String(n).padStart(2, '0')
 }
 
-/**
- * @param key  기간 종류
- * @param today 'YYYY-MM-DD' 기준일
- * @returns {start,end} 또는 null('all')
- */
-export function resolvePeriod(key: PeriodKey, today: string): PeriodRange | null {
-  if (key === 'all') return null
-  const year = today.slice(0, 4)
-  const month = parseInt(today.slice(5, 7), 10) // 1~12
-
-  if (key === 'year') {
-    return { start: `${year}-01-01`, end: today }
-  }
-  if (key === 'month') {
-    return { start: `${year}-${pad2(month)}-01`, end: today }
-  }
-  // quarter: 1~3 / 4~6 / 7~9 / 10~12
-  const quarterStartMonth = Math.floor((month - 1) / 3) * 3 + 1
-  return { start: `${year}-${pad2(quarterStartMonth)}-01`, end: today }
-}
-
 function lastDayOfMonth(year: number, month: number): number {
   const days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
   if (month === 2 && ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0)) return 29
@@ -55,25 +34,45 @@ function lastDayOfMonth(year: number, month: number): number {
 }
 
 /**
- * resolvePeriod의 '월말/분기말/연말까지' 버전.
- * resolvePeriod는 end=today(period-to-date) — 매출처럼 "오늘까지 발생한 것"에 맞다.
- * 그러나 **폐강률**처럼 미래 일정까지 분모에 넣어야 하는 지표는 이 함수를 쓴다.
- *  - 폐강은 보통 다가오는(미래) 수업을 닫는 사건이라 end=today면 누락된다.
+ * 기간 범위 계산 공통 구현. start는 항상 동일하고 end만 모드에 따라 다르다.
+ *  - 'todate': end=today (period-to-date) — 매출처럼 "오늘까지 발생한 것"에 맞다.
+ *  - 'full'  : end=월말/분기말/연말 — 폐강률처럼 미래 일정까지 분모에 넣어야 하는 지표용.
  */
-export function resolvePeriodFull(key: PeriodKey, today: string): PeriodRange | null {
+function periodRange(key: PeriodKey, today: string, endMode: 'todate' | 'full'): PeriodRange | null {
   if (key === 'all') return null
   const year = parseInt(today.slice(0, 4), 10)
   const month = parseInt(today.slice(5, 7), 10) // 1~12
 
   if (key === 'year') {
-    return { start: `${year}-01-01`, end: `${year}-12-31` }
+    return { start: `${year}-01-01`, end: endMode === 'full' ? `${year}-12-31` : today }
   }
   if (key === 'month') {
-    return { start: `${year}-${pad2(month)}-01`, end: `${year}-${pad2(month)}-${pad2(lastDayOfMonth(year, month))}` }
+    const end = endMode === 'full' ? `${year}-${pad2(month)}-${pad2(lastDayOfMonth(year, month))}` : today
+    return { start: `${year}-${pad2(month)}-01`, end }
   }
+  // quarter: 1~3 / 4~6 / 7~9 / 10~12
   const qStart = Math.floor((month - 1) / 3) * 3 + 1
-  const qEnd = qStart + 2
-  return { start: `${year}-${pad2(qStart)}-01`, end: `${year}-${pad2(qEnd)}-${pad2(lastDayOfMonth(year, qEnd))}` }
+  const end = endMode === 'full'
+    ? `${year}-${pad2(qStart + 2)}-${pad2(lastDayOfMonth(year, qStart + 2))}`
+    : today
+  return { start: `${year}-${pad2(qStart)}-01`, end }
+}
+
+/**
+ * @param key  기간 종류
+ * @param today 'YYYY-MM-DD' 기준일
+ * @returns {start,end} 또는 null('all'). end=today (period-to-date).
+ */
+export function resolvePeriod(key: PeriodKey, today: string): PeriodRange | null {
+  return periodRange(key, today, 'todate')
+}
+
+/**
+ * resolvePeriod의 '월말/분기말/연말까지' 버전.
+ * 폐강은 보통 다가오는(미래) 수업을 닫는 사건이라 end=today면 누락되므로 이 함수를 쓴다.
+ */
+export function resolvePeriodFull(key: PeriodKey, today: string): PeriodRange | null {
+  return periodRange(key, today, 'full')
 }
 
 /**

@@ -88,11 +88,25 @@ export async function fetchUnifiedLessonsByRange(
   try {
     const supabase = getSupabaseClient()
 
+    // 그룹 세션 쿼리는 설정과 무관 → 설정 로드와 동시 실행(달력 hot path 왕복 1회 절약).
+    let grpQ = supabase
+      .from('group_sessions')
+      .select('id, session_name, lesson_date, lesson_time, duration_minutes, capacity, instructor_id, room_id, instructors(id, name, color, role), rooms(id, name)')
+      .gte('lesson_date', start)
+      .lte('lesson_date', end)
+      .eq('active', true)   // 취소(폐강)된 세션은 일정에서 숨김
+      .order('lesson_date', { ascending: true })
+      .order('lesson_time', { ascending: true })
+    if (ownerId !== 'no-auth') grpQ = grpQ.eq('owner_id', ownerId)
+
+    const [settings, grpRes] = await Promise.all([loadStudioSettings(ownerId), grpQ])
+    const { data: grpData, error: grpErr } = grpRes
+    if (grpErr) return []
+
     // 일정에 보이는 상태 = 급여에 '계산되는' 상태와 일치시킨다.
     //  - 항상: 예약(scheduled)·완료(completed)
     //  - 당일취소·노쇼: 급여 반영 설정이 켜진 경우에만 표시(취소 마크). 끄면 일정에서 숨김(미계산).
     //  - 사전취소(cancelled_advance): 미계산 → 항상 숨김. (기록은 DB·회원로그에 보존)
-    const settings = await loadStudioSettings(ownerId)
     const visibleStatuses = payrollCountedStatuses({
       sameDayCancel: settings.payrollCountsSameDayCancel,
       noshow: settings.payrollCountsNoshow,
@@ -110,19 +124,6 @@ export async function fetchUnifiedLessonsByRange(
     if (ownerId !== 'no-auth') indQ = indQ.eq('owner_id', ownerId)
     const { data: indData, error: indErr } = await indQ
     if (indErr) return []
-
-    // 그룹 세션
-    let grpQ = supabase
-      .from('group_sessions')
-      .select('id, session_name, lesson_date, lesson_time, duration_minutes, capacity, instructor_id, room_id, instructors(id, name, color, role), rooms(id, name)')
-      .gte('lesson_date', start)
-      .lte('lesson_date', end)
-      .eq('active', true)   // 취소(폐강)된 세션은 일정에서 숨김
-      .order('lesson_date', { ascending: true })
-      .order('lesson_time', { ascending: true })
-    if (ownerId !== 'no-auth') grpQ = grpQ.eq('owner_id', ownerId)
-    const { data: grpData, error: grpErr } = await grpQ
-    if (grpErr) return []
 
     const groupRows = (grpData ?? []) as unknown as GroupRow[]
 
