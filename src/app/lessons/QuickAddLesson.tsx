@@ -177,7 +177,7 @@ export function QuickAddLesson({
           <button
             type="button"
             onClick={() => setType('individual')}
-            className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            className={`flex-1 min-h-[42px] py-2 text-sm font-medium rounded-md transition-colors ${
               type === 'individual' ? 'bg-white shadow-sm text-blue-600' : 'text-neutral-500'
             }`}
           >
@@ -186,7 +186,7 @@ export function QuickAddLesson({
           <button
             type="button"
             onClick={() => setType('group')}
-            className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${
+            className={`flex-1 min-h-[42px] py-2 text-sm font-medium rounded-md transition-colors ${
               type === 'group' ? 'bg-white shadow-sm text-purple-600' : 'text-neutral-500'
             }`}
           >
@@ -203,7 +203,7 @@ export function QuickAddLesson({
                 value={date}
                 onChange={e => setDate(e.target.value)}
                 required
-                className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
+                className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
               />
             </div>
             <div>
@@ -213,7 +213,7 @@ export function QuickAddLesson({
                 value={time}
                 onChange={e => setTime(e.target.value)}
                 required
-                className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
+                className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
               />
             </div>
           </div>
@@ -228,7 +228,7 @@ export function QuickAddLesson({
                 value={memberQuery}
                 onChange={e => setMemberQuery(e.target.value)}
                 placeholder="회원 이름"
-                className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
+                className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
               />
               <datalist id="quick-add-member-options">
                 {members.map(m => <option key={m.id} value={m.name}>{m.phone ?? ''}</option>)}
@@ -260,7 +260,7 @@ export function QuickAddLesson({
                       key={c}
                       type="button"
                       onClick={() => changeCategory(c)}
-                      className={`flex-1 py-1.5 text-sm rounded-md border ${
+                      className={`flex-1 min-h-[42px] py-2 text-sm rounded-md border ${
                         category === c ? 'bg-purple-600 text-white border-purple-600 font-medium' : 'bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50'
                       }`}
                     >
@@ -278,7 +278,7 @@ export function QuickAddLesson({
                   onChange={e => setSessionName(e.target.value)}
                   required
                   placeholder="예: 월수금 10시 그룹"
-                  className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
+                  className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
                 />
               </div>
               <div>
@@ -290,7 +290,7 @@ export function QuickAddLesson({
                   value={capacity}
                   onChange={e => setCapacity(Number(e.target.value) || 4)}
                   required
-                  className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
+                  className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
                 />
               </div>
             </>
@@ -303,7 +303,7 @@ export function QuickAddLesson({
               <select
                 value={selectedRoomId ?? ''}
                 onChange={e => setSelectedRoomId(e.target.value ? parseInt(e.target.value, 10) : null)}
-                className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
+                className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
               >
                 <option value="">미정 (당일 결정)</option>
                 {activeRooms.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
@@ -316,7 +316,7 @@ export function QuickAddLesson({
               <select
                 value={selectedRoomId ?? ''}
                 onChange={e => setSelectedRoomId(e.target.value ? parseInt(e.target.value, 10) : null)}
-                className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
+                className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
               >
                 <option value="">미정 (당일 결정)</option>
                 <option value={activeRooms[0].id}>{activeRooms[0].name}</option>
@@ -335,7 +335,7 @@ export function QuickAddLesson({
             <select
               value={selectedInstructorId ?? ''}
               onChange={e => setSelectedInstructorId(e.target.value ? parseInt(e.target.value, 10) : null)}
-              className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm"
+              className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
             >
               <option value="">선택 안 함</option>
               {instructors.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
@@ -348,14 +348,14 @@ export function QuickAddLesson({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 text-sm border border-neutral-300 rounded px-3 py-2 hover:bg-neutral-50"
+              className="flex-1 inline-flex items-center justify-center min-h-[48px] text-sm font-medium border border-neutral-300 rounded-lg px-3 hover:bg-neutral-50 transition-colors"
             >
               취소
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className={`flex-1 text-sm text-white font-medium rounded px-3 py-2 ${
+              className={`flex-1 inline-flex items-center justify-center min-h-[48px] text-sm text-white font-medium rounded-lg px-3 shadow-sm ${
                 type === 'individual' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-purple-600 hover:bg-purple-700'
               } disabled:opacity-50`}
             >

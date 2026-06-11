@@ -239,7 +239,7 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
         />
         <button
           onClick={() => setShowAddForm(v => !v)}
-          className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          className="inline-flex items-center min-h-[44px] px-4 text-sm font-medium bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 transition-colors"
         >
           + 회원 추가
         </button>
@@ -250,36 +250,36 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
           <div className="text-sm font-medium text-neutral-700">신규 회원 추가</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <FormField label="이름 *">
-              <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm" placeholder="홍길동" />
+              <input type="text" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400" placeholder="홍길동" />
             </FormField>
             <FormField label="전화번호">
-              <input type="text" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm" placeholder="010-0000-0000" />
+              <input type="text" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400" placeholder="010-0000-0000" />
             </FormField>
             <FormField label="이메일">
-              <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm" placeholder="example@email.com" />
+              <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400" placeholder="example@email.com" />
             </FormField>
             <FormField label="성별">
-              <select value={form.gender} onChange={e => setForm(f => ({ ...f, gender: e.target.value }))} className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm">
+              <select value={form.gender} onChange={e => setForm(f => ({ ...f, gender: e.target.value }))} className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400">
                 <option value="">선택 안함</option>
                 <option value="남성">남성</option>
                 <option value="여성">여성</option>
               </select>
             </FormField>
             <FormField label="생년월일">
-              <input type="date" value={form.birthDate} onChange={e => setForm(f => ({ ...f, birthDate: e.target.value }))} className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm" />
+              <input type="date" value={form.birthDate} onChange={e => setForm(f => ({ ...f, birthDate: e.target.value }))} className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400" />
             </FormField>
             <FormField label="메모">
-              <input type="text" value={form.memo} onChange={e => setForm(f => ({ ...f, memo: e.target.value }))} className="w-full border border-neutral-300 rounded px-2 py-1.5 text-sm" placeholder="기타 메모" />
+              <input type="text" value={form.memo} onChange={e => setForm(f => ({ ...f, memo: e.target.value }))} className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400" placeholder="기타 메모" />
             </FormField>
           </div>
 
           <PassPaymentSection value={payment} onChange={setPayment} />
 
           <div className="flex gap-2">
-            <button onClick={handleAdd} disabled={saving} className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-blue-300">
+            <button onClick={handleAdd} disabled={saving} className="inline-flex items-center min-h-[44px] px-5 text-sm font-medium bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 disabled:bg-blue-300 transition-colors">
               {saving ? '저장 중...' : '저장'}
             </button>
-            <button onClick={resetForm} className="px-3 py-1.5 text-sm text-neutral-500 hover:text-neutral-700">취소</button>
+            <button onClick={resetForm} className="inline-flex items-center min-h-[44px] px-4 text-sm font-medium text-neutral-600 rounded-lg border border-neutral-300 hover:bg-neutral-50 transition-colors">취소</button>
           </div>
         </Card>
       )}
@@ -301,7 +301,7 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
                   <a href={`/members/${m.id}`} className="font-semibold text-blue-600 truncate">{m.name}</a>
                   <StatusBadge status={m._status} />
                 </div>
-                <button onClick={() => handleDelete(m)} className="text-xs text-red-600 shrink-0">삭제</button>
+                <button onClick={() => handleDelete(m)} className="text-xs text-red-600 shrink-0 px-2.5 py-1.5 rounded-lg border border-red-200 hover:bg-red-50 transition-colors">삭제</button>
               </div>
               <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-neutral-600">
                 <div className="tabular-nums">📞 {m.phone ?? '—'}</div>
@@ -379,7 +379,7 @@ export function MembersTable({ members, statusCounts, activePassMap = {} }: Prop
                       {m.lastAttendedAt ?? '—'}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
-                      <button onClick={() => handleDelete(m)} className="text-xs px-2 py-0.5 rounded text-red-600 hover:bg-red-50">삭제</button>
+                      <button onClick={() => handleDelete(m)} className="text-xs px-2.5 py-1.5 rounded-md text-red-600 hover:bg-red-50 transition-colors">삭제</button>
                     </td>
                   </tr>
                 )
@@ -409,13 +409,13 @@ function StatusBtn({
   color: 'blue' | 'green' | 'amber' | 'neutral'
 }) {
   const palette = {
-    blue: active ? 'bg-blue-600 text-white' : 'text-blue-600 hover:bg-blue-50',
-    green: active ? 'bg-green-600 text-white' : 'text-green-600 hover:bg-green-50',
-    amber: active ? 'bg-amber-500 text-white' : 'text-amber-600 hover:bg-amber-50',
-    neutral: active ? 'bg-neutral-700 text-white' : 'text-neutral-600 hover:bg-neutral-100',
+    blue: active ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-blue-700 border-neutral-300 hover:bg-blue-50 hover:border-blue-300',
+    green: active ? 'bg-green-600 text-white border-green-600 shadow-sm' : 'bg-white text-green-700 border-neutral-300 hover:bg-green-50 hover:border-green-300',
+    amber: active ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'bg-white text-amber-700 border-neutral-300 hover:bg-amber-50 hover:border-amber-300',
+    neutral: active ? 'bg-neutral-700 text-white border-neutral-700 shadow-sm' : 'bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-100',
   }
   return (
-    <button onClick={onClick} className={`px-3 py-1 rounded font-medium ${palette[color]}`}>
+    <button onClick={onClick} className={`inline-flex items-center min-h-[38px] px-3.5 rounded-lg border font-medium transition-colors ${palette[color]}`}>
       {label}
     </button>
   )
@@ -444,7 +444,7 @@ function Select({
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="text-sm border border-neutral-300 rounded px-2 py-1"
+        className="text-sm border border-neutral-300 rounded-lg px-2.5 py-1.5 bg-white"
       >
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
