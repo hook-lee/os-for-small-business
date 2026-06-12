@@ -39,7 +39,7 @@ export function LessonsFilterBar({
             key={c}
             type="button"
             onClick={() => onCategoryChange(c)}
-            className={`px-3 py-1.5 font-medium border-b-2 transition-colors ${
+            className={`inline-flex items-center min-h-[40px] px-3.5 font-medium border-b-2 transition-colors ${
               category === c
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-neutral-500 hover:text-neutral-700'
@@ -58,7 +58,7 @@ export function LessonsFilterBar({
         <select
           value={instructorFilter ?? ''}
           onChange={e => onInstructorChange(e.target.value ? parseInt(e.target.value, 10) : null)}
-          className="text-sm border border-neutral-300 rounded px-2 py-1"
+          className="text-sm border border-neutral-300 rounded-lg px-3 py-2 bg-white"
         >
           <option value="">전체 강사</option>
           {sortedInstructors.map(i => (
@@ -80,13 +80,13 @@ export function LessonsFilterBar({
       {mode === '월별' && (
         <>
           <span className="text-neutral-200">|</span>
-          <div className="flex gap-1 bg-neutral-100 p-0.5 rounded">
+          <div className="flex gap-1 bg-neutral-100 p-1 rounded-lg">
             {(['all', 'am', 'pm'] as TimeBand[]).map(b => (
               <button
                 key={b}
                 type="button"
                 onClick={() => onTimeBandChange(b)}
-                className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
+                className={`inline-flex items-center min-h-[34px] px-3 text-xs font-medium rounded-md transition-colors ${
                   timeBand === b ? 'bg-white shadow-sm text-blue-600' : 'text-neutral-500 hover:text-neutral-700'
                 }`}
               >

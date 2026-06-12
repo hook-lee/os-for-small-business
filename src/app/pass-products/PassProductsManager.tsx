@@ -228,7 +228,7 @@ export function PassProductsManager({ initial }: { initial: PassProduct[] }) {
         </h2>
         <button
           onClick={() => { setAddOpen(o => !o); setError('') }}
-          className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700"
+          className="inline-flex items-center min-h-[40px] text-sm bg-blue-600 text-white px-4 rounded-lg shadow-sm hover:bg-blue-700 transition-colors"
         >
           {addOpen ? '취소' : '+ 상품 추가'}
         </button>
@@ -239,7 +239,7 @@ export function PassProductsManager({ initial }: { initial: PassProduct[] }) {
           <form onSubmit={handleAdd}>
             <FormFields form={addForm} setForm={setAddForm} existingCategories={existingCategories} />
             <div className="flex gap-2 mt-3">
-              <button type="submit" disabled={busy} className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm disabled:bg-blue-300">
+              <button type="submit" disabled={busy} className="inline-flex items-center min-h-[40px] bg-blue-600 text-white px-4 rounded-lg text-sm shadow-sm hover:bg-blue-700 disabled:bg-blue-300 transition-colors">
                 {busy ? '저장 중...' : '추가'}
               </button>
               <button type="button" onClick={() => { setAddOpen(false); setError('') }} className="text-sm text-neutral-500">취소</button>
@@ -276,7 +276,7 @@ export function PassProductsManager({ initial }: { initial: PassProduct[] }) {
                       <>
                         <FormFields form={editForm} setForm={setEditForm} existingCategories={existingCategories} />
                         <div className="flex gap-2 mt-3">
-                          <button onClick={() => handleSaveEdit(p.id)} disabled={busy} className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm disabled:bg-blue-300">
+                          <button onClick={() => handleSaveEdit(p.id)} disabled={busy} className="inline-flex items-center min-h-[40px] bg-blue-600 text-white px-4 rounded-lg text-sm shadow-sm hover:bg-blue-700 disabled:bg-blue-300 transition-colors">
                             {busy ? '저장 중...' : '저장'}
                           </button>
                           <button onClick={() => { setEditingId(null); setError('') }} className="text-sm text-neutral-500">취소</button>
@@ -292,13 +292,13 @@ export function PassProductsManager({ initial }: { initial: PassProduct[] }) {
                           <div className="flex gap-1">
                             <button
                               onClick={() => { setEditingId(p.id); setEditForm(productToForm(p)); setError('') }}
-                              className="text-xs text-blue-600 hover:text-blue-800 px-1.5 py-0.5 rounded hover:bg-neutral-50"
+                              className="text-xs text-blue-600 hover:text-blue-800 px-2.5 py-1.5 rounded-md border border-neutral-200 hover:bg-blue-50 transition-colors"
                             >
                               수정
                             </button>
                             <button
                               onClick={() => handleDelete(p)}
-                              className="text-xs text-red-500 hover:text-red-700 px-1.5 py-0.5 rounded hover:bg-neutral-50"
+                              className="text-xs text-red-500 hover:text-red-700 px-2.5 py-1.5 rounded-md border border-neutral-200 hover:bg-red-50 transition-colors"
                             >
                               삭제
                             </button>
@@ -338,7 +338,7 @@ function FormFields({
             onChange={e => setForm({ ...form, category: e.target.value })}
             placeholder="예: 체험 (비우면 이름이 카테고리)"
             list="pass-category-options"
-            className="w-full border border-neutral-300 rounded px-2 py-1 text-sm"
+            className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
           />
           <datalist id="pass-category-options">
             {existingCategories.map(c => <option key={c} value={c} />)}
@@ -351,33 +351,33 @@ function FormFields({
             onChange={e => setForm({ ...form, name: e.target.value })}
             placeholder="예: 듀엣 체험"
             required
-            className="w-full border border-neutral-300 rounded px-2 py-1 text-sm"
+            className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
           />
         </Field>
       </div>
       <div className="grid grid-cols-3 gap-3">
         <Field label="종류" required>
-          <select value={form.passType} onChange={e => setForm({ ...form, passType: e.target.value as '프라이빗' | '그룹' })} className="w-full border border-neutral-300 rounded px-2 py-1 text-sm">
+          <select value={form.passType} onChange={e => setForm({ ...form, passType: e.target.value as '프라이빗' | '그룹' })} className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400">
             <option value="프라이빗">프라이빗</option>
             <option value="그룹">그룹</option>
           </select>
         </Field>
         <Field label="유효 기간 (일)" required>
-          <input type="number" min="1" value={form.durationDays} onChange={e => setForm({ ...form, durationDays: e.target.value })} placeholder="90" required className="w-full border border-neutral-300 rounded px-2 py-1 text-sm" />
+          <input type="number" min="1" value={form.durationDays} onChange={e => setForm({ ...form, durationDays: e.target.value })} placeholder="90" required className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400" />
         </Field>
         <Field label="총 횟수" required>
-          <input type="number" min="1" value={form.totalCount} onChange={e => setForm({ ...form, totalCount: e.target.value })} placeholder="20" required className="w-full border border-neutral-300 rounded px-2 py-1 text-sm" />
+          <input type="number" min="1" value={form.totalCount} onChange={e => setForm({ ...form, totalCount: e.target.value })} placeholder="20" required className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400" />
         </Field>
       </div>
       <div className="grid grid-cols-3 gap-3">
         <Field label="판매 가격 (원)" required>
-          <input type="number" min="0" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="650000" required className="w-full border border-neutral-300 rounded px-2 py-1 text-sm" />
+          <input type="number" min="0" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="650000" required className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400" />
         </Field>
         <Field label="회당 가격 (선택)">
-          <input type="number" min="0" value={form.perUnitPrice} onChange={e => setForm({ ...form, perUnitPrice: e.target.value })} placeholder="비우면 자동 계산" className="w-full border border-neutral-300 rounded px-2 py-1 text-sm" />
+          <input type="number" min="0" value={form.perUnitPrice} onChange={e => setForm({ ...form, perUnitPrice: e.target.value })} placeholder="비우면 자동 계산" className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400" />
         </Field>
         <Field label="표시 순서">
-          <input type="number" value={form.displayOrder} onChange={e => setForm({ ...form, displayOrder: e.target.value })} className="w-full border border-neutral-300 rounded px-2 py-1 text-sm" />
+          <input type="number" value={form.displayOrder} onChange={e => setForm({ ...form, displayOrder: e.target.value })} className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400" />
         </Field>
       </div>
       <Field label="컬러 (카테고리 안에서 자유. 비우면 카테고리 색 사용)">
@@ -390,7 +390,7 @@ function FormFields({
           value={form.maxSuspendDays}
           onChange={e => setForm({ ...form, maxSuspendDays: e.target.value })}
           placeholder="비우면 운영설정 기본값 사용"
-          className="w-full border border-neutral-300 rounded px-2 py-1 text-sm tabular-nums"
+          className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 tabular-nums"
         />
       </Field>
     </div>

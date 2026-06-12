@@ -46,7 +46,7 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
           value={profile.workspaceName ?? ''}
           onChange={e => setProfile({ ...profile, workspaceName: e.target.value || null })}
           placeholder="예: 라파 필라테스, 강남 PT 스튜디오"
-          className="border rounded px-2 py-1 w-full"
+          className="border border-neutral-300 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
         />
         <p className="text-xs text-neutral-500 mt-1">상단 헤더에 표시됩니다 (Onmove · 센터명)</p>
       </div>
@@ -78,7 +78,7 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
           value={profile.businessPhone ?? ''}
           onChange={e => setProfile({ ...profile, businessPhone: e.target.value || null })}
           placeholder="02-1234-5678"
-          className="border rounded px-2 py-1 w-full"
+          className="border border-neutral-300 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
         />
       </div>
 
@@ -89,7 +89,7 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
           value={profile.businessAddress ?? ''}
           onChange={e => setProfile({ ...profile, businessAddress: e.target.value || null })}
           placeholder="예: 서울 강남구"
-          className="border rounded px-2 py-1 w-full"
+          className="border border-neutral-300 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
         />
       </div>
 
@@ -103,7 +103,7 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
           type="date"
           value={profile.birthDate ?? ''}
           onChange={e => setProfile({ ...profile, birthDate: e.target.value || null })}
-          className="border rounded px-2 py-1 w-full"
+          className="border border-neutral-300 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
         />
       </div>
 
@@ -145,7 +145,7 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
           step="1"
           value={profile.personalDeductionCount}
           onChange={e => setProfile({ ...profile, personalDeductionCount: Math.max(1, Math.floor(Number(e.target.value) || 1)) })}
-          className="border rounded px-2 py-1 w-full"
+          className="border border-neutral-300 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
         />
         <p className="text-xs text-neutral-500 mt-1">
           본인 + 부양가족(연 소득금액 100만원 이하) 수. 1인당 150만원 소득공제. 모르면 1(본인만)로 두세요.
@@ -159,7 +159,7 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
           min="0"
           value={profile.noranusanAnnualContribution}
           onChange={e => setProfile({ ...profile, noranusanAnnualContribution: Number(e.target.value) })}
-          className="border rounded px-2 py-1 w-full"
+          className="border border-neutral-300 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
         />
       </div>
 
@@ -170,7 +170,7 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
           min="0"
           value={profile.pensionAnnualContribution}
           onChange={e => setProfile({ ...profile, pensionAnnualContribution: Number(e.target.value) })}
-          className="border rounded px-2 py-1 w-full"
+          className="border border-neutral-300 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
         />
       </div>
 
@@ -207,7 +207,7 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
           type="month"
           value={profile.taxStartMonth ?? ''}
           onChange={e => setProfile({ ...profile, taxStartMonth: e.target.value || null })}
-          className="border rounded px-2 py-1 w-full"
+          className="border border-neutral-300 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
         />
       </div>
 
@@ -217,7 +217,7 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
           type="month"
           value={profile.taxGeneralSinceMonth ?? ''}
           onChange={e => setProfile({ ...profile, taxGeneralSinceMonth: e.target.value || null })}
-          className="border rounded px-2 py-1 w-full"
+          className="border border-neutral-300 rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
         />
         <p className="text-xs text-neutral-500 mt-1">
           간이과세자로 시작했다가 일반과세자로 바뀐 달. 처음부터 한 유형이면 비워두세요.
@@ -226,7 +226,7 @@ export function SettingsForm({ initial }: { initial: UserProfile }) {
 
       <button
         type="submit"
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        className="inline-flex items-center min-h-[44px] bg-blue-600 text-white px-5 rounded-lg shadow-sm hover:bg-blue-700 transition-colors"
         disabled={status === 'saving'}
       >
         {status === 'saving' ? '저장 중...' : status === 'saved' ? '저장됨' : '저장'}

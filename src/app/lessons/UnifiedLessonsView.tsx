@@ -147,12 +147,12 @@ export function UnifiedLessonsView({
 
       {/* 모드 토글 + 네비게이션 + 추가 */}
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex gap-1 bg-neutral-100 p-0.5 rounded-lg">
+        <div className="flex gap-1 bg-neutral-100 p-1 rounded-lg">
           {MODES.map(m => (
             <button
               key={m}
               onClick={() => changeMode(m)}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              className={`inline-flex items-center min-h-[38px] px-3.5 text-sm font-medium rounded-md transition-colors ${
                 mode === m ? 'bg-white shadow-sm text-blue-600' : 'text-neutral-500 hover:text-neutral-700'
               }`}
             >
@@ -165,7 +165,7 @@ export function UnifiedLessonsView({
           <NavButtons mode={mode} anchor={anchor} onChange={changeAnchor} />
           <button
             onClick={() => { setAddPrefillDate(anchor); setAddOpen(true) }}
-            className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium px-3 py-1.5 rounded shadow-sm"
+            className="inline-flex items-center min-h-[40px] text-sm bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 rounded-lg shadow-sm transition-colors"
           >
             + 수업 추가
           </button>
@@ -286,15 +286,15 @@ function NavButtons({ mode, anchor, onChange }: {
   const today = new Date().toISOString().slice(0, 10)
   return (
     <>
-      <button onClick={() => go(-1)} className="text-sm px-2 py-1 hover:bg-neutral-100 rounded">‹</button>
-      <button onClick={() => onChange(today)} className="text-xs border border-neutral-300 px-2 py-1 rounded hover:bg-neutral-100">오늘</button>
+      <button onClick={() => go(-1)} aria-label="이전" className="inline-flex items-center justify-center min-w-[40px] min-h-[40px] text-lg text-neutral-600 border border-neutral-300 rounded-lg hover:bg-neutral-100 transition-colors">‹</button>
+      <button onClick={() => onChange(today)} className="inline-flex items-center min-h-[40px] text-sm border border-neutral-300 px-3 rounded-lg hover:bg-neutral-100 transition-colors">오늘</button>
       <input
         type={mode === '월별' ? 'month' : 'date'}
         value={mode === '월별' ? anchor.slice(0, 7) : anchor}
         onChange={e => onChange(mode === '월별' ? `${e.target.value}-01` : e.target.value)}
-        className="border border-neutral-300 rounded px-2 py-1 text-sm"
+        className="border border-neutral-300 rounded-lg px-3 py-2 text-sm bg-white"
       />
-      <button onClick={() => go(1)} className="text-sm px-2 py-1 hover:bg-neutral-100 rounded">›</button>
+      <button onClick={() => go(1)} aria-label="다음" className="inline-flex items-center justify-center min-w-[40px] min-h-[40px] text-lg text-neutral-600 border border-neutral-300 rounded-lg hover:bg-neutral-100 transition-colors">›</button>
     </>
   )
 }

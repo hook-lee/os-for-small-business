@@ -63,7 +63,7 @@ export function MonthlyDashboard({
             min={allSummaries[0]?.yearMonth}
             max={allSummaries[allSummaries.length - 1]?.yearMonth}
             onChange={e => changeMonth(e.target.value)}
-            className="border border-neutral-300 rounded px-2 py-1 text-sm"
+            className="border border-neutral-300 rounded-lg px-3 py-2 text-sm bg-white"
           />
         </div>
       </div>

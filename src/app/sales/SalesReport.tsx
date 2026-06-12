@@ -75,7 +75,7 @@ export function SalesReport({ initialMonth, passes, instructors, transactions }:
             <button
               key={r}
               onClick={() => setRange(r)}
-              className={`text-sm px-3 py-1 rounded ${range === r ? 'bg-blue-600 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
+              className={`text-sm min-h-[38px] inline-flex items-center px-4 rounded-lg border font-medium transition-colors ${range === r ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-neutral-600 border-neutral-300 hover:bg-neutral-50'}`}
             >
               {r}
             </button>
@@ -85,7 +85,7 @@ export function SalesReport({ initialMonth, passes, instructors, transactions }:
               type="month"
               value={yearMonth}
               onChange={e => changeMonth(e.target.value)}
-              className="border border-neutral-300 rounded px-2 py-1 text-sm"
+              className="border border-neutral-300 rounded-lg px-3 py-2 text-sm bg-white"
             />
           )}
         </div>

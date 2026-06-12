@@ -59,7 +59,7 @@ function EditModal({ category, onClose, onSave }: EditModalProps) {
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
             disabled={category.isDefault}
           />
           {category.isDefault && <div className="text-xs text-neutral-400 mt-1">기본 카테고리 — 이름 수정 불가</div>}
@@ -69,7 +69,7 @@ function EditModal({ category, onClose, onSave }: EditModalProps) {
           <textarea
             value={description}
             onChange={e => setDescription(e.target.value)}
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
             rows={3}
           />
         </div>
@@ -78,7 +78,7 @@ function EditModal({ category, onClose, onSave }: EditModalProps) {
           <select
             value={classification}
             onChange={e => setClassification(e.target.value as ExpenseCategory['classification'])}
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
           >
             <option value="business">사업비</option>
             <option value="living">생활비</option>
@@ -107,13 +107,13 @@ function EditModal({ category, onClose, onSave }: EditModalProps) {
           <button
             onClick={handleSave}
             disabled={saving || !name.trim()}
-            className="flex-1 bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:bg-blue-300"
+            className="flex-1 inline-flex items-center justify-center min-h-[44px] bg-blue-600 text-white rounded-lg text-sm font-medium shadow-sm hover:bg-blue-700 disabled:bg-blue-300 transition-colors"
           >
             {saving ? '저장 중...' : '저장'}
           </button>
           <button
             onClick={onClose}
-            className="flex-1 bg-neutral-100 text-neutral-700 py-2 rounded text-sm font-medium hover:bg-neutral-200"
+            className="flex-1 inline-flex items-center justify-center min-h-[44px] bg-white text-neutral-700 border border-neutral-300 rounded-lg text-sm font-medium hover:bg-neutral-50 transition-colors"
           >
             취소
           </button>
@@ -155,7 +155,7 @@ function AddModal({ onClose, onAdd }: AddModalProps) {
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="예: 청소용역비"
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
           />
         </div>
         <div>
@@ -164,7 +164,7 @@ function AddModal({ onClose, onAdd }: AddModalProps) {
             value={description}
             onChange={e => setDescription(e.target.value)}
             placeholder="세무사가 봤을 때 알 수 있는 설명"
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
             rows={3}
           />
         </div>
@@ -173,7 +173,7 @@ function AddModal({ onClose, onAdd }: AddModalProps) {
           <select
             value={classification}
             onChange={e => setClassification(e.target.value as ExpenseCategory['classification'])}
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
           >
             <option value="business">사업비</option>
             <option value="living">생활비</option>
@@ -196,13 +196,13 @@ function AddModal({ onClose, onAdd }: AddModalProps) {
           <button
             onClick={handleAdd}
             disabled={saving || !name.trim()}
-            className="flex-1 bg-blue-600 text-white py-2 rounded text-sm font-medium hover:bg-blue-700 disabled:bg-blue-300"
+            className="flex-1 inline-flex items-center justify-center min-h-[44px] bg-blue-600 text-white rounded-lg text-sm font-medium shadow-sm hover:bg-blue-700 disabled:bg-blue-300 transition-colors"
           >
             {saving ? '추가 중...' : '추가'}
           </button>
           <button
             onClick={onClose}
-            className="flex-1 bg-neutral-100 text-neutral-700 py-2 rounded text-sm font-medium hover:bg-neutral-200"
+            className="flex-1 inline-flex items-center justify-center min-h-[44px] bg-white text-neutral-700 border border-neutral-300 rounded-lg text-sm font-medium hover:bg-neutral-50 transition-colors"
           >
             취소
           </button>
@@ -279,7 +279,7 @@ export function CategoriesManager({ initial }: { initial: ExpenseCategory[] }) {
         <h2 className="text-lg font-semibold">비용 카테고리</h2>
         <button
           onClick={() => setShowAdd(true)}
-          className="bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-medium hover:bg-blue-700"
+          className="inline-flex items-center min-h-[44px] bg-blue-600 text-white px-4 rounded-lg text-sm font-medium shadow-sm hover:bg-blue-700 transition-colors"
         >
           + 카테고리 추가
         </button>
@@ -315,17 +315,17 @@ export function CategoriesManager({ initial }: { initial: ExpenseCategory[] }) {
                 <p className="text-xs text-neutral-500 mt-0.5 leading-relaxed">{cat.description}</p>
               )}
             </div>
-            <div className="flex gap-1 shrink-0">
+            <div className="flex gap-1.5 shrink-0">
               <button
                 onClick={() => setEditTarget(cat)}
-                className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50"
+                className="text-xs text-blue-600 hover:text-blue-800 px-2.5 py-1.5 rounded-md border border-neutral-200 hover:bg-blue-50 hover:border-blue-200 transition-colors"
               >
                 수정
               </button>
               <button
                 onClick={() => handleDelete(cat.id)}
                 disabled={cat.isDefault}
-                className="text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50 disabled:text-neutral-300 disabled:cursor-not-allowed"
+                className="text-xs text-red-500 hover:text-red-700 px-2.5 py-1.5 rounded-md border border-neutral-200 hover:bg-red-50 hover:border-red-200 disabled:text-neutral-300 disabled:border-neutral-100 disabled:cursor-not-allowed transition-colors"
                 title={cat.isDefault ? '기본 카테고리는 삭제할 수 없습니다' : '삭제'}
               >
                 삭제
