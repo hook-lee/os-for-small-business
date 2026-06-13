@@ -45,7 +45,9 @@ export type CategoryCounts = Record<string, number>
  * categoryRates(원장 설정)가 우선. 비어있으면 레거시 4종(개인/재활/듀엣/그룹, 0원 제외)을 폴백.
  * → 마이그레이션 전(categoryRates 미설정)에도 기존 시급이 그대로 적용돼 급여가 안 깨진다.
  */
-export function effectiveRateMap(instructor: Instructor): Record<string, number> {
+export function effectiveRateMap(
+  instructor: Pick<Instructor, 'ratePrivate' | 'rateRehab' | 'rateDuet' | 'rateGroup' | 'categoryRates'>,
+): Record<string, number> {
   const legacy: Record<string, number> = {}
   if (instructor.ratePrivate > 0) legacy['개인'] = instructor.ratePrivate
   if (instructor.rateRehab > 0) legacy['재활'] = instructor.rateRehab

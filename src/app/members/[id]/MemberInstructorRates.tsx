@@ -5,15 +5,18 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import type { MemberInstructorRate } from '@/lib/supabase/member-instructor-rates'
+import { effectiveRateMap } from '@/lib/analytics/payroll'
 
 export interface RateInstructor {
   id: number
   name: string
   color: string | null
+  defaultHourlyRate: number
   ratePrivate: number
   rateRehab: number
   rateDuet: number
   rateGroup: number
+  categoryRates: Record<string, number>
 }
 
 interface Draft {
@@ -125,7 +128,8 @@ export function MemberInstructorRates({
                 {hasRate && <span className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">전용 시급 적용 중</span>}
               </div>
               <div className="text-xs text-neutral-400">
-                강사 기본: 개인 {inst.ratePrivate.toLocaleString()} · 재활 {inst.rateRehab.toLocaleString()} · 듀엣 {inst.rateDuet.toLocaleString()} · 그룹 {inst.rateGroup.toLocaleString()}원
+                강사 기본: 기본 {inst.defaultHourlyRate.toLocaleString()}
+                {Object.entries(effectiveRateMap(inst)).map(([cat, rate]) => ` · ${cat} ${rate.toLocaleString()}`).join('')}원
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <label className="text-xs text-neutral-600">단일 시급 (원/회)

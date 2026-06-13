@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   let ownerId: string
   try { ownerId = await requireOwnerId() } catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   try {
-    const body = await req.json() as { name?: string; phone?: string | null; role?: string; ratePrivate?: number; rateRehab?: number; rateDuet?: number; rateGroup?: number; color?: string | null }
+    const body = await req.json() as { name?: string; phone?: string | null; role?: string; defaultHourlyRate?: number; ratePrivate?: number; rateRehab?: number; rateDuet?: number; rateGroup?: number; categoryRates?: Record<string, number>; color?: string | null }
     if (!body.name || typeof body.name !== 'string') {
       return NextResponse.json({ error: '이름 필수' }, { status: 400 })
     }
@@ -34,10 +34,12 @@ export async function POST(req: Request) {
       name: body.name,
       phone: body.phone ?? null,
       role: role as 'owner' | 'instructor' | 'admin',
+      defaultHourlyRate: body.defaultHourlyRate,
       ratePrivate: body.ratePrivate ?? 30000,
       rateRehab: body.rateRehab ?? 30000,
       rateDuet: body.rateDuet ?? 30000,
       rateGroup: body.rateGroup ?? 30000,
+      categoryRates: body.categoryRates,
       color: body.color ?? null,
     }, ownerId)
     return NextResponse.json({ ok: true, id })

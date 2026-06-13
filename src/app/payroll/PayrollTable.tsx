@@ -6,14 +6,18 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import type { Instructor } from '@/lib/supabase/instructors'
 import type { PayrollRecord } from '@/lib/supabase/payroll'
-import { computePayrollTotal, computeTaxWithholding, type MemberPayrollLine } from '@/lib/analytics/payroll'
+import {
+  computeCategoryPayroll,
+  instructorRateForCategory,
+  effectiveRateMap,
+  computeTaxWithholding,
+  type MemberPayrollLine,
+  type CategoryCounts,
+} from '@/lib/analytics/payroll'
 
 interface EditState {
-  privateCount: string
-  rehabCount: string
-  duetCount: string
-  groupCount: string
-  adjustment: string  // 회원별 시급·인센티브 조정액 (자동 집계로 채워짐)
+  counts: Record<string, string>  // 카테고리 → 횟수(문자열)
+  adjustment: string              // 회원별 시급·인센티브 조정액 (자동 집계로 채워짐)
   bonus: string
   deduction: string
   memo: string
@@ -21,11 +25,21 @@ interface EditState {
 }
 
 function recordToEdit(r: PayrollRecord | null): EditState {
+  const counts: Record<string, string> = {}
+  if (r) {
+    const cc = r.categoryCounts ?? {}
+    if (Object.keys(cc).length > 0) {
+      for (const [k, v] of Object.entries(cc)) counts[k] = String(v)
+    } else {
+      // 레거시 4종 카운트 → 카테고리 맵 (v3.24 전 저장분)
+      if (r.privateCount) counts['개인'] = String(r.privateCount)
+      if (r.rehabCount) counts['재활'] = String(r.rehabCount)
+      if (r.duetCount) counts['듀엣'] = String(r.duetCount)
+      if (r.groupCount) counts['그룹'] = String(r.groupCount)
+    }
+  }
   return {
-    privateCount: String(r?.privateCount ?? 0),
-    rehabCount: String(r?.rehabCount ?? 0),
-    duetCount: String(r?.duetCount ?? 0),
-    groupCount: String(r?.groupCount ?? 0),
+    counts,
     adjustment: String(r?.adjustment ?? 0),
     bonus: String(r?.bonus ?? 0),
     deduction: String(r?.deduction ?? 0),
@@ -34,16 +48,46 @@ function recordToEdit(r: PayrollRecord | null): EditState {
   }
 }
 
-export function PayrollTable({ initialMonth, instructors, initialRecords, basePath = '/payroll' }: {
+const emptyEdit = (): EditState => ({ counts: {}, adjustment: '0', bonus: '0', deduction: '0', memo: '', paid: false })
+
+/** 강사 카드에 보여줄 카테고리 행 목록 = 센터 카테고리 ∪ 강사 시급 카테고리 ∪ 입력된 횟수 카테고리. */
+function rowCategories(inst: Instructor, edit: EditState, center: string[]): string[] {
+  const set = new Set<string>()
+  for (const c of center) set.add(c)
+  for (const k of Object.keys(effectiveRateMap(inst))) set.add(k)
+  for (const k of Object.keys(edit.counts)) set.add(k)
+  return Array.from(set)
+}
+
+function parseCounts(counts: Record<string, string>): CategoryCounts {
+  const out: CategoryCounts = {}
+  for (const [k, v] of Object.entries(counts)) {
+    const n = parseInt(v, 10)
+    if (Number.isFinite(n) && n > 0) out[k] = n
+  }
+  return out
+}
+
+/** 레거시 4 컬럼 back-compat 매핑 (개인/재활/듀엣/그룹만 채움). */
+function legacyCols(counts: CategoryCounts) {
+  return {
+    privateCount: counts['개인'] ?? 0,
+    rehabCount: counts['재활'] ?? 0,
+    duetCount: counts['듀엣'] ?? 0,
+    groupCount: counts['그룹'] ?? 0,
+  }
+}
+
+export function PayrollTable({ initialMonth, instructors, initialRecords, basePath = '/payroll', categories = ['개인', '재활', '듀엣', '그룹'] }: {
   initialMonth: string
   instructors: Instructor[]
   initialRecords: PayrollRecord[]
   basePath?: string
+  categories?: string[]
 }) {
   const router = useRouter()
   const [yearMonth, setYearMonth] = useState(initialMonth)
 
-  // 각 강사별 편집 상태 (instructor_id → EditState)
   const [edits, setEdits] = useState<Record<number, EditState>>(() => {
     const map: Record<number, EditState> = {}
     for (const inst of instructors) {
@@ -54,28 +98,25 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
   })
   const [saving, setSaving] = useState<Record<number, boolean>>({})
   const [error, setError] = useState('')
-  // 자동 집계가 채운 회원별 조정 내역 (표시용, DB 영속 X — adjustment 숫자만 저장됨)
   const [autoLines, setAutoLines] = useState<Record<number, MemberPayrollLine[]>>({})
 
   function updateEdit(instId: number, patch: Partial<EditState>) {
     setEdits(prev => ({ ...prev, [instId]: { ...prev[instId], ...patch } }))
   }
+  function setCount(instId: number, cat: string, v: string) {
+    setEdits(prev => ({ ...prev, [instId]: { ...prev[instId], counts: { ...prev[instId].counts, [cat]: v } } }))
+  }
 
   function calc(inst: Instructor, edit: EditState) {
-    const breakdown = computePayrollTotal(inst, {
-      privateCount: parseInt(edit.privateCount, 10) || 0,
-      rehabCount: parseInt(edit.rehabCount, 10) || 0,
-      duetCount: parseInt(edit.duetCount, 10) || 0,
-      groupCount: parseInt(edit.groupCount, 10) || 0,
-    })
+    const counts = parseCounts(edit.counts)
+    const { byCategory, grossTotal: naiveGross } = computeCategoryPayroll(inst, counts)
     const adjustment = parseInt(edit.adjustment, 10) || 0
-    const naiveGross = breakdown.grossTotal
     const grossTotal = naiveGross + adjustment
     const taxWithholding = computeTaxWithholding(grossTotal)
     const bonus = parseInt(edit.bonus, 10) || 0
     const deduction = parseInt(edit.deduction, 10) || 0
     const net = grossTotal + bonus - taxWithholding - deduction
-    return { ...breakdown, naiveGross, adjustment, grossTotal, taxWithholding, bonus, deduction, net }
+    return { byCategory, counts, naiveGross, adjustment, grossTotal, taxWithholding, bonus, deduction, net }
   }
 
   async function handleSave(inst: Instructor) {
@@ -90,10 +131,8 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
         body: JSON.stringify({
           instructorId: inst.id,
           yearMonth,
-          privateCount: parseInt(edit.privateCount, 10) || 0,
-          rehabCount: parseInt(edit.rehabCount, 10) || 0,
-          duetCount: parseInt(edit.duetCount, 10) || 0,
-          groupCount: parseInt(edit.groupCount, 10) || 0,
+          categoryCounts: result.counts,
+          ...legacyCols(result.counts), // 레거시 4 컬럼 back-compat
           adjustment: result.adjustment,
           totalAmount: result.grossTotal,
           bonus: result.bonus,
@@ -123,10 +162,7 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
   }
 
   function resetInstructor(instId: number) {
-    setEdits(prev => ({
-      ...prev,
-      [instId]: { privateCount: '0', rehabCount: '0', duetCount: '0', groupCount: '0', adjustment: '0', bonus: '0', deduction: '0', memo: '', paid: false },
-    }))
+    setEdits(prev => ({ ...prev, [instId]: emptyEdit() }))
     setAutoLines(prev => ({ ...prev, [instId]: [] }))
   }
 
@@ -134,9 +170,7 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
     if (!confirm('모든 강사 입력을 초기화할까요? (저장되지 않은 변경사항만 초기화 — DB에 저장된 데이터는 그대로)')) return
     setEdits(() => {
       const map: Record<number, EditState> = {}
-      for (const inst of instructors) {
-        map[inst.id] = { privateCount: '0', rehabCount: '0', duetCount: '0', groupCount: '0', adjustment: '0', bonus: '0', deduction: '0', memo: '', paid: false }
-      }
+      for (const inst of instructors) map[inst.id] = emptyEdit()
       return map
     })
     setAutoLines({})
@@ -145,32 +179,26 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
   async function applyAutoCounts(instructorId: number, silent: boolean = false, mode: 'full' | 'todate' = 'full') {
     if (!silent) {
       const current = edits[instructorId]
-      const hasManual = parseInt(current.privateCount) || parseInt(current.rehabCount) || parseInt(current.duetCount) || parseInt(current.groupCount)
+      const hasManual = Object.values(current.counts).some(v => (parseInt(v, 10) || 0) > 0)
       if (hasManual && !confirm('현재 입력된 횟수가 자동 집계 값으로 덮어쓰여집니다. 계속할까요?')) return
     }
     try {
       const res = await fetch(`/api/payroll/auto?instructorId=${instructorId}&yearMonth=${yearMonth}&mode=${mode}`)
       const json = await res.json() as {
-        counts?: { privateCount: number; rehabCount: number; duetCount: number; groupCount: number; individualLessonsCount: number; groupSessionsCount: number } | null
+        categoryCounts?: Record<string, number> | null
         adjustment?: number
         lines?: MemberPayrollLine[]
         error?: string
       }
-      if (!res.ok || !json.counts) {
+      if (!res.ok || !json.categoryCounts) {
         if (!silent) toast(`자동 집계 실패: ${json.error ?? 'unknown'}`)
         return
       }
-      const c = json.counts
+      const counts: Record<string, string> = {}
+      for (const [k, v] of Object.entries(json.categoryCounts)) counts[k] = String(v)
       setEdits(prev => ({
         ...prev,
-        [instructorId]: {
-          ...prev[instructorId],
-          privateCount: String(c.privateCount),
-          rehabCount: String(c.rehabCount),
-          duetCount: String(c.duetCount),
-          groupCount: String(c.groupCount),
-          adjustment: String(json.adjustment ?? 0),
-        },
+        [instructorId]: { ...prev[instructorId], counts, adjustment: String(json.adjustment ?? 0) },
       }))
       setAutoLines(prev => ({ ...prev, [instructorId]: json.lines ?? [] }))
     } catch {
@@ -197,7 +225,7 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
       net += c.net
     }
     return { gross, tax, bonus, deduction, net }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [instructors, edits])
 
   return (
@@ -210,25 +238,25 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
             type="month"
             value={yearMonth}
             onChange={e => changeMonth(e.target.value)}
-            className="border border-neutral-300 rounded px-2 py-1 text-sm"
+            className="border border-neutral-300 rounded-lg px-3 py-2 text-sm bg-white"
           />
           <button
             onClick={() => applyAutoAll('full')}
             title="그 달에 예약된 모든 수업 기준 (완료 표시 안 해도 포함)"
-            className="whitespace-nowrap text-sm bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded hover:bg-blue-100"
+            className="whitespace-nowrap text-sm bg-blue-50 text-blue-700 border border-blue-200 px-3 min-h-[38px] rounded-lg hover:bg-blue-100"
           >
             ✨ 전체 집계
           </button>
           <button
             onClick={() => applyAutoAll('todate')}
             title="오늘까지 진행된 수업만 기준"
-            className="whitespace-nowrap text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded hover:bg-emerald-100"
+            className="whitespace-nowrap text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 min-h-[38px] rounded-lg hover:bg-emerald-100"
           >
             📅 현 시점
           </button>
           <button
             onClick={resetAll}
-            className="whitespace-nowrap text-sm border border-neutral-300 px-3 py-1 rounded hover:bg-neutral-100"
+            className="whitespace-nowrap text-sm border border-neutral-300 px-3 min-h-[38px] rounded-lg hover:bg-neutral-100"
           >
             초기화
           </button>
@@ -242,9 +270,9 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
         <Stat label="실 지급 (net)" value={`${totals.net.toLocaleString()}원`} highlight />
       </div>
 
-      <div className="text-xs text-neutral-500 bg-blue-50 border border-blue-200 px-3 py-2 rounded space-y-1">
-        <p>💡 자동 집계는 lessons + group_sessions에서 개인·재활·듀엣·그룹 횟수를 채워넣어요. 개별 수업도 <b>예약(scheduled)되면 잡힙니다</b> — 사전 취소·삭제분은 제외. 회원별 전용 시급·인센티브(회원 상세 설정)는 자동으로 조정액에 반영. 보너스·공제는 수동.</p>
-        <p>· <b className="text-blue-700">✨ 전체</b> = 그 달 예약된 모든 수업 기준(아직 완료 표시 안 해도 포함). · <b className="text-emerald-700">📅 현 시점</b> = 오늘까지 진행된 수업만.</p>
+      <div className="text-xs text-neutral-500 bg-blue-50 border border-blue-200 px-3 py-2 rounded-lg space-y-1">
+        <p>💡 자동 집계는 lessons + group_sessions를 <b>수업 종류(수강권 상위 카테고리)별</b>로 채워넣어요. 각 카테고리는 강사의 카테고리별 시급(미설정 시 기본 시급)으로 계산됩니다. 개별 수업도 <b>예약(scheduled)되면 잡힙니다</b> — 사전 취소·삭제분은 제외. 회원별 전용 시급·인센티브는 자동으로 조정액에 반영. 보너스·공제는 수동.</p>
+        <p>· <b className="text-blue-700">✨ 전체</b> = 그 달 예약된 모든 수업 기준. · <b className="text-emerald-700">📅 현 시점</b> = 오늘까지 진행된 수업만.</p>
       </div>
 
       {error && <div className="text-sm text-red-600">{error}</div>}
@@ -252,6 +280,7 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
       {instructors.map(inst => {
         const edit = edits[inst.id]
         const result = calc(inst, edit)
+        const cats = rowCategories(inst, edit, categories)
         const isSaving = saving[inst.id] ?? false
         return (
           <Card key={inst.id} className="space-y-3">
@@ -265,75 +294,32 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <label className="text-xs flex items-center gap-1">
-                  <input
-                    type="checkbox"
-                    checked={edit.paid}
-                    onChange={e => updateEdit(inst.id, { paid: e.target.checked })}
-                  />
+                  <input type="checkbox" checked={edit.paid} onChange={e => updateEdit(inst.id, { paid: e.target.checked })} />
                   지급 완료
                 </label>
-                <button
-                  type="button"
-                  onClick={() => applyAutoCounts(inst.id, false, 'full')}
-                  title="그 달 예약 전체"
-                  className="text-xs text-blue-600 hover:text-blue-700 px-2 py-1 rounded hover:bg-blue-50"
-                >
-                  자동(전체)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyAutoCounts(inst.id, false, 'todate')}
-                  title="오늘까지 진행분"
-                  className="text-xs text-emerald-600 hover:text-emerald-700 px-2 py-1 rounded hover:bg-emerald-50"
-                >
-                  자동(현재)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => resetInstructor(inst.id)}
-                  className="text-xs text-neutral-500 hover:text-neutral-700 px-2 py-1 rounded hover:bg-neutral-100"
-                >
-                  초기화
-                </button>
-                <button
-                  onClick={() => handleSave(inst)}
-                  disabled={isSaving}
-                  className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 disabled:bg-blue-300"
-                >
+                <button type="button" onClick={() => applyAutoCounts(inst.id, false, 'full')} title="그 달 예약 전체" className="text-xs text-blue-600 hover:text-blue-700 px-2.5 py-1.5 rounded-md hover:bg-blue-50">자동(전체)</button>
+                <button type="button" onClick={() => applyAutoCounts(inst.id, false, 'todate')} title="오늘까지 진행분" className="text-xs text-emerald-600 hover:text-emerald-700 px-2.5 py-1.5 rounded-md hover:bg-emerald-50">자동(현재)</button>
+                <button type="button" onClick={() => resetInstructor(inst.id)} className="text-xs text-neutral-500 hover:text-neutral-700 px-2.5 py-1.5 rounded-md hover:bg-neutral-100">초기화</button>
+                <button onClick={() => handleSave(inst)} disabled={isSaving} className="inline-flex items-center min-h-[38px] bg-blue-600 text-white px-4 rounded-lg text-sm shadow-sm hover:bg-blue-700 disabled:bg-blue-300">
                   {isSaving ? '저장 중...' : '저장'}
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-              <CountInput
-                label={`개인 (${inst.ratePrivate.toLocaleString()}/회)`}
-                value={edit.privateCount}
-                onChange={v => updateEdit(inst.id, { privateCount: v })}
-                subtotal={result.privateTotal}
-              />
-              <CountInput
-                label={`재활 (${inst.rateRehab.toLocaleString()}/회)`}
-                value={edit.rehabCount}
-                onChange={v => updateEdit(inst.id, { rehabCount: v })}
-                subtotal={result.rehabTotal}
-              />
-              <CountInput
-                label={`듀엣 (${inst.rateDuet.toLocaleString()}/회)`}
-                value={edit.duetCount}
-                onChange={v => updateEdit(inst.id, { duetCount: v })}
-                subtotal={result.duetTotal}
-              />
-              <CountInput
-                label={`그룹 (${inst.rateGroup.toLocaleString()}/회)`}
-                value={edit.groupCount}
-                onChange={v => updateEdit(inst.id, { groupCount: v })}
-                subtotal={result.groupTotal}
-              />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-sm">
+              {cats.map(cat => (
+                <CountInput
+                  key={cat}
+                  label={`${cat} (${instructorRateForCategory(inst, cat).toLocaleString()}/회)`}
+                  value={edit.counts[cat] ?? ''}
+                  onChange={v => setCount(inst.id, cat, v)}
+                  subtotal={result.byCategory[cat] ?? 0}
+                />
+              ))}
             </div>
 
             {(result.adjustment !== 0 || (autoLines[inst.id]?.length ?? 0) > 0) && (
-              <div className="rounded border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs space-y-1">
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-emerald-800">회원별 시급·인센티브 조정</span>
                   <span className={`font-semibold tabular-nums ${result.adjustment >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
@@ -362,20 +348,12 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
               <NumberInput label="총 급여" value={result.grossTotal} readOnly />
               <div>
                 <label className="block text-xs text-neutral-600 mb-1">사업소득세 3.3%</label>
-                <div className="w-full border border-neutral-200 bg-red-50 rounded px-2 py-1 text-sm tabular-nums text-red-700">
+                <div className="w-full border border-neutral-200 bg-red-50 rounded-lg px-2 py-1.5 text-sm tabular-nums text-red-700">
                   -{result.taxWithholding.toLocaleString()}원
                 </div>
               </div>
-              <NumberInput
-                label="보너스 (+)"
-                value={result.bonus}
-                onChange={v => updateEdit(inst.id, { bonus: String(v) })}
-              />
-              <NumberInput
-                label="기타 공제 (-)"
-                value={result.deduction}
-                onChange={v => updateEdit(inst.id, { deduction: String(v) })}
-              />
+              <NumberInput label="보너스 (+)" value={result.bonus} onChange={v => updateEdit(inst.id, { bonus: String(v) })} />
+              <NumberInput label="기타 공제 (-)" value={result.deduction} onChange={v => updateEdit(inst.id, { deduction: String(v) })} />
             </div>
 
             <div className="flex items-center justify-between border-t pt-2">
@@ -384,7 +362,7 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
                 value={edit.memo}
                 onChange={e => updateEdit(inst.id, { memo: e.target.value })}
                 placeholder="메모 (선택)"
-                className="flex-1 mr-3 border border-neutral-300 rounded px-2 py-1 text-sm"
+                className="flex-1 mr-3 border border-neutral-300 rounded-lg px-3 py-2 text-sm"
               />
               <div className="text-right">
                 <div className="text-xs text-neutral-500">실 지급</div>
@@ -406,13 +384,14 @@ export function PayrollTable({ initialMonth, instructors, initialRecords, basePa
 function CountInput({ label, value, onChange, subtotal }: { label: string; value: string; onChange: (v: string) => void; subtotal: number }) {
   return (
     <div>
-      <label className="block text-xs text-neutral-600 mb-1">{label}</label>
+      <label className="block text-xs text-neutral-600 mb-1 truncate" title={label}>{label}</label>
       <input
         type="number"
         min="0"
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="w-full border border-neutral-300 rounded px-2 py-1 text-sm tabular-nums"
+        placeholder="0"
+        className="w-full border border-neutral-300 rounded-lg px-2 py-1.5 text-sm tabular-nums"
       />
       <div className="text-xs text-neutral-400 mt-0.5 tabular-nums">{subtotal.toLocaleString()}원</div>
     </div>
@@ -424,7 +403,7 @@ function NumberInput({ label, value, onChange, readOnly }: { label: string; valu
     <div>
       <label className="block text-xs text-neutral-600 mb-1">{label}</label>
       {readOnly ? (
-        <div className="w-full border border-neutral-200 bg-neutral-50 rounded px-2 py-1 text-sm tabular-nums">
+        <div className="w-full border border-neutral-200 bg-neutral-50 rounded-lg px-2 py-1.5 text-sm tabular-nums">
           {value.toLocaleString()}원
         </div>
       ) : (
@@ -433,7 +412,7 @@ function NumberInput({ label, value, onChange, readOnly }: { label: string; valu
           min="0"
           value={value || ''}
           onChange={e => onChange?.(parseInt(e.target.value, 10) || 0)}
-          className="w-full border border-neutral-300 rounded px-2 py-1 text-sm tabular-nums"
+          className="w-full border border-neutral-300 rounded-lg px-2 py-1.5 text-sm tabular-nums"
         />
       )}
     </div>

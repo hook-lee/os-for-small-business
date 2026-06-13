@@ -81,6 +81,7 @@ export interface InstructorUpdate {
   rateRehab?: number
   rateDuet?: number
   rateGroup?: number
+  categoryRates?: Record<string, number>
   color?: string | null
   active?: boolean
 }
@@ -97,13 +98,26 @@ export async function updateInstructor(id: number, patch: InstructorUpdate, owne
   if (patch.rateRehab !== undefined) dbPatch.rate_rehab = patch.rateRehab
   if (patch.rateDuet !== undefined) dbPatch.rate_duet = patch.rateDuet
   if (patch.rateGroup !== undefined) dbPatch.rate_group = patch.rateGroup
+  if (patch.categoryRates !== undefined) dbPatch.category_rates = patch.categoryRates
   if (patch.color !== undefined) dbPatch.color = patch.color
   if (patch.active !== undefined) dbPatch.active = patch.active
 
-  let q = supabase.from('instructors').update(dbPatch).eq('id', id)
-  if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
-  const { error } = await q
-  if (error) throw new Error(`Supabase instructor update failed: ${error.message}`)
+  const run = async (p: Record<string, unknown>) => {
+    let q = supabase.from('instructors').update(p).eq('id', id)
+    if (ownerId !== 'no-auth') q = q.eq('owner_id', ownerId)
+    return q
+  }
+  const { error } = await run(dbPatch)
+  if (error) {
+    // category_rates 컬럼이 아직 없는 DB(v3.24 전) 폴백: 빼고 재시도.
+    if (/category_rates|does not exist|schema cache/i.test(error.message) && dbPatch.category_rates !== undefined) {
+      const rest = { ...dbPatch }; delete rest.category_rates
+      const retry = await run(rest)
+      if (retry.error) throw new Error(`Supabase instructor update failed: ${retry.error.message}`)
+      return
+    }
+    throw new Error(`Supabase instructor update failed: ${error.message}`)
+  }
 }
 
 export interface NewInstructorInput {
@@ -115,6 +129,7 @@ export interface NewInstructorInput {
   rateRehab?: number
   rateDuet?: number
   rateGroup?: number
+  categoryRates?: Record<string, number>
   color?: string | null
 }
 
@@ -129,15 +144,19 @@ export async function insertInstructor(input: NewInstructorInput, ownerId: strin
     rate_rehab: input.rateRehab ?? 30000,
     rate_duet: input.rateDuet ?? 30000,
     rate_group: input.rateGroup ?? 30000,
+    category_rates: input.categoryRates ?? {},
     color: input.color ?? null,
     active: true,
   }
   if (ownerId !== 'no-auth') row.owner_id = ownerId
-  const { data, error } = await supabase
-    .from('instructors')
-    .insert(row)
-    .select('id')
-    .single()
+  const ins = async (r: Record<string, unknown>) =>
+    supabase.from('instructors').insert(r).select('id').single()
+  let { data, error } = await ins(row)
+  if (error && /category_rates|does not exist|schema cache/i.test(error.message)) {
+    // category_rates 컬럼 없는 DB(v3.24 전) 폴백
+    const rest = { ...row }; delete rest.category_rates
+    ;({ data, error } = await ins(rest))
+  }
   if (error) throw new Error(`Insert instructor failed: ${error.message}`)
   return (data as { id: number }).id
 }

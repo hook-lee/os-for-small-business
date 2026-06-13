@@ -8,6 +8,7 @@ export interface PayrollRecord {
   rehabCount: number
   duetCount: number
   groupCount: number
+  categoryCounts: Record<string, number>  // §0 카테고리별 횟수 (v3.24) — 4종 고정 대체
   adjustment: number  // 회원별 시급·인센티브 조정액 (v3.9)
   totalAmount: number
   bonus: number
@@ -27,6 +28,7 @@ interface PayrollRow {
   rehab_count: number
   duet_count: number
   group_count: number
+  category_counts?: Record<string, number> | null
   adjustment: number | null
   total_amount: number
   bonus: number
@@ -47,6 +49,7 @@ function rowToPayroll(row: PayrollRow): PayrollRecord {
     rehabCount: row.rehab_count,
     duetCount: row.duet_count,
     groupCount: row.group_count,
+    categoryCounts: (row.category_counts ?? {}) as Record<string, number>,
     adjustment: Number(row.adjustment ?? 0),
     totalAmount: Number(row.total_amount),
     bonus: Number(row.bonus),
@@ -82,6 +85,7 @@ export interface UpsertPayrollInput {
   rehabCount: number
   duetCount: number
   groupCount: number
+  categoryCounts?: Record<string, number>
   adjustment?: number
   totalAmount: number
   bonus?: number
@@ -101,6 +105,7 @@ export async function upsertPayroll(input: UpsertPayrollInput, ownerId: string):
     rehab_count: input.rehabCount,
     duet_count: input.duetCount,
     group_count: input.groupCount,
+    category_counts: input.categoryCounts ?? {},
     adjustment: input.adjustment ?? 0,
     total_amount: input.totalAmount,
     bonus: input.bonus ?? 0,
@@ -116,11 +121,12 @@ export async function upsertPayroll(input: UpsertPayrollInput, ownerId: string):
     .from('payroll_records')
     .upsert(row, { onConflict: 'instructor_id,year_month' })
   if (error) {
-    // 신규 컬럼(v3.9 adjustment·tax_withholding) 마이그레이션 미실행 DB 폴백: 빼고 재시도.
-    if (/adjustment|tax_withholding|does not exist|schema cache/i.test(error.message)) {
+    // 신규 컬럼(v3.9 adjustment·tax_withholding / v3.24 category_counts) 마이그 미실행 DB 폴백: 빼고 재시도.
+    if (/adjustment|tax_withholding|category_counts|does not exist|schema cache/i.test(error.message)) {
       const rest: Record<string, unknown> = { ...row }
       delete rest.adjustment
       delete rest.tax_withholding
+      delete rest.category_counts
       const retry = await supabase
         .from('payroll_records')
         .upsert(rest, { onConflict: 'instructor_id,year_month' })

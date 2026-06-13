@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { ColorPicker } from '@/components/ColorPicker'
 import type { Instructor } from '@/lib/supabase/instructors'
+import { effectiveRateMap } from '@/lib/analytics/payroll'
+import { DEFAULT_LESSON_CATEGORIES } from '@/lib/supabase/lesson-categories'
 
 // 역할 우선순위: owner(0) → admin(1) → instructor(2). 같은 역할 내에서는 이름 가나다순.
 const ROLE_RANK: Record<Instructor['role'], number> = {
@@ -17,27 +19,27 @@ const ROLE_RANK: Record<Instructor['role'], number> = {
 interface EditDraft {
   name: string
   phone: string
-  ratePrivate: string
-  rateRehab: string
-  rateDuet: string
-  rateGroup: string
+  defaultRate: string
+  categoryRates: Record<string, string>  // 카테고리 → 시급(문자열)
 }
 
+/** 강사 시급 요약 — 기본시급 + 카테고리별(설정된 것만). §0 */
 function ratesSummary(inst: Instructor): string {
-  const { ratePrivate, rateRehab, rateDuet, rateGroup } = inst
-  if (ratePrivate === rateRehab && rateRehab === rateDuet && rateDuet === rateGroup) {
-    return `${ratePrivate.toLocaleString()}원 (균등)`
-  }
-  return `개인 ${ratePrivate.toLocaleString()}·재활 ${rateRehab.toLocaleString()}·듀엣 ${rateDuet.toLocaleString()}·그룹 ${rateGroup.toLocaleString()}원`
+  const eff = effectiveRateMap(inst)
+  const entries = Object.entries(eff)
+  const parts = [`기본 ${inst.defaultHourlyRate.toLocaleString()}`]
+  for (const [cat, rate] of entries) parts.push(`${cat} ${rate.toLocaleString()}`)
+  return parts.join(' · ') + '원'
 }
 
 interface InstructorsTableProps {
   instructors: Instructor[]
   memberCounts?: Record<number, number>
   revenueByInstructor?: Record<number, number>
+  categories?: string[]  // 센터 수업 카테고리(수강권 상위 카테고리) — 시급 입력 칸 목록
 }
 
-export function InstructorsTable({ instructors: initial, memberCounts = {}, revenueByInstructor = {} }: InstructorsTableProps) {
+export function InstructorsTable({ instructors: initial, memberCounts = {}, revenueByInstructor = {}, categories = DEFAULT_LESSON_CATEGORIES }: InstructorsTableProps) {
   const router = useRouter()
   const [instructors, setInstructors] = useState<Instructor[]>(initial)
 
@@ -51,7 +53,7 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
     [instructors],
   )
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [editDraft, setEditDraft] = useState<EditDraft>({ name: '', phone: '', ratePrivate: '', rateRehab: '', rateDuet: '', rateGroup: '' })
+  const [editDraft, setEditDraft] = useState<EditDraft>({ name: '', phone: '', defaultRate: '', categoryRates: {} })
   const [savingId, setSavingId] = useState<number | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [addSaving, setAddSaving] = useState(false)
@@ -59,13 +61,18 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
 
   function startEdit(inst: Instructor) {
     setEditingId(inst.id)
+    const eff = effectiveRateMap(inst)
+    const cr: Record<string, string> = {}
+    for (const cat of categories) cr[cat] = eff[cat] != null ? String(eff[cat]) : ''
+    // 카테고리 목록에 없지만 강사가 따로 설정해둔 카테고리도 보존
+    for (const [k, v] of Object.entries(inst.categoryRates ?? {})) {
+      if (!(k in cr)) cr[k] = String(v)
+    }
     setEditDraft({
       name: inst.name,
       phone: inst.phone ?? '',
-      ratePrivate: String(inst.ratePrivate),
-      rateRehab: String(inst.rateRehab),
-      rateDuet: String(inst.rateDuet),
-      rateGroup: String(inst.rateGroup),
+      defaultRate: String(inst.defaultHourlyRate),
+      categoryRates: cr,
     })
   }
 
@@ -75,13 +82,13 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
       toast('이름은 비울 수 없습니다')
       return
     }
-    const ratePrivate = parseInt(editDraft.ratePrivate, 10)
-    const rateRehab = parseInt(editDraft.rateRehab, 10)
-    const rateDuet = parseInt(editDraft.rateDuet, 10)
-    const rateGroup = parseInt(editDraft.rateGroup, 10)
-    if ([ratePrivate, rateRehab, rateDuet, rateGroup].some(r => !Number.isFinite(r) || r < 0)) {
-      toast('시급은 0 이상 숫자만 입력 가능')
-      return
+    const defaultHourlyRate = parseInt(editDraft.defaultRate, 10) || 0
+    if (defaultHourlyRate < 0) { toast('기본 시급은 0 이상'); return }
+    // 입력된 카테고리 시급(>0)만 저장
+    const categoryRates: Record<string, number> = {}
+    for (const [cat, v] of Object.entries(editDraft.categoryRates)) {
+      const n = parseInt(v, 10)
+      if (Number.isFinite(n) && n > 0) categoryRates[cat] = n
     }
     const phone = editDraft.phone.trim() || null
     setSavingId(id)
@@ -89,7 +96,7 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
       const res = await fetch(`/api/instructors/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, ratePrivate, rateRehab, rateDuet, rateGroup }),
+        body: JSON.stringify({ name, phone, defaultHourlyRate, categoryRates }),
       })
       const json = await res.json() as { ok?: boolean; error?: string }
       if (!res.ok) {
@@ -97,7 +104,7 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
         return
       }
       setInstructors(prev => prev.map(i =>
-        i.id === id ? { ...i, name, phone, ratePrivate, rateRehab, rateDuet, rateGroup } : i,
+        i.id === id ? { ...i, name, phone, defaultHourlyRate, categoryRates } : i,
       ))
       setEditingId(null)
     } catch {
@@ -229,13 +236,7 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
                   <input type="text" value={editDraft.name} onChange={e => setEditDraft(d => ({ ...d, name: e.target.value }))} className="flex-1 border border-neutral-300 rounded px-2 py-1 text-sm" placeholder="이름" />
                 </div>
                 <input type="text" value={editDraft.phone} onChange={e => setEditDraft(d => ({ ...d, phone: e.target.value }))} className="w-full border border-neutral-300 rounded px-2 py-1 text-sm" placeholder="전화번호" />
-                <div className="grid grid-cols-2 gap-2">
-                  {(['ratePrivate', 'rateRehab', 'rateDuet', 'rateGroup'] as const).map((key, i) => (
-                    <label key={key} className="text-xs text-neutral-500">{['개인', '재활', '듀엣', '그룹'][i]} 시급
-                      <input type="number" value={editDraft[key]} onChange={e => setEditDraft(d => ({ ...d, [key]: e.target.value }))} className="block w-full mt-0.5 border border-neutral-300 rounded px-2 py-1 text-right text-sm" min="0" step="1000" />
-                    </label>
-                  ))}
-                </div>
+                <RateEditor draft={editDraft} onChange={patch => setEditDraft(d => ({ ...d, ...patch }))} />
                 <div className="flex gap-2">
                   <button onClick={() => saveEdit(inst.id)} disabled={savingId === inst.id} className="flex-1 bg-blue-600 text-white px-3 py-1.5 rounded text-sm disabled:bg-blue-300">{savingId === inst.id ? '저장 중...' : '저장'}</button>
                   <button onClick={() => setEditingId(null)} className="px-3 py-1.5 text-sm text-neutral-500">취소</button>
@@ -279,7 +280,7 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
                 <th className="text-left px-4 py-2 font-medium whitespace-nowrap">역할</th>
                 <th className="text-left px-4 py-2 font-medium whitespace-nowrap">전화번호</th>
                 <th className="text-center px-4 py-2 font-medium whitespace-nowrap">담당</th>
-                <th className="text-left px-4 py-2 font-medium">시급 (개인·재활·듀엣·그룹)</th>
+                <th className="text-left px-4 py-2 font-medium">시급 (기본·카테고리별)</th>
                 <th className="text-right px-4 py-2 font-medium whitespace-nowrap">매출 기여</th>
                 <th className="text-right px-4 py-2 font-medium whitespace-nowrap">동작</th>
               </tr>
@@ -338,22 +339,8 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
                   </td>
                   <td className="px-4 py-3 tabular-nums">
                     {editingId === inst.id ? (
-                      <div className="grid grid-cols-4 gap-2 min-w-[320px]">
-                        {(['ratePrivate', 'rateRehab', 'rateDuet', 'rateGroup'] as const).map((key, i) => (
-                          <div key={key}>
-                            <label className="block text-xs text-neutral-400 mb-0.5">
-                              {['개인', '재활', '듀엣', '그룹'][i]}
-                            </label>
-                            <input
-                              type="number"
-                              value={editDraft[key]}
-                              onChange={e => setEditDraft(d => ({ ...d, [key]: e.target.value }))}
-                              className="w-full border border-neutral-300 rounded px-2 py-1 text-right text-sm"
-                              min="0"
-                              step="1000"
-                            />
-                          </div>
-                        ))}
+                      <div className="min-w-[300px]">
+                        <RateEditor draft={editDraft} onChange={patch => setEditDraft(d => ({ ...d, ...patch }))} />
                       </div>
                     ) : (
                       <span className="text-neutral-700 leading-relaxed">{ratesSummary(inst)}</span>
@@ -411,6 +398,43 @@ export function InstructorsTable({ instructors: initial, memberCounts = {}, reve
           </table>
         </div>
       </Card>
+    </div>
+  )
+}
+
+// 강사 시급 편집기 — 기본 시급 + 카테고리(수강권 상위 카테고리)별 시급. §0
+function RateEditor({ draft, onChange }: {
+  draft: EditDraft
+  onChange: (patch: Partial<EditDraft>) => void
+}) {
+  const cats = Object.keys(draft.categoryRates)
+  return (
+    <div className="space-y-2">
+      <label className="block text-xs text-neutral-500">
+        기본 시급 (카테고리 미설정 시 적용)
+        <input
+          type="number" min="0" step="1000"
+          value={draft.defaultRate}
+          onChange={e => onChange({ defaultRate: e.target.value })}
+          className="block w-full mt-0.5 border border-neutral-300 rounded-lg px-2 py-1.5 text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+        />
+      </label>
+      {cats.length > 0 && (
+        <div className="grid grid-cols-2 gap-2">
+          {cats.map(cat => (
+            <label key={cat} className="text-xs text-neutral-500 truncate" title={cat}>
+              {cat}
+              <input
+                type="number" min="0" step="1000" placeholder="기본 적용"
+                value={draft.categoryRates[cat]}
+                onChange={e => onChange({ categoryRates: { ...draft.categoryRates, [cat]: e.target.value } })}
+                className="block w-full mt-0.5 border border-neutral-300 rounded-lg px-2 py-1.5 text-right text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+              />
+            </label>
+          ))}
+        </div>
+      )}
+      <p className="text-[10px] text-neutral-400 leading-snug">비워두면 기본 시급 적용. 카테고리는 수강권 상품의 상위 카테고리예요.</p>
     </div>
   )
 }

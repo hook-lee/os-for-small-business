@@ -628,3 +628,24 @@ alter table passes        add column if not exists max_suspend_days integer;
 
 alter table group_sessions add column if not exists cancel_reason text;
 alter table group_sessions add column if not exists cancelled_at  timestamptz;
+
+-- ============================================================
+-- v3.24: 강사 시급 카테고리화 (§0 — 센터마다 수업 종류가 달라 4종 고정 대신 커스텀)
+--  - instructors.category_rates: { '개인':30000, '요가':25000, ... } 카테고리별 시급.
+--    비어있으면 코드가 레거시 4종(rate_private 등)으로 폴백 → 마이그 전에도 안 깨짐.
+--  - payroll_records.category_counts: 급여표가 카테고리별 횟수를 저장(4종 고정 컬럼 대체).
+--  - 기존 강사 4종 시급을 category_rates로 백필(라파). 0원 종류는 제외. 이미 설정된 행은 보존.
+-- 멱등: add column if not exists + 백필은 빈 행만.
+-- ============================================================
+
+alter table instructors     add column if not exists category_rates  jsonb default '{}'::jsonb;
+alter table payroll_records add column if not exists category_counts jsonb default '{}'::jsonb;
+
+update instructors
+set category_rates = jsonb_strip_nulls(jsonb_build_object(
+  '개인', nullif(rate_private, 0),
+  '재활', nullif(rate_rehab,   0),
+  '듀엣', nullif(rate_duet,    0),
+  '그룹', nullif(rate_group,   0)
+))
+where category_rates is null or category_rates = '{}'::jsonb;

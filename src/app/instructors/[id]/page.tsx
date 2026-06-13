@@ -2,6 +2,7 @@ import { fetchInstructorById, fetchMembersByInstructor } from '@/lib/supabase/in
 import { fetchAllPasses } from '@/lib/supabase/passes'
 import { fetchAllRates } from '@/lib/supabase/member-instructor-rates'
 import { computeInstructorKPI, groupPassesByMember } from '@/lib/analytics/instructor-kpi'
+import { effectiveRateMap } from '@/lib/analytics/payroll'
 import { hasSupabaseConfig } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/Card'
 import { notFound } from 'next/navigation'
@@ -61,10 +62,10 @@ export default async function InstructorDetailPage({
 
       <Card className="space-y-2">
         <Row label="전화번호" value={instructor.phone} />
-        <Row label="개인 시급" value={`${instructor.ratePrivate.toLocaleString()}원`} />
-        <Row label="재활 시급" value={`${instructor.rateRehab.toLocaleString()}원`} />
-        <Row label="듀엣 시급" value={`${instructor.rateDuet.toLocaleString()}원`} />
-        <Row label="그룹 시급" value={`${instructor.rateGroup.toLocaleString()}원`} />
+        <Row label="기본 시급" value={`${instructor.defaultHourlyRate.toLocaleString()}원`} />
+        {Object.entries(effectiveRateMap(instructor)).map(([cat, rate]) => (
+          <Row key={cat} label={`${cat} 시급`} value={`${rate.toLocaleString()}원`} />
+        ))}
       </Card>
 
       <InstructorAccountSection

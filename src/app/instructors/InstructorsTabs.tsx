@@ -20,6 +20,7 @@ export function InstructorsTabs({
   payrollRecords,
   scorecards,
   periodKey,
+  categories,
 }: {
   tab: Tab
   instructors: Instructor[]
@@ -29,6 +30,7 @@ export function InstructorsTabs({
   payrollRecords: PayrollRecord[]
   scorecards: InstructorScorecardRow[]
   periodKey: PeriodKey
+  categories: string[]
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -46,6 +48,7 @@ export function InstructorsTabs({
           instructors={instructors}
           memberCounts={memberCounts}
           revenueByInstructor={revenueByInstructor}
+          categories={categories}
         />
       )}
       {tab === 'scorecard' && (
@@ -57,6 +60,7 @@ export function InstructorsTabs({
           instructors={instructors}
           initialRecords={payrollRecords}
           basePath="/instructors"
+          categories={categories}
         />
       )}
     </div>

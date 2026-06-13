@@ -117,10 +117,12 @@ export default async function MemberDetailPage({ params }: { params: Promise<{ i
             id: i.id,
             name: i.name,
             color: i.color,
+            defaultHourlyRate: i.defaultHourlyRate,
             ratePrivate: i.ratePrivate,
             rateRehab: i.rateRehab,
             rateDuet: i.rateDuet,
             rateGroup: i.rateGroup,
+            categoryRates: i.categoryRates,
           }))}
           initialRates={memberRates}
         />

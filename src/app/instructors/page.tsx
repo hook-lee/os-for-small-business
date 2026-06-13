@@ -10,6 +10,7 @@ import { computeInstructorScorecards, computeGroupClosureStats, type InstructorS
 import { fetchGroupSessionsForAnalytics } from '@/lib/supabase/group-sessions'
 import { resolvePeriod, resolvePeriodFull, isPeriodKey, type PeriodKey } from '@/lib/analytics/period'
 import { loadStudioSettings } from '@/lib/supabase/studio-settings'
+import { fetchLessonCategories } from '@/lib/supabase/lesson-categories'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,6 +29,7 @@ export default async function InstructorsPage({ searchParams }: { searchParams: 
   const revenueByInstructor: Record<number, number> = {}
   let scorecards: InstructorScorecardRow[] = []
   const ownerId = await requireOwnerId().catch(() => 'no-auth')
+  const categories = hasSupabaseConfig() ? await fetchLessonCategories(ownerId) : ['개인', '재활', '듀엣', '그룹']
 
   if (hasSupabaseConfig()) {
     instructors = await fetchAllInstructors(ownerId)
@@ -94,6 +96,7 @@ export default async function InstructorsPage({ searchParams }: { searchParams: 
         payrollRecords={payrollRecords}
         scorecards={scorecards}
         periodKey={periodKey}
+        categories={categories}
       />
     </div>
   )

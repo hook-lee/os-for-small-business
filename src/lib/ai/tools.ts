@@ -14,8 +14,8 @@ import { fetchAllMembers, fetchMemberById } from '@/lib/supabase/members'
 import { fetchAllInstructors, fetchInstructorById } from '@/lib/supabase/instructors'
 import { fetchActivePassesByMember } from '@/lib/supabase/passes'
 import { loadTransactions } from '@/lib/data/loader'
-import { fetchAutoPayrollCounts } from '@/lib/supabase/payroll-auto'
-import { computePayrollTotal } from '@/lib/analytics/payroll'
+import { fetchAutoPayrollBreakdown } from '@/lib/supabase/payroll-auto'
+import { computeCategoryPayroll, effectiveRateMap } from '@/lib/analytics/payroll'
 import { simulateVAT, simulateAnnualVAT, type Quarter } from '@/lib/tax/vat'
 import { simulateIncomeTax } from '@/lib/tax/income-tax'
 import { recommendReserve } from '@/lib/tax/reserve'
@@ -175,20 +175,15 @@ export function buildTools(ownerId: string): ToolHandler[] {
       const yearMonth = args.yearMonth as string
       const instructor = await fetchInstructorById(instructorId, ownerId)
       if (!instructor) return { error: '강사를 찾을 수 없습니다' }
-      const counts = await fetchAutoPayrollCounts(instructorId, yearMonth, ownerId)
-      const b = computePayrollTotal(instructor, counts)
+      const { categoryCounts } = await fetchAutoPayrollBreakdown(instructorId, yearMonth, ownerId)
+      const b = computeCategoryPayroll(instructor, categoryCounts)
       const taxWithholding = Math.round(b.grossTotal * 0.033)
       return {
         instructorName: instructor.name,
         yearMonth,
-        counts,
+        counts: categoryCounts,        // 카테고리별 횟수
         grossAmount: b.grossTotal,
-        breakdown: {
-          privateTotal: b.privateTotal,
-          rehabTotal: b.rehabTotal,
-          duetTotal: b.duetTotal,
-          groupTotal: b.groupTotal,
-        },
+        breakdown: b.byCategory,       // 카테고리별 금액
         taxWithholding,
         netAmount: b.grossTotal - taxWithholding,
       }
@@ -301,10 +296,8 @@ export function buildTools(ownerId: string): ToolHandler[] {
         id: i.id,
         name: i.name,
         role: i.role,
-        ratePrivate: i.ratePrivate,
-        rateRehab: i.rateRehab,
-        rateDuet: i.rateDuet,
-        rateGroup: i.rateGroup,
+        defaultHourlyRate: i.defaultHourlyRate,
+        categoryRates: effectiveRateMap(i),  // 카테고리별 시급(기본+커스텀)
         active: i.active,
       }))
     },
