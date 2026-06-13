@@ -70,6 +70,28 @@ export function sessionCategoryToPayrollCategory(category: string | null | undef
   return 'group'   // 그룹/소그룹/기타
 }
 
+/** 4종 영문 버킷 → 레거시 한국어 카테고리명 (effectiveRateMap의 레거시 키와 정렬). */
+const LEGACY_CATEGORY_LABEL: Record<PayrollCategory, string> = {
+  private: '개인', rehab: '재활', duet: '듀엣', group: '그룹',
+}
+
+/**
+ * 개별 수업의 급여 카테고리 = 수강권 상품의 상위 카테고리(원장 설정, pass_products.category). (§0)
+ * passes에 상품 FK가 없어 수강권 이름(스냅샷)으로 상품을 찾는다.
+ * 상품 매칭 실패/카테고리 미설정이면 이름 키워드 폴백(레거시 동작 보존).
+ */
+export function resolveIndividualCategory(
+  passName: string | null | undefined,
+  productCategoryByName: Map<string, string | null | undefined>,
+): string {
+  const name = (passName ?? '').trim()
+  if (name) {
+    const cat = productCategoryByName.get(name)
+    if (cat) return cat
+  }
+  return LEGACY_CATEGORY_LABEL[passNameToPayrollCategory(passName)]
+}
+
 interface PayrollBucket { privateCount: number; rehabCount: number; duetCount: number; groupCount: number }
 
 function addToBucket(counts: PayrollBucket, cat: PayrollCategory): void {

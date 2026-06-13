@@ -8,6 +8,7 @@ import {
   type CategoryMemberBucket,
   type MemberRateOverride,
 } from '@/lib/analytics/payroll'
+import { resolveIndividualCategory } from '@/lib/analytics/payroll-auto'
 import type { Instructor } from '@/lib/supabase/instructors'
 
 function makeInstructor(partial: Partial<Instructor> = {}): Instructor {
@@ -87,5 +88,29 @@ describe('computeCategoryMemberAdjustment', () => {
     const byMember: CategoryMemberBucket[] = [{ memberId: 1, memberName: 'A', counts: { 개인: 4 } }]
     const rateMap = new Map<number, MemberRateOverride>([[1, { customRate: null, incentivePerSession: 5000 }]])
     expect(computeCategoryMemberAdjustment(inst, byMember, rateMap).adjustment).toBe(20000) // 4×5000
+  })
+})
+
+describe('resolveIndividualCategory', () => {
+  const products = new Map<string, string | null>([
+    ['필라테스 10회', '필라테스'],
+    ['요가 20회', '요가'],
+    ['카테고리없음 5회', null],
+  ])
+  it('수강권 이름이 상품과 매칭되면 그 상품의 카테고리(원장 설정)', () => {
+    expect(resolveIndividualCategory('필라테스 10회', products)).toBe('필라테스')
+    expect(resolveIndividualCategory('요가 20회', products)).toBe('요가')
+  })
+  it('상품은 매칭됐지만 카테고리 미설정이면 이름 키워드 폴백', () => {
+    // '카테고리없음 5회' → 상품 category null → 키워드에 재활/듀엣/그룹 없음 → 개인
+    expect(resolveIndividualCategory('카테고리없음 5회', products)).toBe('개인')
+  })
+  it('상품 매칭 실패 시 이름 키워드 폴백(레거시 동작 보존)', () => {
+    expect(resolveIndividualCategory('재활 8회권', products)).toBe('재활')
+    expect(resolveIndividualCategory('소그룹 12회', products)).toBe('그룹')
+    expect(resolveIndividualCategory('듀엣 10회', products)).toBe('듀엣')
+  })
+  it('이름 없으면 개인(기본)', () => {
+    expect(resolveIndividualCategory(null, products)).toBe('개인')
   })
 })

@@ -1,13 +1,15 @@
 import { getSupabaseClient } from './client'
 import { loadStudioSettings } from './studio-settings'
+import { fetchAllPassProducts } from './pass-products'
 import {
   bucketLessonCounts,
   passNameToPayrollCategory,
+  resolveIndividualCategory,
   resolvePayrollWindow,
   payrollCountedStatuses,
   type PayrollAggregateMode,
 } from '@/lib/analytics/payroll-auto'
-import type { MemberLessonBucket, PayrollCounts } from '@/lib/analytics/payroll'
+import type { MemberLessonBucket, PayrollCounts, CategoryCounts, CategoryMemberBucket } from '@/lib/analytics/payroll'
 
 export interface AutoPayrollCounts {
   privateCount: number; rehabCount: number; duetCount: number; groupCount: number
@@ -35,6 +37,8 @@ export async function fetchAutoPayrollBreakdown(
 ): Promise<{
   counts: AutoPayrollCounts
   byMember: MemberLessonBucket[]
+  categoryCounts: CategoryCounts          // §0: 카테고리(수강권 상위 카테고리)별 횟수 — 개별+그룹
+  byMemberCategory: CategoryMemberBucket[] // 회원별 카테고리 횟수 (개별 수업만)
 }> {
   try {
     const supabase = getSupabaseClient()
@@ -83,10 +87,35 @@ export async function fetchAutoPayrollBreakdown(
 
     const groupRows = (groupSessions ?? []) as Array<{ id: number; category?: string | null }>
     const groupSessionsCount = groupRows.length
-    // 예약형 수업을 종류별로 버킷팅 (개인 정원1 = 개인 시급, 그룹 = 그룹 시급 등)
+    // 예약형 수업을 종류별로 버킷팅 (개인 정원1 = 개인 시급, 그룹 = 그룹 시급 등) — 레거시 4종
     const counts = bucketLessonCounts(passNames, groupRows.map(g => g.category ?? null))
 
-    // 회원별 분해
+    // ── §0 카테고리 기반 집계: 수강권 상품의 상위 카테고리로 매칭 ──
+    const products = await fetchAllPassProducts(ownerId)
+    const productCategoryByName = new Map<string, string | null | undefined>()
+    for (const p of products) productCategoryByName.set(p.name.trim(), p.category)
+
+    const categoryCounts: CategoryCounts = {}
+    const memberCatMap = new Map<number, CategoryMemberBucket>()
+    for (const l of rows) {
+      const p = Array.isArray(l.passes) ? l.passes[0] : l.passes
+      const cat = resolveIndividualCategory(p?.pass_name ?? null, productCategoryByName)
+      categoryCounts[cat] = (categoryCounts[cat] ?? 0) + 1
+      const memberId = l.member_id
+      if (memberId != null) {
+        const member = Array.isArray(l.members) ? l.members[0] : l.members
+        let b = memberCatMap.get(memberId)
+        if (!b) { b = { memberId, memberName: member?.name ?? null, counts: {} }; memberCatMap.set(memberId, b) }
+        b.counts[cat] = (b.counts[cat] ?? 0) + 1
+      }
+    }
+    // 그룹(예약형)은 세션 카테고리 그대로 (회원 비귀속 → byMemberCategory 미포함)
+    for (const g of groupRows) {
+      const cat = g.category ?? '그룹'
+      categoryCounts[cat] = (categoryCounts[cat] ?? 0) + 1
+    }
+
+    // 회원별 분해 (레거시 4종 — 하위호환)
     const memberMap = new Map<number, MemberLessonBucket>()
     for (const l of rows) {
       const memberId = l.member_id
@@ -116,11 +145,15 @@ export async function fetchAutoPayrollBreakdown(
         groupSessionsCount,
       },
       byMember: Array.from(memberMap.values()),
+      categoryCounts,
+      byMemberCategory: Array.from(memberCatMap.values()),
     }
   } catch {
     return {
       counts: { privateCount: 0, rehabCount: 0, duetCount: 0, groupCount: 0, individualLessonsCount: 0, groupSessionsCount: 0 },
       byMember: [],
+      categoryCounts: {},
+      byMemberCategory: [],
     }
   }
 }
