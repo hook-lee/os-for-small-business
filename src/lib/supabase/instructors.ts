@@ -7,11 +7,14 @@ export interface Instructor {
   email: string | null
   role: 'owner' | 'instructor' | 'admin'
   employmentType: string | null
-  defaultHourlyRate: number  // fallback
-  ratePrivate: number
-  rateRehab: number
-  rateDuet: number
-  rateGroup: number
+  defaultHourlyRate: number  // fallback (카테고리별 시급 미설정 시)
+  ratePrivate: number        // (레거시) 개인 시급 — categoryRates로 이행 중, 미설정 DB 폴백용
+  rateRehab: number          // (레거시) 재활 시급
+  rateDuet: number           // (레거시) 듀엣 시급
+  rateGroup: number          // (레거시) 그룹 시급
+  // 카테고리별 시급 (§0) — { '개인': 30000, '요가': 25000, ... }. 센터의 수강권 카테고리에 맞춰 원장이 설정.
+  // 비어있으면 effectiveRateMap()이 레거시 4종을 폴백으로 사용.
+  categoryRates: Record<string, number>
   color: string | null
   active: boolean
   authUserId: string | null   // 로그인 계정 연결 여부 (v3.17). null=미연결
@@ -29,6 +32,7 @@ interface InstructorRow {
   rate_rehab: number
   rate_duet: number
   rate_group: number
+  category_rates?: Record<string, number> | null
   color: string | null
   active: boolean
   auth_user_id?: string | null
@@ -47,6 +51,7 @@ function rowToInstructor(row: InstructorRow): Instructor {
     rateRehab: Number(row.rate_rehab),
     rateDuet: Number(row.rate_duet),
     rateGroup: Number(row.rate_group),
+    categoryRates: (row.category_rates ?? {}) as Record<string, number>,
     color: row.color,
     active: row.active,
     authUserId: row.auth_user_id ?? null,

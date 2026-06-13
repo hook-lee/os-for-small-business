@@ -10,6 +10,7 @@ function inst(id: number, name: string, role: Instructor['role'] = 'instructor')
     id, name, phone: null, email: null, role,
     employmentType: null, defaultHourlyRate: 0,
     ratePrivate: 0, rateRehab: 0, rateDuet: 0, rateGroup: 0,
+    categoryRates: {},
     color: null, active: true, authUserId: null,
   }
 }

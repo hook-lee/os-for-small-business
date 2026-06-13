@@ -12,6 +12,7 @@ const instructor: Instructor = {
   id: 1, name: '김유진', phone: null, email: null, role: 'owner',
   employmentType: null, defaultHourlyRate: 30000,
   ratePrivate: 30000, rateRehab: 35000, rateDuet: 40000, rateGroup: 20000,
+    categoryRates: {},
   color: null, active: true, authUserId: null,
 }
 

@@ -35,6 +35,47 @@ export function computePayrollTotal(instructor: Instructor, counts: PayrollCount
   }
 }
 
+// ── 카테고리 기반 급여 (§0 — 센터마다 수업 종류가 달라 4종 고정 대신 카테고리 맵) ──
+
+/** 카테고리 → 횟수. 예: { '필라테스': 10, '요가': 4 } */
+export type CategoryCounts = Record<string, number>
+
+/**
+ * 강사의 '실효 시급 맵' (카테고리 → 시급).
+ * categoryRates(원장 설정)가 우선. 비어있으면 레거시 4종(개인/재활/듀엣/그룹, 0원 제외)을 폴백.
+ * → 마이그레이션 전(categoryRates 미설정)에도 기존 시급이 그대로 적용돼 급여가 안 깨진다.
+ */
+export function effectiveRateMap(instructor: Instructor): Record<string, number> {
+  const legacy: Record<string, number> = {}
+  if (instructor.ratePrivate > 0) legacy['개인'] = instructor.ratePrivate
+  if (instructor.rateRehab > 0) legacy['재활'] = instructor.rateRehab
+  if (instructor.rateDuet > 0) legacy['듀엣'] = instructor.rateDuet
+  if (instructor.rateGroup > 0) legacy['그룹'] = instructor.rateGroup
+  return { ...legacy, ...(instructor.categoryRates ?? {}) }
+}
+
+/** 특정 카테고리의 강사 시급. 설정 없으면 기본 시급(defaultHourlyRate) 폴백. */
+export function instructorRateForCategory(instructor: Instructor, category: string | null | undefined): number {
+  const map = effectiveRateMap(instructor)
+  if (category && map[category] != null) return map[category]
+  return instructor.defaultHourlyRate
+}
+
+/** 카테고리별 횟수 × 시급 합산. */
+export function computeCategoryPayroll(
+  instructor: Instructor,
+  counts: CategoryCounts,
+): { byCategory: Record<string, number>; grossTotal: number } {
+  const byCategory: Record<string, number> = {}
+  let grossTotal = 0
+  for (const [cat, count] of Object.entries(counts)) {
+    const subtotal = count * instructorRateForCategory(instructor, cat)
+    byCategory[cat] = subtotal
+    grossTotal += subtotal
+  }
+  return { byCategory, grossTotal }
+}
+
 // ── 회원별 시급/인센티브 (v3.9) ──
 
 export interface MemberRateOverride {
@@ -114,6 +155,65 @@ export function computeMemberRateAdjustment(
   }
 
   // 큰 조정(절댓값) 먼저
+  lines.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+  return { adjustment, lines }
+}
+
+/** 회원별 카테고리 횟수 버킷 (MemberLessonBucket의 카테고리 버전). */
+export interface CategoryMemberBucket {
+  memberId: number
+  memberName: string | null
+  counts: CategoryCounts
+}
+
+/**
+ * 카테고리 기반 회원별 시급/인센티브 조정. computeMemberRateAdjustment의 카테고리 버전.
+ * - naiveSubtotal = Σ(카테고리 횟수 × 강사 카테고리 시급)
+ * - customRate 있으면: 그 회원 전 수업을 단일 시급으로 재계산
+ * - incentivePerSession: 회당 추가
+ */
+export function computeCategoryMemberAdjustment(
+  instructor: Instructor,
+  byMember: CategoryMemberBucket[],
+  rateMap: Map<number, MemberRateOverride>,
+): { adjustment: number; lines: MemberPayrollLine[] } {
+  let adjustment = 0
+  const lines: MemberPayrollLine[] = []
+
+  for (const bucket of byMember) {
+    const entries = Object.entries(bucket.counts)
+    const lessonCount = entries.reduce((s, [, n]) => s + n, 0)
+    if (lessonCount === 0) continue
+
+    const naiveSubtotal = entries.reduce(
+      (s, [cat, n]) => s + n * instructorRateForCategory(instructor, cat),
+      0,
+    )
+
+    const override = rateMap.get(bucket.memberId)
+    const customRate = override?.customRate ?? null
+    const incentivePerSession = override?.incentivePerSession ?? 0
+
+    const effectiveSubtotal = customRate != null ? lessonCount * customRate : naiveSubtotal
+    const incentiveTotal = lessonCount * incentivePerSession
+    const delta = (effectiveSubtotal - naiveSubtotal) + incentiveTotal
+
+    if (delta !== 0) {
+      adjustment += delta
+      lines.push({
+        memberId: bucket.memberId,
+        memberName: bucket.memberName,
+        lessonCount,
+        baseRate: customRate,
+        incentivePerSession,
+        naiveSubtotal,
+        effectiveSubtotal,
+        incentiveTotal,
+        delta,
+      })
+    }
+  }
+
   lines.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
   return { adjustment, lines }
 }
